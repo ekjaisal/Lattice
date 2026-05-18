@@ -17,6 +17,9 @@ abstract: >-
   lightweight, fast, and scalable.
 url: "https://lattice.jaisal.in"
 repository-code: "https://github.com/ekjaisal/Lattice"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.20271310"
 license: "AGPL-3.0-or-later"
 keywords:
   - qualitative data analysis
