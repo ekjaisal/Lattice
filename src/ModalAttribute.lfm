@@ -1,0 +1,232 @@
+object frmModalAttribute: TfrmModalAttribute
+  Left = 450
+  Height = 720
+  Top = 150
+  Width = 1080
+  BorderIcons = [biSystemMenu]
+  Caption = 'Attribute Manager'
+  ClientHeight = 720
+  ClientWidth = 1080
+  DesignTimePPI = 144
+  Font.CharSet = ANSI_CHARSET
+  Font.Height = -18
+  Font.Name = 'Arial'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
+  Position = poMainFormCenter
+  LCLVersion = '4.6.0.0'
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnResize = FormResize
+  OnShow = FormShow
+  object vstAttribute: TLazVirtualStringTree
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = lblTitle
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = pnlEdit
+    Left = 20
+    Height = 541
+    Top = 61
+    Width = 1040
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Left = 20
+    BorderSpacing.Top = 20
+    BorderSpacing.Right = 20
+    BorderSpacing.Bottom = 20
+    BorderStyle = bsNone
+    Colors.UnfocusedSelectionColor = clHighlight
+    Colors.UnfocusedSelectionBorderColor = clHighlight
+    DefaultNodeHeight = 29
+    Header.AutoSizeIndex = -1
+    Header.Columns = <    
+      item
+        Position = 0
+        Text = 'Attribute Name'
+        Width = 400
+      end    
+      item
+        Position = 1
+        Text = 'Type'
+        Width = 200
+      end    
+      item
+        Position = 2
+        Text = 'Description'
+        Width = 440
+      end>
+    Header.DefaultHeight = 25
+    Header.Height = 28
+    Header.Options = [hoAutoResize, hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible]
+    Header.ParentFont = True
+    Header.SortColumn = 0
+    Indent = 0
+    Margin = 4
+    TabOrder = 0
+    TextMargin = 4
+    TreeOptions.PaintOptions = [toThemeAware, toUseBlendedImages, toUseExplorerTheme]
+    TreeOptions.SelectionOptions = [toFullRowSelect]
+    OnFocusChanged = vstAttributeFocusChanged
+    OnGetText = vstAttributeGetText
+    OnPaintText = vstAttributePaintText
+    OnHeaderClick = vstAttributeHeaderClick
+  end
+  object pnlEdit: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = pnlAttributeActions
+    Left = 20
+    Height = 29
+    Top = 622
+    Width = 1040
+    Anchors = [akLeft, akRight, akBottom]
+    BorderSpacing.Left = 20
+    BorderSpacing.Top = 20
+    BorderSpacing.Right = 20
+    BevelOuter = bvNone
+    ClientHeight = 29
+    ClientWidth = 1040
+    TabOrder = 1
+    object edtAttributeName: TEdit
+      AnchorSideLeft.Control = pnlEdit
+      AnchorSideTop.Control = pnlEdit
+      AnchorSideBottom.Control = pnlEdit
+      AnchorSideBottom.Side = asrBottom
+      Left = 0
+      Height = 29
+      Top = 0
+      Width = 300
+      Anchors = [akTop, akLeft, akBottom]
+      TabOrder = 0
+      TextHint = 'Attribute Name'
+    end
+    object cmbAttributeType: TComboBox
+      AnchorSideLeft.Control = edtAttributeName
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = pnlEdit
+      AnchorSideBottom.Control = pnlEdit
+      AnchorSideBottom.Side = asrBottom
+      Left = 320
+      Height = 29
+      Top = 0
+      Width = 220
+      Anchors = [akTop, akLeft, akBottom]
+      BorderSpacing.Left = 20
+      ItemHeight = 21
+      Items.Strings = (
+        'Text'
+        'Numeric'
+        'Date-Time'
+        'Categorical'
+        'URL or Path'
+      )
+      Style = csDropDownList
+      TabOrder = 1
+    end
+    object edtAttributeDescription: TEdit
+      AnchorSideLeft.Control = cmbAttributeType
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = pnlEdit
+      AnchorSideRight.Control = pnlEdit
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlEdit
+      AnchorSideBottom.Side = asrBottom
+      Left = 560
+      Height = 29
+      Top = 0
+      Width = 480
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Left = 20
+      TabOrder = 2
+      TextHint = 'Description (Optional)'
+    end
+  end
+  object pnlAttributeActions: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 20
+    Height = 29
+    Top = 671
+    Width = 1040
+    Anchors = [akLeft, akRight, akBottom]
+    BorderSpacing.Around = 20
+    BevelOuter = bvNone
+    ClientHeight = 29
+    ClientWidth = 1040
+    TabOrder = 2
+    object btnUpdate: TButton
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = pnlAttributeActions
+      AnchorSideRight.Control = btnAdd
+      AnchorSideBottom.Control = pnlAttributeActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 755
+      Height = 29
+      Top = 0
+      Width = 175
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Update Selected'
+      TabOrder = 1
+      OnClick = btnUpdateClick
+    end
+    object btnDelete: TButton
+      AnchorSideLeft.Control = btnUpdate
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = pnlAttributeActions
+      AnchorSideRight.Control = btnUpdate
+      AnchorSideBottom.Control = pnlAttributeActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 570
+      Height = 29
+      Top = 0
+      Width = 175
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Delete Selected'
+      TabOrder = 2
+      OnClick = btnDeleteClick
+    end
+    object btnAdd: TButton
+      AnchorSideLeft.Control = pnlAttributeActions
+      AnchorSideTop.Control = pnlAttributeActions
+      AnchorSideRight.Control = pnlAttributeActions
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlAttributeActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 940
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight, akBottom]
+      Caption = 'Add New'
+      TabOrder = 0
+      OnClick = btnAddClick
+    end
+  end
+  object lblTitle: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 20
+    Height = 21
+    Top = 20
+    Width = 1040
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Around = 20
+    Caption = 'Project-wide Attribute Definitions'
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -18
+    Font.Name = 'Arial'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+end

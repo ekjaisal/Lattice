@@ -1,0 +1,200 @@
+object frmDialogEditor: TfrmDialogEditor
+  Left = 450
+  Height = 540
+  Top = 250
+  Width = 720
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Editor'
+  ClientHeight = 540
+  ClientWidth = 720
+  DesignTimePPI = 144
+  Font.CharSet = ANSI_CHARSET
+  Font.Name = 'Arial'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
+  Position = poMainFormCenter
+  LCLVersion = '4.6.0.0'
+  OnResize = FormResize
+  OnShow = FormShow
+  object pnlTop: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 0
+    Height = 80
+    Top = 0
+    Width = 720
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = True
+    BevelOuter = bvNone
+    ClientHeight = 80
+    ClientWidth = 720
+    TabOrder = 0
+    object lblTitle: TLabel
+      AnchorSideLeft.Control = pnlTop
+      AnchorSideTop.Control = pnlTop
+      AnchorSideRight.Control = pnlTop
+      AnchorSideRight.Side = asrBottom
+      Left = 20
+      Height = 21
+      Top = 20
+      Width = 680
+      Anchors = [akTop, akLeft, akRight]
+      BorderSpacing.Left = 20
+      BorderSpacing.Top = 20
+      BorderSpacing.Right = 20
+      BorderSpacing.Bottom = 2
+      Caption = 'Title/Prompt'
+      Font.CharSet = ANSI_CHARSET
+      Font.Height = -18
+      Font.Name = 'Arial'
+      Font.Pitch = fpVariable
+      Font.Quality = fqDraft
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+      WordWrap = True
+    end
+    object edtTitle: TEdit
+      AnchorSideLeft.Control = pnlTop
+      AnchorSideTop.Control = lblTitle
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = pnlTop
+      AnchorSideRight.Side = asrBottom
+      Left = 20
+      Height = 29
+      Top = 51
+      Width = 680
+      Anchors = [akTop, akLeft, akRight]
+      AutoSize = False
+      BorderSpacing.Left = 20
+      BorderSpacing.Top = 10
+      BorderSpacing.Right = 20
+      TabOrder = 0
+    end
+  end
+  object pnlClient: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = pnlTop
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = pnlActions
+    Left = 0
+    Height = 391
+    Top = 80
+    Width = 720
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BevelOuter = bvNone
+    ClientHeight = 391
+    ClientWidth = 720
+    TabOrder = 1
+    object lblSubtitle: TLabel
+      AnchorSideLeft.Control = pnlClient
+      AnchorSideTop.Control = pnlClient
+      AnchorSideRight.Control = pnlClient
+      AnchorSideRight.Side = asrBottom
+      Left = 20
+      Height = 21
+      Top = 10
+      Width = 680
+      Anchors = [akTop, akLeft, akRight]
+      BorderSpacing.Left = 20
+      BorderSpacing.Top = 10
+      BorderSpacing.Right = 20
+      Caption = 'Description'
+      Font.CharSet = ANSI_CHARSET
+      Font.Height = -18
+      Font.Name = 'Arial'
+      Font.Pitch = fpVariable
+      Font.Quality = fqDraft
+      Font.Style = [fsBold]
+      ParentColor = False
+      ParentFont = False
+    end
+    object memContent: TMemo
+      AnchorSideLeft.Control = pnlClient
+      AnchorSideTop.Control = lblSubtitle
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = pnlClient
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlClient
+      AnchorSideBottom.Side = asrBottom
+      Left = 20
+      Height = 350
+      Top = 41
+      Width = 680
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Left = 20
+      BorderSpacing.Top = 10
+      BorderSpacing.Right = 20
+      BorderStyle = bsNone
+      ScrollBars = ssAutoVertical
+      TabOrder = 0
+    end
+  end
+  object pnlActions: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 20
+    Height = 29
+    Top = 491
+    Width = 680
+    Anchors = [akLeft, akRight, akBottom]
+    BorderSpacing.Around = 20
+    BevelOuter = bvNone
+    ClientHeight = 29
+    ClientWidth = 680
+    TabOrder = 2
+    object btnOK: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = pnlActions
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 580
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight, akBottom]
+      Caption = 'Save'
+      TabOrder = 0
+      OnClick = btnOKClick
+    end
+    object btnCancel: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = btnOK
+      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 470
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Cancel'
+      ModalResult = 2
+      TabOrder = 1
+    end
+    object btnDelete: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = btnCancel
+      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 360
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Delete'
+      TabOrder = 2
+      OnClick = btnDeleteClick
+    end
+  end
+end

@@ -1,0 +1,241 @@
+﻿Lattice is a free and open-source Computer-Assisted Qualitative Data Analysis
+Software (CAQDAS). It is designed to be native, lightweight, fast, and scalable,
+and is envisaged from the ground up to be intuitive for setting up and managing
+projects. Every project is contained in a standalone ‘Lattice Project File’ with
+‘.lattice’ extension. This user guide provides a brief overview of the following
+topics to start with a Lattice project:
+
+  • Project Management
+  • Documents, Data Import, and Export
+  • Managing Attributes
+  • Coding Data
+  • Memos
+  • Editing Documents
+  • Filtering, Sorting, and Searching
+  • Retrieval and Exports
+  • Analysis Workspace
+
+
+PROJECT MANAGEMENT
+__________________________________________________________________________________
+
+To get started, launch the application and use the start-up dialog to ‘Create New
+Project’ or ‘Open Existing Project’.
+
+The ‘Project’ menu provides tools for database maintenance:
+
+  • ‘Optimise Project’: Rebuilds search indices, defragments the database, and
+    reclaims unused disk space. It is intended for use on larger projects.
+  • ‘Snapshot Project’: Creates a timestamped backup copy of the current working
+    state.
+  • ‘Close Project’: Safely commits all transactions and returns to the start-up
+    dialog.
+
+
+DOCUMENTS, DATA IMPORT, AND EXPORT
+__________________________________________________________________________________
+
+The primary analytical data unit is a document. Documents are plain-text data;
+images, audio, and video are not supported.
+
+Multiple import pathways are available in Lattice. To import data into a project,
+navigate to ‘Menu’ → ‘Documents’ → ‘Import Documents’.
+
+  1. ‘Import Plain-Text Files’: Directly load ‘TXT’ files.
+  2. ‘Import DOCX/ODT Files as Plain-Text’ or ‘Import PDF Files as Plain
+     Text’: Extract text content from word processor or document files.
+  3. ‘Import from XLSX/ODS Spreadsheet’, ‘Import from JSON Structured Data’,
+     or ‘Import from SQLite Database’: Import structured records containing
+     attributes.
+
+When importing structured data, the ‘Import Manager’ assists in mapping fields.
+Use the left panel to select source columns and the right panel to map them to
+target fields. Available target mappings include ‘Document Name’, ‘Document
+Content’, ‘Attribute’, or ‘Skip’. For attributes, specify the data type and
+determine whether to ‘Use Existing Attribute’ or ‘Create New Attribute’ (see
+§ MANAGING ATTRIBUTES).
+
+To export documents from the project, select the target items in the document
+list, then navigate to ‘Menu’ → ‘Documents’ → ‘Export Documents’.
+
+Available export formats include:
+
+  • ‘Export as TXT with Metadata CSV’: Saves documents as individual plain-text
+    files alongside a unified ‘CSV’ file containing all associated attributes.
+  • ‘Export as XLSX/ODS Spreadsheet’: Compiles documents and their attributes
+    into a single tabular spreadsheet.
+  • ‘Export as JSON Structured Data’ or ‘Export as XML Structured Data’:
+    Structures the document content and metadata into machine-readable
+    hierarchical formats.
+
+
+MANAGING ATTRIBUTES
+__________________________________________________________________________________
+
+Attributes allow metadata to be stored as typed parameters rather than plain text,
+enabling richer analysis. The available attribute types are ‘Text’, ‘Categorical’,
+‘Numeric’, ‘Date-Time’, and ‘URL or Path’.
+
+To define project-wide attributes, open the ‘Attribute Manager’ via ‘Menu’ →
+‘Attributes’. This interface facilitates adding, updating, or deleting attributes
+and controlling their data-type across the entire database.
+
+Attributes associated with a specific document are displayed in the bottom-left
+panel of the main interface, alongside the document text. A ‘URL or Path’ type
+attribute is clickable and will open the original webpage or local file for
+quick access. To modify a specific document’s attributes, right-click the item
+in the ‘Documents’ tree and select ‘Add Attribute’, ‘Edit Attribute Value’, or
+‘Delete Attribute’.
+
+
+CODING DATA
+__________________________________________________________________________________
+
+Creating and organising codes and sub-codes is primarily handled from the ‘Codes’
+panel in the main window. The application supports a hierarchy of up to six levels
+including the first-level code and subsequent sub-codes.
+
+To create and apply codes:
+
+  • Click ‘+ New’ to create a top-level code with an assigned name and optionally
+    a description.
+  • Select a segment of text within the reading panel, then double-click the
+    preferred code in the ‘Codes’ tree to apply the coding.
+  • Right-click an existing code and select ‘Add Sub-Code’ to expand the
+    hierarchy, or ‘Change Colour’ to modify its visual highlight.
+  • Reorganise the code order and hierarchy by right-clicking and selecting ‘Move
+    Code Up’, ‘Move Code Down’, ‘Promote Code Level’, or ‘Demote Code Level’.
+  • Merge duplicate or overlapping codes by selecting multiple items,
+    right-clicking the intended target code, and choosing ‘Merge Selected
+    Here’.
+
+Hovering over the vertical brackets beside the document text reveals the applied
+code in the ‘Legend’ panel. Right-clicking a bracket provides options to ‘Remove
+Coding’ or ‘Re-code to Current Selection’.
+
+The ‘Menu’ → ‘Codes’ → ‘Code System’ allows exporting or importing the code system
+as a ‘JSON’ file for reuse. The ‘Menu’ → ‘Codes’ → ‘Export Codebook’ option
+exports the details related to codes along with associated code memos to ‘XLSX’,
+‘ODS’, or ‘CSV’ formats.
+
+
+MEMOS
+__________________________________________________________________________________
+
+Five distinct types of memos are supported to capture analytical reflections:
+
+  • ‘Project Memo’: Intended for project-wide notes and is available via ‘Menu’ →
+    ‘Memos’ → ‘Project Memo’.
+  • ‘Analytical Memo’: Meant for fleeting thoughts. Add new entries via ‘Menu’ →
+    ‘Memos’ → ‘Add Analytical Memo’.
+  • ‘Document Memo’: Specific to individual documents. Right-click a document in
+    the tree to ‘Create/Modify Document Memo’.
+  • ‘Code Memo’: Attached to specific codes. Right-click a code to ‘Create/Modify
+    Code Memo’.
+  • ‘Segment Memo’: Linked to specific document text segments. Right-click a text
+    selection or an existing coding bracket to ‘Create Memo for Selection’ or
+    ‘Create Memo for Coded Segment’.
+
+All memos can be centrally managed from the ‘Memo Manager’ (via ‘Menu’ → ‘Memos’ →
+‘Manage Memos’). The manager allows filtering, editing, and exporting memos to
+‘XLSX’, ‘ODS’, ‘CSV’, ‘JSON’, or ‘XML’ formats. Documents, codes, or segments with
+attached memos are visually indicated by an underline beneath their respective
+labels or text.
+
+
+EDITING DOCUMENTS
+__________________________________________________________________________________
+
+While the central text panel is read-only by default to prevent accidental
+modification, an integrated editing mode allows for text correction.
+
+To edit a document:
+
+  1. Select the document from the left panel.
+  2. Click the ‘Enter Edit Mode’ button (pencil icon) located beside the document
+     title.
+  3. Modify the text, correct typographic errors, or insert new content. Existing
+     codings and segment memos will synchronise with the structural changes.
+  4. Click the ‘Save Changes’ button (floppy icon) or press ‘Ctrl’ + ‘S’ to
+     permanently save the changes made to the document.
+  5. Click the ‘Exit Edit Mode’ button (cross mark icon) to return to the reading
+     mode.
+
+
+FILTERING, SORTING, AND SEARCHING
+__________________________________________________________________________________
+
+Filtering and search capabilities allow for quicker access to relevant data across
+large projects.
+
+To locate and organise data:
+
+  • Search the document list or code tree directly using the search bar positioned
+    above each panel.
+  • Search within an open document using the ‘Find in document’ search bar,
+    navigating results via the ‘Previous’ and ‘Next’ buttons.
+  • Filter the document list by clicking the ‘Filter Documents’ button (funnel
+    icon). Documents can be filtered by ‘Document Title Pattern’, ‘Document
+    Content Match (FTS5 Syntax)’, or via ‘Filter by Attribute’.
+  • Attribute filters employ type-specific operators such as ‘Equals’, ‘Contains’,
+    ‘Greater Than’, ‘Between’, or ‘Is Empty’.
+  • Sort the document list by clicking the ‘Sort Documents’ button. Available
+    criteria include import time, coding count, segment memo count, or specific
+    attribute values. Select ‘Make Sort Permanent’ to persist the order.
+
+
+RETRIEVAL AND EXPORTS
+__________________________________________________________________________________
+
+Coded data segments can be retrieved, reviewed, and exported for reporting using
+the ‘Retrieval Manager’ (accessible via ‘Menu’ → ‘Retrieval’).
+
+To retrieve and export data:
+
+  1. Define the scope by selecting specific target nodes within the ‘Code Scope’
+     and ‘Document Scope’ tabs.
+  2. Apply ‘Attribute Filters’ to restrict the retrieval to documents meeting
+     strict metadata criteria (e.g. all participants located in a specific
+     region). Use the ‘Attribute Filter Logic’ controls to specify ‘Match all
+     (AND)’ or ‘Match any (OR)’.
+  3. Click ‘Retrieve’ to compile the matching segments into the results grid.
+  4. Navigate to the ‘Export Options’ tab to configure the output structure.
+     Select fields to include (e.g. ‘Document Name’, ‘Code’, ‘Attributes’) and
+     define up to three sorting levels (‘Primary Sort’, ‘Secondary Sort’,
+     ‘Tertiary Sort’).
+  5. Click ‘Export’ to generate coding reports in ‘PDF’ or ‘HTML’ formats, or
+     save the raw data tables in ‘XLSX’, ‘ODS’, ‘CSV’, ‘JSON’, or ‘XML’.
+
+
+ANALYSIS WORKSPACE
+__________________________________________________________________________________
+
+Five distinct analytical tools are built into the ‘Analysis Workspace’ (accessible
+via ‘Menu’ → ‘Analysis’):
+
+  • ‘Code Frequency’: Displays the application frequency of selected codes across
+    the dataset.
+  • ‘Code Co-occurrence’: Identifies patterns of intersection where codes from an
+    X-Axis selection overlap with codes from a Y-Axis selection.
+  • ‘Attribute-Code Crosstab’: Tabulates code occurrences within the scope of a
+    selected document attribute.
+  • ‘Coding Coverage’: Discerns the character extent of coding for each selected
+    document.
+  • ‘Word Cloud’: Produces a frequency visualisation of words found within
+    coded segments. Click ‘Stopwords’ to manage the comma-separated exclusion
+    list.
+
+To perform an analysis:
+
+  1. Select the desired analysis type from the top tabs.
+  2. Adjust the code, document, and attribute scopes using the left-hand panels
+    to precisely target the data of interest.
+  3. Click ‘Run Analysis’ to generate the visualisation and compile the
+     underlying data grid.
+  4. Adjust the ‘Limit Bars to’ or ‘Limit Words in Cloud to’ parameters to control
+     the density of the output visualisation. Use the mouse scroll wheel to zoom,
+     and click-and-drag to pan the graphics area.
+  5. Click ‘Export Visualisation’ to save the chart as ‘SVG’, ‘PDF’, ‘PNG’, or
+     ‘JPEG’.
+  6. Click ‘Export Data Table’ to extract the calculated matrix into ‘XLSX’,
+     ‘ODS’, ‘CSV’, ‘JSON’, or ‘XML’ files.

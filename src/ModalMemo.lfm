@@ -1,0 +1,326 @@
+object frmModalMemo: TfrmModalMemo
+  Left = 450
+  Height = 850
+  Top = 150
+  Width = 1600
+  BorderIcons = [biSystemMenu]
+  Caption = 'Memo Manager'
+  ClientHeight = 850
+  ClientWidth = 1600
+  DesignTimePPI = 144
+  Font.CharSet = ANSI_CHARSET
+  Font.Height = -18
+  Font.Name = 'Arial'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
+  Position = poMainFormCenter
+  LCLVersion = '4.6.0.0'
+  OnResize = FormResize
+  OnShow = FormShow
+  object pnlTopContainer: TPanel
+    Left = 20
+    Height = 49
+    Top = 20
+    Width = 1560
+    Align = alTop
+    AutoSize = True
+    BorderSpacing.Left = 20
+    BorderSpacing.Top = 20
+    BorderSpacing.Right = 20
+    BevelOuter = bvNone
+    ClientHeight = 49
+    ClientWidth = 1560
+    TabOrder = 0
+    object pnlMemoFilter: TPanel
+      Left = 0
+      Height = 29
+      Top = 0
+      Width = 1560
+      Align = alTop
+      BorderSpacing.Bottom = 20
+      BevelOuter = bvNone
+      ClientHeight = 29
+      ClientWidth = 1560
+      TabOrder = 0
+      object cmbTypeFilter: TComboBox
+        Left = 0
+        Height = 29
+        Top = 0
+        Width = 250
+        Align = alLeft
+        ItemHeight = 21
+        Items.Strings = (
+          'All Memo Types'
+          'Project Memo'
+          'Document Memo'
+          'Code Memo'
+          'Segment Memo'
+          'Analytical Memo'
+        )
+        Style = csDropDownList
+        TabOrder = 0
+        OnChange = cmbTypeFilterChange
+      end
+      object edtMemoSearch: TEdit
+        Left = 270
+        Height = 29
+        Top = 0
+        Width = 1290
+        Align = alClient
+        BorderSpacing.Left = 20
+        TabOrder = 1
+        TextHint = 'Search within memo titles or content'
+        OnChange = edtMemoSearchChange
+      end
+    end
+  end
+  object vstMemo: TLazVirtualStringTree
+    Left = 20
+    Height = 500
+    Top = 69
+    Width = 1560
+    Align = alClient
+    BorderSpacing.Left = 20
+    BorderSpacing.Right = 20
+    BorderStyle = bsNone
+    Colors.UnfocusedSelectionColor = clHighlight
+    Colors.UnfocusedSelectionBorderColor = clHighlight
+    DefaultNodeHeight = 29
+    Header.AutoSizeIndex = -1
+    Header.Columns = <    
+      item
+        Position = 0
+        Text = 'Type'
+        Width = 200
+      end    
+      item
+        Position = 1
+        Text = 'Title'
+        Width = 600
+      end    
+      item
+        Position = 2
+        Text = 'Last Updated (Local Time)'
+        Width = 300
+      end    
+      item
+        Position = 3
+        Text = 'References'
+        Width = 460
+      end>
+    Header.DefaultHeight = 25
+    Header.Height = 28
+    Header.Options = [hoAutoResize, hoColumnResize, hoDrag, hoShowSortGlyphs, hoVisible]
+    Header.ParentFont = True
+    Header.SortColumn = 2
+    Header.SortDirection = sdDescending
+    Indent = 0
+    Margin = 4
+    TabOrder = 1
+    TextMargin = 4
+    TreeOptions.PaintOptions = [toHideFocusRect, toThemeAware, toUseBlendedImages, toUseExplorerTheme]
+    TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect]
+    OnDblClick = vstMemoDblClick
+    OnFocusChanged = vstMemoFocusChanged
+    OnGetText = vstMemoGetText
+    OnPaintText = vstMemoPaintText
+    OnHeaderClick = vstMemoHeaderClick
+    OnMouseDown = vstMemoMouseDown
+  end
+  object splPreview: TSplitter
+    Cursor = crVSplit
+    Left = 0
+    Height = 12
+    Top = 569
+    Width = 1600
+    Align = alBottom
+    ResizeAnchor = akBottom
+    ResizeStyle = rsPattern
+  end
+  object pnlPreviewContainer: TPanel
+    Left = 20
+    Height = 200
+    Top = 581
+    Width = 1560
+    Align = alBottom
+    BorderSpacing.Left = 20
+    BorderSpacing.Right = 20
+    BorderSpacing.Bottom = 20
+    BevelOuter = bvNone
+    ClientHeight = 200
+    ClientWidth = 1560
+    TabOrder = 2
+    object pnlPreviewContent: TPanel
+      Left = 0
+      Height = 200
+      Top = 0
+      Width = 774
+      Align = alClient
+      BevelOuter = bvNone
+      ClientHeight = 200
+      ClientWidth = 774
+      TabOrder = 0
+      object lblPreviewTitle: TLabel
+        Left = 0
+        Height = 21
+        Top = 0
+        Width = 774
+        Align = alTop
+        BorderSpacing.Bottom = 12
+        Caption = 'Memo Content'
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -18
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object memPreview: TMemo
+        Left = 0
+        Height = 167
+        Top = 33
+        Width = 774
+        Align = alClient
+        BorderStyle = bsNone
+        ReadOnly = True
+        ScrollBars = ssAutoVertical
+        TabOrder = 0
+      end
+    end
+    object splPreviewInternal: TSplitter
+      Left = 774
+      Height = 200
+      Top = 0
+      Width = 12
+      Align = alRight
+      ResizeAnchor = akRight
+      ResizeStyle = rsPattern
+      Visible = False
+    end
+    object pnlPreviewSegment: TPanel
+      Left = 786
+      Height = 200
+      Top = 0
+      Width = 774
+      Align = alRight
+      BevelOuter = bvNone
+      ClientHeight = 200
+      ClientWidth = 774
+      TabOrder = 2
+      Visible = False
+      object lblSegmentTitle: TLabel
+        Left = 0
+        Height = 21
+        Top = 0
+        Width = 774
+        Align = alTop
+        BorderSpacing.Bottom = 12
+        Caption = 'Referenced Segment in'
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -18
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object memSegment: TMemo
+        Left = 0
+        Height = 167
+        Top = 33
+        Width = 774
+        Align = alClient
+        BorderStyle = bsNone
+        ReadOnly = True
+        ScrollBars = ssAutoVertical
+        TabOrder = 0
+      end
+    end
+  end
+  object pnlMemoActions: TPanel
+    Left = 20
+    Height = 29
+    Top = 801
+    Width = 1560
+    Align = alBottom
+    BorderSpacing.Around = 20
+    BevelOuter = bvNone
+    ClientHeight = 29
+    ClientWidth = 1560
+    TabOrder = 3
+    object btnClearSelection: TButton
+      AnchorSideLeft.Control = pnlMemoActions
+      AnchorSideTop.Control = pnlMemoActions
+      AnchorSideBottom.Control = pnlMemoActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 0
+      Height = 29
+      Top = 0
+      Width = 150
+      Anchors = [akTop, akLeft, akBottom]
+      Caption = 'Clear Selection'
+      TabOrder = 3
+      Visible = False
+      OnClick = btnClearSelectionClick
+    end
+    object btnEdit: TButton
+      AnchorSideTop.Control = pnlMemoActions
+      AnchorSideRight.Control = pnlMemoActions
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlMemoActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 1460
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight, akBottom]
+      Caption = 'Edit'
+      TabOrder = 0
+      OnClick = btnEditClick
+    end
+    object btnDelete: TButton
+      AnchorSideTop.Control = pnlMemoActions
+      AnchorSideRight.Control = btnEdit
+      AnchorSideBottom.Control = pnlMemoActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 1300
+      Height = 29
+      Top = 0
+      Width = 150
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Delete Memo'
+      TabOrder = 1
+      OnClick = btnDeleteClick
+    end
+    object btnExport: TButton
+      AnchorSideTop.Control = pnlMemoActions
+      AnchorSideRight.Control = btnDelete
+      AnchorSideBottom.Control = pnlMemoActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 1140
+      Height = 29
+      Top = 0
+      Width = 150
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Export Memo'
+      TabOrder = 2
+      OnClick = btnExportClick
+    end
+  end
+  object tmrMemoSearch: TTimer
+    Enabled = False
+    Interval = 300
+    OnTimer = tmrMemoSearchTimer
+    Left = 562
+    Top = 312
+  end
+  object dlgExport: TSaveDialog
+    DefaultExt = '.xlsx'
+    Filter = 'Microsoft Excel Spreadsheet (*.xlsx)|*.xlsx|OpenDocument Spreadsheet (*.ods)|*.ods|Comma Separated Values (*.csv)|*.csv|JSON Document (*.json)|*.json|Extensible Markup (*.xml)|*.xml'
+    Left = 650
+    Top = 312
+  end
+end

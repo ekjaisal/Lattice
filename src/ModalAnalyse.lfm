@@ -1,0 +1,1664 @@
+object frmModalAnalyse: TfrmModalAnalyse
+  Left = 250
+  Height = 910
+  Top = 100
+  Width = 1850
+  BorderIcons = [biSystemMenu]
+  Caption = 'Analysis Workspace'
+  ClientHeight = 910
+  ClientWidth = 1850
+  DesignTimePPI = 144
+  Font.CharSet = ANSI_CHARSET
+  Font.Height = -18
+  Font.Name = 'Arial'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
+  Position = poMainFormCenter
+  LCLVersion = '4.6.0.0'
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  object pnlActions: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 0
+    Height = 29
+    Top = 861
+    Width = 1850
+    Align = alBottom
+    BorderSpacing.Top = 20
+    BorderSpacing.Bottom = 20
+    BevelOuter = bvNone
+    ClientHeight = 29
+    ClientWidth = 1850
+    TabOrder = 0
+    object btnClose: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = pnlActions
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 1730
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 20
+      Caption = 'Close'
+      ModalResult = 2
+      TabOrder = 4
+    end
+    object btnExportData: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = btnReset
+      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 1410
+      Height = 29
+      Top = 0
+      Width = 200
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Export Data Table'
+      TabOrder = 2
+      OnClick = btnExportDataClick
+    end
+    object btnSaveVisualization: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = btnExportData
+      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 1200
+      Height = 29
+      Top = 0
+      Width = 200
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Export Visualisation'
+      TabOrder = 1
+      OnClick = btnSaveVisualizationClick
+    end
+    object btnReset: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = btnClose
+      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 1620
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Reset'
+      TabOrder = 3
+      OnClick = btnResetClick
+    end
+    object btnAnalyse: TButton
+      AnchorSideLeft.Control = pnlActions
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 20
+      Height = 29
+      Top = 0
+      Width = 150
+      Anchors = [akTop, akLeft, akBottom]
+      BorderSpacing.Left = 20
+      Caption = 'Run Analysis'
+      TabOrder = 0
+      OnClick = btnAnalyseClick
+    end
+  end
+  object pnlLeft: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = splMain
+    AnchorSideBottom.Control = pnlActions
+    Left = 20
+    Height = 821
+    Top = 20
+    Width = 900
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Left = 20
+    BorderSpacing.Top = 20
+    BorderSpacing.Bottom = 20
+    BevelOuter = bvNone
+    ClientHeight = 821
+    ClientWidth = 900
+    TabOrder = 1
+    object pnlLeftHeader: TPanel
+      Left = 0
+      Height = 29
+      Top = 0
+      Width = 900
+      Align = alTop
+      BevelOuter = bvNone
+      ClientHeight = 29
+      ClientWidth = 900
+      TabOrder = 0
+      object lblParamsTitle: TLabel
+        AnchorSideLeft.Control = pnlLeftHeader
+        AnchorSideTop.Control = pnlLeftHeader
+        AnchorSideBottom.Control = pnlLeftHeader
+        AnchorSideBottom.Side = asrBottom
+        Left = 0
+        Height = 29
+        Top = 0
+        Width = 75
+        Anchors = [akTop, akLeft, akBottom]
+        Caption = 'Analysis'
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -18
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Font.Style = [fsBold]
+        Layout = tlCenter
+        ParentFont = False
+      end
+    end
+    object pcAnalysisType: TPageControl
+      AnchorSideLeft.Control = pnlLeft
+      AnchorSideTop.Control = pnlLeftHeader
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = pnlLeft
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = splScope
+      Left = 0
+      Height = 319
+      Top = 39
+      Width = 900
+      ActivePage = tsFrequency
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Top = 10
+      BorderSpacing.Bottom = 10
+      TabIndex = 0
+      TabOrder = 1
+      OnChange = pcAnalysisTypeChange
+      object tsFrequency: TTabSheet
+        Caption = 'Code Frequency'
+        ClientHeight = 285
+        ClientWidth = 892
+        object pnlFrequencyTools: TPanel
+          Left = 6
+          Height = 66
+          Top = 6
+          Width = 880
+          Align = alTop
+          BorderSpacing.Around = 6
+          BevelOuter = bvNone
+          ClientHeight = 66
+          ClientWidth = 880
+          TabOrder = 0
+          object edtSearchFrequency: TEdit
+            AnchorSideLeft.Control = pnlFrequencyTools
+            AnchorSideTop.Control = pnlFrequencyTools
+            AnchorSideRight.Control = pnlFrequencyTools
+            AnchorSideRight.Side = asrBottom
+            Left = 0
+            Height = 29
+            Top = 0
+            Width = 880
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Bottom = 6
+            TabOrder = 0
+            TextHint = 'Search codes'
+            OnChange = edtSearchFrequencyChange
+            OnKeyDown = SearchKeyDown
+          end
+          object btnFrequencySelectAll: TButton
+            AnchorSideLeft.Control = pnlFrequencyTools
+            AnchorSideTop.Control = edtSearchFrequency
+            AnchorSideTop.Side = asrBottom
+            Left = 0
+            Height = 29
+            Top = 35
+            Width = 150
+            Caption = 'Select All'
+            TabOrder = 1
+            OnClick = btnFrequencySelectAllClick
+          end
+          object btnFrequencyClearAll: TButton
+            AnchorSideLeft.Control = btnFrequencySelectAll
+            AnchorSideLeft.Side = asrBottom
+            AnchorSideTop.Control = edtSearchFrequency
+            AnchorSideTop.Side = asrBottom
+            Left = 156
+            Height = 29
+            Top = 35
+            Width = 150
+            BorderSpacing.Left = 6
+            Caption = 'Clear All'
+            TabOrder = 2
+            OnClick = btnFrequencyClearAllClick
+          end
+        end
+        object vstFrequencyCode: TLazVirtualStringTree
+          Left = 6
+          Height = 201
+          Top = 78
+          Width = 880
+          Align = alClient
+          BorderSpacing.Around = 6
+          BorderStyle = bsNone
+          DefaultNodeHeight = 30
+          Header.AutoSizeIndex = 0
+          Header.Columns = <          
+            item
+              Position = 0
+              Width = 880
+            end>
+          Header.DefaultHeight = 25
+          Header.Height = 25
+          Header.Options = [hoAutoResize, hoColumnResize]
+          HintMode = hmTooltip
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 1
+          TreeOptions.AutoOptions = [toAutoDropExpand, toAutoScrollOnExpand, toAutoSpanColumns]
+          TreeOptions.MiscOptions = [toCheckSupport, toFullRepaintOnResize, toInitOnSave, toWheelPanning]
+          OnChecked = vstChecked
+          OnFocusChanging = vstScopeNoFocusChanging
+          OnFreeNode = vstCodeFreeNode
+          OnGetText = vstCodeGetText
+          OnGetHint = vstCodeGetHint
+          OnInitNode = vstCodeInitNode
+        end
+      end
+      object tsCoOccurrence: TTabSheet
+        Caption = 'Code Co-occurrence'
+        ClientHeight = 285
+        ClientWidth = 892
+        object pnlCoOccurrenceX: TPanel
+          AnchorSideLeft.Control = tsCoOccurrence
+          AnchorSideTop.Control = tsCoOccurrence
+          AnchorSideRight.Control = splCoOccurrence
+          AnchorSideBottom.Control = tsCoOccurrence
+          AnchorSideBottom.Side = asrBottom
+          Left = 0
+          Height = 285
+          Top = 0
+          Width = 440
+          Anchors = [akTop, akLeft, akRight, akBottom]
+          BevelOuter = bvNone
+          ClientHeight = 285
+          ClientWidth = 440
+          TabOrder = 0
+          object pnlCoOccurrenceXTools: TPanel
+            Left = 6
+            Height = 66
+            Top = 6
+            Width = 428
+            Align = alTop
+            BorderSpacing.Around = 6
+            BevelOuter = bvNone
+            ClientHeight = 66
+            ClientWidth = 428
+            TabOrder = 0
+            object edtSearchCoOccurrenceX: TEdit
+              AnchorSideLeft.Control = pnlCoOccurrenceXTools
+              AnchorSideTop.Control = pnlCoOccurrenceXTools
+              AnchorSideRight.Control = pnlCoOccurrenceXTools
+              AnchorSideRight.Side = asrBottom
+              Left = 0
+              Height = 29
+              Top = 0
+              Width = 428
+              Anchors = [akTop, akLeft, akRight]
+              BorderSpacing.Bottom = 6
+              TabOrder = 0
+              TextHint = 'Search X-Axis codes'
+              OnChange = edtSearchCoOccurrenceXChange
+              OnKeyDown = SearchKeyDown
+            end
+            object btnCoOccurrenceXSelectAll: TButton
+              AnchorSideLeft.Control = pnlCoOccurrenceXTools
+              AnchorSideTop.Control = edtSearchCoOccurrenceX
+              AnchorSideTop.Side = asrBottom
+              Left = 0
+              Height = 29
+              Top = 35
+              Width = 150
+              Caption = 'Select All'
+              TabOrder = 1
+              OnClick = btnCoOccurrenceXSelectAllClick
+            end
+            object btnCoOccurrenceXClearAll: TButton
+              AnchorSideLeft.Control = btnCoOccurrenceXSelectAll
+              AnchorSideLeft.Side = asrBottom
+              AnchorSideTop.Control = edtSearchCoOccurrenceX
+              AnchorSideTop.Side = asrBottom
+              Left = 156
+              Height = 29
+              Top = 35
+              Width = 150
+              BorderSpacing.Left = 6
+              Caption = 'Clear All'
+              TabOrder = 2
+              OnClick = btnCoOccurrenceXClearAllClick
+            end
+          end
+          object vstCoOccurrenceX: TLazVirtualStringTree
+            Left = 6
+            Height = 201
+            Top = 78
+            Width = 428
+            Align = alClient
+            BorderSpacing.Around = 6
+            BorderStyle = bsNone
+            DefaultNodeHeight = 30
+            Header.AutoSizeIndex = 0
+            Header.Columns = <            
+              item
+                Position = 0
+                Width = 428
+              end>
+            Header.DefaultHeight = 25
+            Header.Height = 25
+            Header.Options = [hoAutoResize, hoColumnResize]
+            HintMode = hmTooltip
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 1
+            TreeOptions.AutoOptions = [toAutoDropExpand, toAutoScrollOnExpand, toAutoSpanColumns]
+            TreeOptions.MiscOptions = [toCheckSupport, toFullRepaintOnResize, toInitOnSave, toWheelPanning]
+            OnChecked = vstChecked
+            OnFocusChanging = vstScopeNoFocusChanging
+            OnFreeNode = vstCodeFreeNode
+            OnGetText = vstCodeGetText
+            OnGetHint = vstCodeGetHint
+            OnInitNode = vstCodeInitNode
+          end
+        end
+        object splCoOccurrence: TSplitter
+          AnchorSideTop.Control = tsCoOccurrence
+          AnchorSideBottom.Control = tsCoOccurrence
+          AnchorSideBottom.Side = asrBottom
+          Left = 440
+          Height = 285
+          Top = 0
+          Width = 12
+          Align = alNone
+          Anchors = [akTop, akLeft, akBottom]
+          MinSize = 1
+          ResizeStyle = rsPattern
+        end
+        object pnlCoOccurrenceY: TPanel
+          AnchorSideLeft.Control = splCoOccurrence
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = tsCoOccurrence
+          AnchorSideRight.Control = tsCoOccurrence
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = tsCoOccurrence
+          AnchorSideBottom.Side = asrBottom
+          Left = 452
+          Height = 285
+          Top = 0
+          Width = 440
+          Anchors = [akTop, akLeft, akRight, akBottom]
+          BevelOuter = bvNone
+          ClientHeight = 285
+          ClientWidth = 440
+          TabOrder = 2
+          object pnlCoOccurrenceYTools: TPanel
+            Left = 6
+            Height = 66
+            Top = 6
+            Width = 428
+            Align = alTop
+            BorderSpacing.Around = 6
+            BevelOuter = bvNone
+            ClientHeight = 66
+            ClientWidth = 428
+            TabOrder = 0
+            object edtSearchCoOccurrenceY: TEdit
+              AnchorSideLeft.Control = pnlCoOccurrenceYTools
+              AnchorSideTop.Control = pnlCoOccurrenceYTools
+              AnchorSideRight.Control = pnlCoOccurrenceYTools
+              AnchorSideRight.Side = asrBottom
+              Left = 0
+              Height = 29
+              Top = 0
+              Width = 428
+              Anchors = [akTop, akLeft, akRight]
+              BorderSpacing.Bottom = 6
+              TabOrder = 0
+              TextHint = 'Search Y-Axis codes'
+              OnChange = edtSearchCoOccurrenceYChange
+              OnKeyDown = SearchKeyDown
+            end
+            object btnCoOccurrenceYSelectAll: TButton
+              AnchorSideLeft.Control = pnlCoOccurrenceYTools
+              AnchorSideTop.Control = edtSearchCoOccurrenceY
+              AnchorSideTop.Side = asrBottom
+              Left = 0
+              Height = 29
+              Top = 35
+              Width = 150
+              Caption = 'Select All'
+              TabOrder = 1
+              OnClick = btnCoOccurrenceYSelectAllClick
+            end
+            object btnCoOccurrenceYClearAll: TButton
+              AnchorSideLeft.Control = btnCoOccurrenceYSelectAll
+              AnchorSideLeft.Side = asrBottom
+              AnchorSideTop.Control = edtSearchCoOccurrenceY
+              AnchorSideTop.Side = asrBottom
+              Left = 156
+              Height = 29
+              Top = 35
+              Width = 150
+              BorderSpacing.Left = 6
+              Caption = 'Clear All'
+              TabOrder = 2
+              OnClick = btnCoOccurrenceYClearAllClick
+            end
+          end
+          object vstCoOccurrenceY: TLazVirtualStringTree
+            Left = 6
+            Height = 201
+            Top = 78
+            Width = 428
+            Align = alClient
+            BorderSpacing.Around = 6
+            BorderStyle = bsNone
+            DefaultNodeHeight = 30
+            Header.AutoSizeIndex = 0
+            Header.Columns = <            
+              item
+                Position = 0
+                Width = 428
+              end>
+            Header.DefaultHeight = 25
+            Header.Height = 25
+            Header.Options = [hoAutoResize, hoColumnResize]
+            HintMode = hmTooltip
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 1
+            TreeOptions.AutoOptions = [toAutoDropExpand, toAutoScrollOnExpand, toAutoSpanColumns]
+            TreeOptions.MiscOptions = [toCheckSupport, toFullRepaintOnResize, toInitOnSave, toWheelPanning]
+            OnChecked = vstChecked
+            OnFocusChanging = vstScopeNoFocusChanging
+            OnFreeNode = vstCodeFreeNode
+            OnGetText = vstCodeGetText
+            OnGetHint = vstCodeGetHint
+            OnInitNode = vstCodeInitNode
+          end
+        end
+      end
+      object tsCrosstab: TTabSheet
+        Caption = 'Attribute-Code Crosstab'
+        ClientHeight = 285
+        ClientWidth = 892
+        object pnlCrossX: TPanel
+          AnchorSideLeft.Control = tsCrosstab
+          AnchorSideTop.Control = tsCrosstab
+          AnchorSideRight.Control = splCross
+          AnchorSideBottom.Control = tsCrosstab
+          AnchorSideBottom.Side = asrBottom
+          Left = 0
+          Height = 285
+          Top = 0
+          Width = 440
+          Anchors = [akTop, akLeft, akRight, akBottom]
+          BevelOuter = bvNone
+          ClientHeight = 285
+          ClientWidth = 440
+          TabOrder = 0
+          object pnlCrosstabXTools: TPanel
+            Left = 0
+            Height = 66
+            Top = 0
+            Width = 440
+            Align = alTop
+            BevelOuter = bvNone
+            ClientHeight = 66
+            ClientWidth = 440
+            TabOrder = 0
+            object edtSearchCrosstab: TEdit
+              AnchorSideLeft.Control = pnlCrosstabXTools
+              AnchorSideTop.Control = pnlCrosstabXTools
+              AnchorSideRight.Control = pnlCrosstabXTools
+              AnchorSideRight.Side = asrBottom
+              Left = 0
+              Height = 29
+              Top = 0
+              Width = 440
+              Anchors = [akTop, akLeft, akRight]
+              BorderSpacing.Bottom = 6
+              TabOrder = 0
+              TextHint = 'Search X-Axis codes'
+              OnChange = edtSearchCrosstabChange
+              OnKeyDown = SearchKeyDown
+            end
+            object btnCrosstabSelectAll: TButton
+              AnchorSideLeft.Control = pnlCrosstabXTools
+              AnchorSideTop.Control = edtSearchCrosstab
+              AnchorSideTop.Side = asrBottom
+              Left = 0
+              Height = 29
+              Top = 35
+              Width = 150
+              Caption = 'Select All'
+              TabOrder = 1
+              OnClick = btnCrosstabSelectAllClick
+            end
+            object btnCrossClearAll: TButton
+              AnchorSideLeft.Control = btnCrosstabSelectAll
+              AnchorSideLeft.Side = asrBottom
+              AnchorSideTop.Control = edtSearchCrosstab
+              AnchorSideTop.Side = asrBottom
+              Left = 156
+              Height = 29
+              Top = 35
+              Width = 150
+              BorderSpacing.Left = 6
+              Caption = 'Clear All'
+              TabOrder = 2
+              OnClick = btnCrossClearAllClick
+            end
+          end
+          object vstCrosstabCode: TLazVirtualStringTree
+            Left = 6
+            Height = 207
+            Top = 72
+            Width = 428
+            Align = alClient
+            BorderSpacing.Around = 6
+            BorderStyle = bsNone
+            DefaultNodeHeight = 30
+            Header.AutoSizeIndex = 0
+            Header.Columns = <            
+              item
+                Position = 0
+                Width = 428
+              end>
+            Header.DefaultHeight = 25
+            Header.Height = 25
+            Header.Options = [hoAutoResize, hoColumnResize]
+            HintMode = hmTooltip
+            ParentShowHint = False
+            ShowHint = True
+            TabOrder = 1
+            TreeOptions.AutoOptions = [toAutoDropExpand, toAutoScrollOnExpand, toAutoSpanColumns]
+            TreeOptions.MiscOptions = [toCheckSupport, toFullRepaintOnResize, toInitOnSave, toWheelPanning]
+            OnChecked = vstChecked
+            OnFocusChanging = vstScopeNoFocusChanging
+            OnFreeNode = vstCodeFreeNode
+            OnGetText = vstCodeGetText
+            OnGetHint = vstCodeGetHint
+            OnInitNode = vstCodeInitNode
+          end
+        end
+        object splCross: TSplitter
+          AnchorSideTop.Control = tsCrosstab
+          AnchorSideBottom.Control = tsCrosstab
+          AnchorSideBottom.Side = asrBottom
+          Left = 440
+          Height = 285
+          Top = 0
+          Width = 12
+          Align = alNone
+          Anchors = [akTop, akLeft, akBottom]
+          MinSize = 1
+          ResizeStyle = rsPattern
+        end
+        object pnlCrossY: TPanel
+          AnchorSideLeft.Control = splCross
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = tsCrosstab
+          AnchorSideRight.Control = tsCrosstab
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = tsCrosstab
+          AnchorSideBottom.Side = asrBottom
+          Left = 458
+          Height = 308
+          Top = 6
+          Width = 428
+          BorderSpacing.Around = 6
+          BevelOuter = bvNone
+          ClientHeight = 308
+          ClientWidth = 428
+          TabOrder = 2
+          object lblCrossAttribute: TLabel
+            AnchorSideLeft.Control = pnlCrossY
+            AnchorSideTop.Control = pnlCrossY
+            Left = 0
+            Height = 21
+            Top = 0
+            Width = 178
+            BorderSpacing.Bottom = 8
+            Caption = 'Y-Axis: Select Attribute'
+            Layout = tlCenter
+            ParentColor = False
+          end
+          object cmbCrossAttribute: TComboBox
+            AnchorSideLeft.Control = pnlCrossY
+            AnchorSideTop.Control = lblCrossAttribute
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = pnlCrossY
+            AnchorSideRight.Side = asrBottom
+            Left = 0
+            Height = 29
+            Top = 29
+            Width = 428
+            Anchors = [akTop, akLeft, akRight]
+            ItemHeight = 21
+            Style = csDropDownList
+            TabOrder = 0
+          end
+        end
+      end
+      object tsCoverage: TTabSheet
+        Caption = 'Coding Coverage'
+        ClientHeight = 285
+        ClientWidth = 892
+        object lblCoverageInfo: TLabel
+          Left = 0
+          Height = 285
+          Top = 0
+          Width = 892
+          Align = alClient
+          Alignment = taCenter
+          Caption = 'Coding coverage query selects all codes and runs within the scope defined below.'
+          Font.CharSet = ANSI_CHARSET
+          Font.Color = clGray
+          Font.Height = -18
+          Font.Name = 'Arial'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          Layout = tlCenter
+          ParentFont = False
+        end
+      end
+      object tsWordCloud: TTabSheet
+        Caption = 'Word Cloud'
+        ClientHeight = 285
+        ClientWidth = 892
+        object pnlCloudTools: TPanel
+          Left = 6
+          Height = 66
+          Top = 6
+          Width = 880
+          Align = alTop
+          BorderSpacing.Around = 6
+          BevelOuter = bvNone
+          ClientHeight = 66
+          ClientWidth = 880
+          TabOrder = 0
+          object edtSearchCloud: TEdit
+            AnchorSideLeft.Control = pnlCloudTools
+            AnchorSideTop.Control = pnlCloudTools
+            AnchorSideRight.Control = pnlCloudTools
+            AnchorSideRight.Side = asrBottom
+            Left = 0
+            Height = 29
+            Top = 0
+            Width = 880
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Bottom = 6
+            TabOrder = 0
+            TextHint = 'Search codes'
+            OnChange = edtSearchCloudChange
+            OnKeyDown = SearchKeyDown
+          end
+          object btnCloudSelectAll: TButton
+            AnchorSideLeft.Control = pnlCloudTools
+            AnchorSideTop.Control = edtSearchCloud
+            AnchorSideTop.Side = asrBottom
+            Left = 0
+            Height = 29
+            Top = 35
+            Width = 150
+            Caption = 'Select All'
+            TabOrder = 1
+            OnClick = btnCloudSelectAllClick
+          end
+          object btnCloudClearAll: TButton
+            AnchorSideLeft.Control = btnCloudSelectAll
+            AnchorSideLeft.Side = asrBottom
+            AnchorSideTop.Control = edtSearchCloud
+            AnchorSideTop.Side = asrBottom
+            Left = 156
+            Height = 29
+            Top = 35
+            Width = 150
+            BorderSpacing.Left = 6
+            Caption = 'Clear All'
+            TabOrder = 2
+            OnClick = btnCloudClearAllClick
+          end
+        end
+        object vstWordCloudCode: TLazVirtualStringTree
+          Left = 6
+          Height = 201
+          Top = 78
+          Width = 880
+          Align = alClient
+          BorderSpacing.Around = 6
+          BorderStyle = bsNone
+          DefaultNodeHeight = 30
+          Header.AutoSizeIndex = 0
+          Header.Columns = <          
+            item
+              Position = 0
+              Width = 880
+            end>
+          Header.DefaultHeight = 25
+          Header.Height = 25
+          Header.Options = [hoAutoResize, hoColumnResize]
+          HintMode = hmTooltip
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 1
+          TreeOptions.AutoOptions = [toAutoDropExpand, toAutoScrollOnExpand, toAutoSpanColumns]
+          TreeOptions.MiscOptions = [toCheckSupport, toFullRepaintOnResize, toInitOnSave, toWheelPanning]
+          OnChecked = vstChecked
+          OnFocusChanging = vstScopeNoFocusChanging
+          OnFreeNode = vstCodeFreeNode
+          OnGetText = vstCodeGetText
+          OnGetHint = vstCodeGetHint
+          OnInitNode = vstCodeInitNode
+        end
+      end
+    end
+    object splScope: TSplitter
+      AnchorSideLeft.Control = pnlLeft
+      AnchorSideRight.Control = pnlLeft
+      AnchorSideRight.Side = asrBottom
+      Cursor = crVSplit
+      Left = 0
+      Height = 12
+      Top = 368
+      Width = 900
+      Align = alNone
+      Anchors = [akTop, akLeft, akRight]
+      MinSize = 1
+      ResizeAnchor = akBottom
+      ResizeStyle = rsPattern
+    end
+    object pnlScope: TPanel
+      AnchorSideLeft.Control = pnlLeft
+      AnchorSideTop.Control = splScope
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = pnlLeft
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlLeft
+      AnchorSideBottom.Side = asrBottom
+      Left = 0
+      Height = 431
+      Top = 390
+      Width = 900
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Top = 10
+      BevelOuter = bvNone
+      ClientHeight = 431
+      ClientWidth = 900
+      Constraints.MinHeight = 21
+      TabOrder = 3
+      object pnlScopeDocument: TPanel
+        AnchorSideLeft.Control = pnlScope
+        AnchorSideTop.Control = pnlScope
+        AnchorSideRight.Control = splScopeInternal
+        AnchorSideBottom.Control = pnlScope
+        AnchorSideBottom.Side = asrBottom
+        Left = 0
+        Height = 431
+        Top = 0
+        Width = 438
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        AutoSize = True
+        BorderSpacing.Right = 6
+        BevelOuter = bvNone
+        ClientHeight = 431
+        ClientWidth = 438
+        TabOrder = 0
+        object pnlScopeDocumentTools: TPanel
+          AnchorSideLeft.Control = pnlScopeDocument
+          AnchorSideTop.Control = lblScopeDocumentTitle
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = pnlScopeDocument
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 66
+          Top = 31
+          Width = 438
+          Anchors = [akTop, akLeft, akRight]
+          BorderSpacing.Top = 10
+          BorderSpacing.Bottom = 6
+          BevelOuter = bvNone
+          ClientHeight = 66
+          ClientWidth = 438
+          TabOrder = 0
+          object edtSearchScopeDocument: TEdit
+            AnchorSideLeft.Control = pnlScopeDocumentTools
+            AnchorSideTop.Control = pnlScopeDocumentTools
+            AnchorSideRight.Control = pnlScopeDocumentTools
+            AnchorSideRight.Side = asrBottom
+            Left = 0
+            Height = 29
+            Top = 0
+            Width = 438
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Bottom = 6
+            TabOrder = 0
+            TextHint = 'Search documents'
+            OnChange = edtSearchScopeDocumentChange
+            OnKeyDown = SearchKeyDown
+          end
+          object btnScopeDocumentSelectAll: TButton
+            AnchorSideLeft.Control = pnlScopeDocumentTools
+            AnchorSideTop.Control = edtSearchScopeDocument
+            AnchorSideTop.Side = asrBottom
+            Left = 0
+            Height = 29
+            Top = 35
+            Width = 150
+            Caption = 'Select All'
+            TabOrder = 1
+            OnClick = btnScopeDocumentSelectAllClick
+          end
+          object btnScopeDocumentClearAll: TButton
+            AnchorSideLeft.Control = btnScopeDocumentSelectAll
+            AnchorSideLeft.Side = asrBottom
+            AnchorSideTop.Control = edtSearchScopeDocument
+            AnchorSideTop.Side = asrBottom
+            Left = 156
+            Height = 29
+            Top = 35
+            Width = 150
+            BorderSpacing.Left = 6
+            Caption = 'Clear All'
+            TabOrder = 2
+            OnClick = btnScopeDocumentClearAllClick
+          end
+        end
+        object vstScopeDocument: TLazVirtualStringTree
+          AnchorSideLeft.Control = pnlScopeDocument
+          AnchorSideTop.Control = pnlScopeDocumentTools
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = pnlScopeDocument
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = pnlScopeDocument
+          AnchorSideBottom.Side = asrBottom
+          Left = 0
+          Height = 328
+          Top = 103
+          Width = 438
+          Anchors = [akTop, akLeft, akRight, akBottom]
+          BorderSpacing.Top = 6
+          BorderStyle = bsNone
+          DefaultNodeHeight = 30
+          Header.AutoSizeIndex = 0
+          Header.Columns = <          
+            item
+              Position = 0
+              Text = 'Document Name'
+              Width = 438
+            end>
+          Header.DefaultHeight = 25
+          Header.Height = 25
+          Header.Options = [hoAutoResize, hoColumnResize, hoVisible]
+          Header.ParentFont = True
+          HintMode = hmTooltip
+          Indent = 0
+          Margin = 8
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 1
+          TextMargin = 4
+          TreeOptions.AutoOptions = [toAutoDropExpand, toAutoScrollOnExpand, toAutoSpanColumns]
+          TreeOptions.MiscOptions = [toCheckSupport, toFullRepaintOnResize, toInitOnSave, toWheelPanning]
+          TreeOptions.PaintOptions = [toHideSelection, toThemeAware, toUseBlendedImages]
+          OnChecked = vstScopeDocumentChecked
+          OnFocusChanging = vstScopeNoFocusChanging
+          OnFreeNode = vstScopeDocumentFreeNode
+          OnGetText = vstScopeDocumentGetText
+          OnGetHint = vstScopeDocumentGetHint
+          OnInitNode = vstScopeDocumentInitNode
+        end
+        object lblScopeDocumentTitle: TLabel
+          AnchorSideLeft.Control = pnlScopeDocument
+          AnchorSideTop.Control = pnlScopeDocument
+          AnchorSideRight.Control = pnlScopeDocument
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 21
+          Top = 0
+          Width = 438
+          Anchors = [akTop, akLeft, akRight]
+          Caption = 'Document Scope'
+          Constraints.MinHeight = 21
+          Font.CharSet = ANSI_CHARSET
+          Font.Height = -18
+          Font.Name = 'Arial'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+      end
+      object splScopeInternal: TSplitter
+        AnchorSideTop.Control = pnlScopeDocument
+        AnchorSideBottom.Control = pnlScope
+        AnchorSideBottom.Side = asrBottom
+        Left = 444
+        Height = 431
+        Top = 0
+        Width = 12
+        Align = alNone
+        Anchors = [akTop, akLeft, akBottom]
+        MinSize = 1
+        ResizeStyle = rsPattern
+      end
+      object pnlScopeAttributes: TPanel
+        AnchorSideLeft.Control = splScopeInternal
+        AnchorSideLeft.Side = asrBottom
+        AnchorSideTop.Control = pnlScope
+        AnchorSideRight.Control = pnlScope
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = pnlScope
+        AnchorSideBottom.Side = asrBottom
+        Left = 462
+        Height = 431
+        Top = 0
+        Width = 432
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        AutoSize = True
+        BorderSpacing.Left = 6
+        BorderSpacing.Right = 6
+        BevelOuter = bvNone
+        ClientHeight = 431
+        ClientWidth = 432
+        TabOrder = 2
+        object pnlScopeAttributesTools: TPanel
+          AnchorSideLeft.Control = pnlScopeAttributes
+          AnchorSideTop.Control = lblScopeAttributeTitle
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = pnlScopeAttributes
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 29
+          Top = 31
+          Width = 432
+          Anchors = [akTop, akLeft, akRight]
+          BorderSpacing.Top = 10
+          BorderSpacing.Bottom = 6
+          BevelOuter = bvNone
+          ClientHeight = 29
+          ClientWidth = 432
+          TabOrder = 0
+          object edtSearchScopeAttribute: TEdit
+            AnchorSideLeft.Control = pnlScopeAttributesTools
+            AnchorSideTop.Control = pnlScopeAttributesTools
+            AnchorSideRight.Control = pnlScopeAttributesTools
+            AnchorSideRight.Side = asrBottom
+            Left = 0
+            Height = 29
+            Top = 0
+            Width = 432
+            Anchors = [akTop, akLeft, akRight]
+            TabOrder = 0
+            TextHint = 'Search attributes'
+            OnChange = edtSearchScopeAttributeChange
+            OnKeyDown = SearchKeyDown
+          end
+        end
+        object vstScopeAttribute: TLazVirtualStringTree
+          AnchorSideLeft.Control = pnlScopeAttributes
+          AnchorSideTop.Control = pnlScopeAttributesTools
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = pnlScopeAttributes
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = rgLogicMode
+          Left = 0
+          Height = 178
+          Top = 66
+          Width = 432
+          Anchors = [akTop, akLeft, akRight, akBottom]
+          BorderSpacing.Top = 6
+          BorderStyle = bsNone
+          Colors.UnfocusedSelectionColor = clHighlight
+          Colors.UnfocusedSelectionBorderColor = clHighlight
+          DefaultNodeHeight = 30
+          Header.AutoSizeIndex = 2
+          Header.Columns = <          
+            item
+              Position = 0
+              Text = 'Attribute'
+              Width = 140
+            end          
+            item
+              Position = 1
+              Text = 'Operator'
+              Width = 160
+            end          
+            item
+              Position = 2
+              Text = 'Value'
+              Width = 132
+            end>
+          Header.DefaultHeight = 25
+          Header.Height = 25
+          Header.Options = [hoAutoResize, hoColumnResize, hoShowSortGlyphs, hoVisible]
+          Header.ParentFont = True
+          Header.SortColumn = 0
+          HintMode = hmTooltip
+          Indent = 0
+          Margin = 4
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 1
+          TextMargin = 4
+          TreeOptions.AutoOptions = [toAutoDropExpand, toAutoScrollOnExpand]
+          TreeOptions.MiscOptions = [toFullRepaintOnResize, toInitOnSave, toWheelPanning]
+          TreeOptions.PaintOptions = [toThemeAware, toUseBlendedImages, toUseExplorerTheme]
+          TreeOptions.SelectionOptions = [toFullRowSelect]
+          OnChange = vstScopeAttributeChange
+          OnGetText = vstScopeAttributeGetText
+          OnPaintText = vstScopeAttributePaintText
+          OnGetHint = vstScopeAttributeGetHint
+          OnHeaderClick = vstScopeAttributeHeaderClick
+        end
+        object rgLogicMode: TRadioGroup
+          AnchorSideLeft.Control = pnlScopeAttributes
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = pnlScopeAttributes
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = pnlAttributeFilterDef
+          Left = 0
+          Height = 70
+          Top = 250
+          Width = 432
+          Anchors = [akLeft, akRight, akBottom]
+          AutoFill = True
+          BorderSpacing.Top = 6
+          Caption = 'Attribute Filter Logic'
+          ChildSizing.LeftRightSpacing = 10
+          ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+          ChildSizing.EnlargeVertical = crsHomogenousChildResize
+          ChildSizing.ShrinkHorizontal = crsScaleChilds
+          ChildSizing.ShrinkVertical = crsScaleChilds
+          ChildSizing.Layout = cclLeftToRightThenTopToBottom
+          ChildSizing.ControlsPerLine = 2
+          ClientHeight = 44
+          ClientWidth = 428
+          Columns = 2
+          ItemIndex = 0
+          Items.Strings = (
+            'Match all (AND)'
+            'Match any (OR)'
+          )
+          TabOrder = 3
+        end
+        object pnlAttributeFilterDef: TPanel
+          AnchorSideLeft.Control = pnlScopeAttributes
+          AnchorSideRight.Control = pnlScopeAttributes
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = pnlScopeAttributes
+          AnchorSideBottom.Side = asrBottom
+          Left = 0
+          Height = 105
+          Top = 326
+          Width = 432
+          Anchors = [akLeft, akRight, akBottom]
+          BorderSpacing.Top = 6
+          BevelOuter = bvNone
+          ClientHeight = 105
+          ClientWidth = 432
+          TabOrder = 2
+          Visible = False
+          object cmbScopeAttributeOperator: TComboBox
+            AnchorSideLeft.Control = pnlAttributeFilterDef
+            AnchorSideTop.Control = pnlAttributeFilterDef
+            AnchorSideBottom.Control = btnScopeAttributeApply
+            Left = 0
+            Height = 29
+            Top = 0
+            Width = 180
+            Anchors = [akTop, akLeft, akBottom]
+            BorderSpacing.Bottom = 20
+            ItemHeight = 21
+            Style = csDropDownList
+            TabOrder = 0
+            OnChange = cmbScopeAttributeOperatorChange
+          end
+          object pnlScopeAttributeValue: TPanel
+            AnchorSideLeft.Control = cmbScopeAttributeOperator
+            AnchorSideLeft.Side = asrBottom
+            AnchorSideTop.Control = pnlAttributeFilterDef
+            AnchorSideRight.Control = pnlAttributeFilterDef
+            AnchorSideRight.Side = asrBottom
+            AnchorSideBottom.Control = btnScopeAttributeApply
+            Left = 186
+            Height = 64
+            Top = 0
+            Width = 246
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Left = 6
+            BorderSpacing.Bottom = 6
+            BevelOuter = bvNone
+            ClientHeight = 64
+            ClientWidth = 246
+            TabOrder = 1
+            object pnlScopeAttributeValueNumeric: TPanel
+              AnchorSideLeft.Control = pnlScopeAttributeValue
+              AnchorSideTop.Control = pnlScopeAttributeValue
+              AnchorSideRight.Control = pnlScopeAttributeValue
+              AnchorSideRight.Side = asrBottom
+              Left = 0
+              Height = 64
+              Top = 0
+              Width = 246
+              Anchors = [akTop, akLeft, akRight]
+              BevelOuter = bvNone
+              ClientHeight = 64
+              ClientWidth = 246
+              TabOrder = 1
+              Visible = False
+              object fseScopeAttributeValueNum: TFloatSpinEdit
+                AnchorSideRight.Side = asrBottom
+                Left = 0
+                Height = 29
+                Top = 0
+                Width = 246
+                Align = alTop
+                AutoSize = False
+                TabOrder = 0
+              end
+              object fseScopeAttributeValueNumEnd: TFloatSpinEdit
+                AnchorSideTop.Control = fseScopeAttributeValueNum
+                AnchorSideTop.Side = asrBottom
+                AnchorSideRight.Side = asrBottom
+                Left = 0
+                Height = 29
+                Top = 35
+                Width = 246
+                Align = alBottom
+                Anchors = [akTop, akLeft, akRight, akBottom]
+                AutoSize = False
+                BorderSpacing.Top = 6
+                TabOrder = 1
+                Visible = False
+              end
+            end
+            object pnlScopeAttributeValueDate: TPanel
+              AnchorSideLeft.Control = pnlScopeAttributeValue
+              AnchorSideTop.Control = pnlScopeAttributeValue
+              AnchorSideRight.Control = pnlScopeAttributeValue
+              AnchorSideRight.Side = asrBottom
+              Left = 0
+              Height = 64
+              Top = 0
+              Width = 246
+              Anchors = [akTop, akLeft, akRight]
+              BevelOuter = bvNone
+              ClientHeight = 64
+              ClientWidth = 246
+              TabOrder = 2
+              Visible = False
+              object deScopeAttributeValueDate: TDateEdit
+                AnchorSideRight.Side = asrBottom
+                Left = 0
+                Height = 29
+                Top = 0
+                Width = 246
+                CalendarDisplaySettings = [dsShowHeadings, dsShowDayNames]
+                DateOrder = doNone
+                ButtonWidth = 35
+                Align = alTop
+                NumGlyphs = 1
+                MaxLength = 0
+                TabOrder = 0
+              end
+              object deScopeAttributeValueDateEnd: TDateEdit
+                AnchorSideTop.Control = deScopeAttributeValueDate
+                AnchorSideTop.Side = asrBottom
+                AnchorSideRight.Side = asrBottom
+                Left = 0
+                Height = 29
+                Top = 35
+                Width = 246
+                CalendarDisplaySettings = [dsShowHeadings, dsShowDayNames]
+                DateOrder = doNone
+                ButtonWidth = 35
+                Align = alBottom
+                Anchors = [akTop, akLeft, akRight, akBottom]
+                BorderSpacing.Top = 6
+                NumGlyphs = 1
+                MaxLength = 0
+                TabOrder = 1
+                Visible = False
+              end
+            end
+            object cmbScopeAttributeValueCat: TComboBox
+              AnchorSideLeft.Control = pnlScopeAttributeValue
+              AnchorSideTop.Control = pnlScopeAttributeValue
+              AnchorSideRight.Control = pnlScopeAttributeValue
+              AnchorSideRight.Side = asrBottom
+              Left = 0
+              Height = 29
+              Top = 0
+              Width = 246
+              Anchors = [akTop, akLeft, akRight]
+              AutoSize = False
+              ItemHeight = 21
+              Style = csDropDownList
+              TabOrder = 3
+              Visible = False
+            end
+            object edtScopeAttributeValueText: TEdit
+              AnchorSideLeft.Control = pnlScopeAttributeValue
+              AnchorSideTop.Control = pnlScopeAttributeValue
+              AnchorSideRight.Control = pnlScopeAttributeValue
+              AnchorSideRight.Side = asrBottom
+              AnchorSideBottom.Side = asrBottom
+              Left = 0
+              Height = 29
+              Top = 0
+              Width = 246
+              Anchors = [akTop, akLeft, akRight]
+              AutoSize = False
+              TabOrder = 0
+              Visible = False
+            end
+          end
+          object btnScopeAttributeApply: TButton
+            AnchorSideRight.Control = pnlAttributeFilterDef
+            AnchorSideRight.Side = asrBottom
+            AnchorSideBottom.Control = pnlAttributeFilterDef
+            AnchorSideBottom.Side = asrBottom
+            Left = 332
+            Height = 29
+            Top = 70
+            Width = 100
+            Anchors = [akRight, akBottom]
+            BorderSpacing.Top = 6
+            BorderSpacing.Bottom = 6
+            Caption = 'Apply'
+            TabOrder = 2
+            OnClick = btnScopeAttributeApplyClick
+          end
+          object btnScopeAttributeClear: TButton
+            AnchorSideTop.Control = btnScopeAttributeApply
+            AnchorSideRight.Control = btnScopeAttributeApply
+            AnchorSideBottom.Control = pnlAttributeFilterDef
+            AnchorSideBottom.Side = asrBottom
+            Left = 176
+            Height = 29
+            Top = 70
+            Width = 150
+            Anchors = [akTop, akRight, akBottom]
+            BorderSpacing.Right = 6
+            BorderSpacing.Bottom = 6
+            Caption = 'Clear Selected'
+            TabOrder = 3
+            OnClick = btnScopeAttributeClearClick
+          end
+          object btnScopeAttributeClearAll: TButton
+            AnchorSideTop.Control = btnScopeAttributeApply
+            AnchorSideRight.Control = btnScopeAttributeClear
+            AnchorSideBottom.Control = pnlAttributeFilterDef
+            AnchorSideBottom.Side = asrBottom
+            Left = 70
+            Height = 29
+            Top = 70
+            Width = 100
+            Anchors = [akTop, akRight, akBottom]
+            BorderSpacing.Right = 6
+            BorderSpacing.Bottom = 6
+            Caption = 'Clear All'
+            TabOrder = 4
+            OnClick = btnScopeAttributeClearAllClick
+          end
+        end
+        object lblScopeAttributeTitle: TLabel
+          AnchorSideLeft.Control = pnlScopeAttributes
+          AnchorSideTop.Control = pnlScopeAttributes
+          AnchorSideRight.Control = pnlScopeAttributes
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 21
+          Top = 0
+          Width = 432
+          Anchors = [akTop, akLeft, akRight]
+          Caption = 'Attribute Filters'
+          Constraints.MinHeight = 21
+          Font.CharSet = ANSI_CHARSET
+          Font.Height = -18
+          Font.Name = 'Arial'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+      end
+    end
+  end
+  object splMain: TSplitter
+    AnchorSideTop.Control = Owner
+    AnchorSideBottom.Control = pnlActions
+    Left = 920
+    Height = 841
+    Top = 0
+    Width = 12
+    Align = alNone
+    Anchors = [akTop, akLeft, akBottom]
+    MinSize = 1
+    ResizeStyle = rsPattern
+  end
+  object pnlRight: TPanel
+    AnchorSideLeft.Control = splMain
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = pnlActions
+    Left = 932
+    Height = 821
+    Top = 20
+    Width = 898
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Top = 20
+    BorderSpacing.Right = 20
+    BorderSpacing.Bottom = 20
+    BevelOuter = bvNone
+    ClientHeight = 821
+    ClientWidth = 898
+    TabOrder = 2
+    object pnlResults: TPanel
+      AnchorSideLeft.Control = pnlRight
+      AnchorSideTop.Control = pnlDisplayOptions
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = pnlRight
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlRight
+      AnchorSideBottom.Side = asrBottom
+      Left = 0
+      Height = 782
+      Top = 39
+      Width = 898
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Top = 10
+      BevelOuter = bvNone
+      Caption = 'pnlResults'
+      ClientHeight = 782
+      ClientWidth = 898
+      TabOrder = 1
+      object pnlVisualization: TPanel
+        AnchorSideLeft.Control = pnlResults
+        AnchorSideTop.Control = pnlResults
+        AnchorSideRight.Control = pnlResults
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = splResults
+        Left = 0
+        Height = 772
+        Top = 10
+        Width = 898
+        Align = alClient
+        AutoSize = True
+        BorderSpacing.Top = 10
+        BevelOuter = bvNone
+        ClientHeight = 772
+        ClientWidth = 898
+        TabOrder = 0
+        object pbxVisualization: TPaintBox
+          Left = 0
+          Height = 772
+          Top = 0
+          Width = 898
+          Align = alClient
+          OnMouseDown = pbxVisualizationMouseDown
+          OnMouseMove = pbxVisualizationMouseMove
+          OnMouseUp = pbxVisualizationMouseUp
+          OnMouseWheel = pbxVisualizationMouseWheel
+          OnPaint = pbxVisualizationPaint
+        end
+      end
+      object splResults: TSplitter
+        AnchorSideLeft.Control = pnlResults
+        AnchorSideRight.Control = pnlResults
+        AnchorSideRight.Side = asrBottom
+        Cursor = crVSplit
+        Left = 0
+        Height = 12
+        Top = 600
+        Width = 898
+        Align = alNone
+        Anchors = [akTop, akLeft, akRight]
+        MinSize = 1
+        ResizeAnchor = akBottom
+        ResizeStyle = rsPattern
+        Visible = False
+      end
+      object pnlGrid: TPanel
+        AnchorSideLeft.Control = pnlResults
+        AnchorSideTop.Control = splResults
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = pnlResults
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = pnlResults
+        AnchorSideBottom.Side = asrBottom
+        Left = 0
+        Height = 170
+        Top = 612
+        Width = 898
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        BevelOuter = bvNone
+        ClientHeight = 170
+        ClientWidth = 898
+        TabOrder = 2
+        Visible = False
+        object vstResultGrid: TLazVirtualStringTree
+          Left = 0
+          Height = 170
+          Top = 0
+          Width = 898
+          Align = alClient
+          BorderStyle = bsNone
+          Colors.UnfocusedSelectionColor = clHighlight
+          Colors.UnfocusedSelectionBorderColor = clHighlight
+          DefaultNodeHeight = 30
+          Header.AutoSizeIndex = -1
+          Header.Columns = <>
+          Header.DefaultHeight = 25
+          Header.Height = 25
+          Header.MainColumn = -1
+          Header.Options = [hoColumnResize, hoShowSortGlyphs, hoVisible, hoAutoSpring]
+          Header.ParentFont = True
+          HintMode = hmTooltip
+          Indent = 0
+          Margin = 4
+          ParentShowHint = False
+          ScrollBarOptions.ScrollBars = ssVertical
+          ShowHint = True
+          TabOrder = 0
+          TreeOptions.AutoOptions = [toAutoDropExpand, toAutoScrollOnExpand]
+          TreeOptions.MiscOptions = [toFullRepaintOnResize, toInitOnSave, toWheelPanning]
+          TreeOptions.PaintOptions = [toHideSelection, toThemeAware, toUseBlendedImages, toUseExplorerTheme]
+          TreeOptions.SelectionOptions = [toFullRowSelect]
+          OnGetText = vstResultGridGetText
+          OnGetHint = vstResultGridGetHint
+        end
+      end
+    end
+    object pnlDisplayOptions: TPanel
+      AnchorSideLeft.Control = pnlRight
+      AnchorSideTop.Control = pnlRight
+      AnchorSideRight.Control = pnlRight
+      AnchorSideRight.Side = asrBottom
+      Left = 0
+      Height = 29
+      Top = 0
+      Width = 898
+      Align = alTop
+      BorderSpacing.Bottom = 6
+      BevelOuter = bvNone
+      ClientHeight = 29
+      ClientWidth = 898
+      TabOrder = 0
+      object lblResultsTitle: TLabel
+        AnchorSideLeft.Control = pnlDisplayOptions
+        AnchorSideTop.Control = pnlDisplayOptions
+        AnchorSideBottom.Control = pnlDisplayOptions
+        AnchorSideBottom.Side = asrBottom
+        Left = 0
+        Height = 29
+        Top = 0
+        Width = 66
+        Align = alLeft
+        Caption = 'Results'
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -18
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Font.Style = [fsBold]
+        Layout = tlCenter
+        ParentFont = False
+      end
+      object pnlLimitControls: TPanel
+        Left = 338
+        Height = 29
+        Top = 0
+        Width = 560
+        Align = alRight
+        BevelOuter = bvNone
+        ClientHeight = 29
+        ClientWidth = 560
+        TabOrder = 0
+        object edtVisualizationLimit: TSpinEdit
+          AnchorSideTop.Control = pnlLimitControls
+          AnchorSideRight.Control = pnlLimitControls
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = pnlLimitControls
+          AnchorSideBottom.Side = asrBottom
+          Left = 484
+          Height = 29
+          Top = 0
+          Width = 76
+          Anchors = [akTop, akBottom]
+          MaxValue = 1000000
+          MinValue = 1
+          TabOrder = 1
+          Value = 10
+          OnChange = edtVisualizationLimitChange
+        end
+        object chkEnableLimit: TCheckBox
+          AnchorSideTop.Control = pnlLimitControls
+          AnchorSideRight.Control = lblVisualizationLimit
+          AnchorSideBottom.Control = pnlLimitControls
+          AnchorSideBottom.Side = asrBottom
+          Left = 349
+          Height = 29
+          Top = 0
+          Width = 25
+          Anchors = [akTop, akRight, akBottom]
+          Checked = True
+          State = cbChecked
+          TabOrder = 0
+          OnChange = chkEnableLimitChange
+        end
+        object lblVisualizationLimit: TLabel
+          AnchorSideTop.Control = pnlLimitControls
+          AnchorSideRight.Control = edtVisualizationLimit
+          AnchorSideBottom.Control = pnlLimitControls
+          AnchorSideBottom.Side = asrBottom
+          Left = 374
+          Height = 29
+          Top = 0
+          Width = 104
+          Alignment = taRightJustify
+          Anchors = [akTop, akRight, akBottom]
+          BorderSpacing.Right = 6
+          Caption = 'Limit Bars to:'
+          Layout = tlCenter
+        end
+        object btnStopwords: TButton
+          AnchorSideTop.Control = pnlLimitControls
+          AnchorSideRight.Control = chkEnableLimit
+          AnchorSideBottom.Control = pnlLimitControls
+          AnchorSideBottom.Side = asrBottom
+          Left = 189
+          Height = 29
+          Top = 0
+          Width = 150
+          Anchors = [akTop, akRight, akBottom]
+          BorderSpacing.Right = 10
+          Caption = 'Stopwords'
+          TabOrder = 2
+          Visible = False
+          OnClick = btnStopwordsClick
+        end
+      end
+    end
+  end
+  object dlgExportData: TSaveDialog
+    Title = 'Save Data Table'
+    DefaultExt = '.xlsx'
+    Filter = 'Microsoft Excel Spreadsheet (*.xlsx)|*.xlsx|OpenDocument Spreadsheet (*.ods)|*.ods|Comma Separated Values (*.csv)|*.csv|JSON Document (*.json)|*.json|Extensible Markup (*.xml)|*.xml'
+    Left = 1536
+    Top = 720
+  end
+  object dlgSaveVisualization: TSaveDialog
+    Title = 'Save Visualisation as'
+    DefaultExt = '.svg'
+    Filter = 'Scalable Vector Graphics (*.svg)|*.svg|Portable Document Format (*.pdf)|*.pdf|Portable Network Graphic (*.png)|*.png|JPEG Image (*.jpeg;*.jpg)|*.jpeg;*.jpg'
+    Left = 1320
+    Top = 720
+  end
+  object tmrFrequencySearch: TTimer
+    Enabled = False
+    Interval = 300
+    OnTimer = tmrFrequencySearchTimer
+    Left = 112
+    Top = 248
+  end
+  object tmrCoOccurrenceXSearch: TTimer
+    Enabled = False
+    Interval = 300
+    OnTimer = tmrCoOccurrenceXSearchTimer
+    Left = 304
+    Top = 248
+  end
+  object tmrCoOccurrenceYSearch: TTimer
+    Enabled = False
+    Interval = 300
+    OnTimer = tmrCoOccurrenceYSearchTimer
+    Left = 600
+    Top = 248
+  end
+  object tmrCrosstabSearch: TTimer
+    Enabled = False
+    Interval = 300
+    OnTimer = tmrCrosstabSearchTimer
+    Left = 800
+    Top = 248
+  end
+  object tmrCloudSearch: TTimer
+    Enabled = False
+    Interval = 300
+    OnTimer = tmrCloudSearchTimer
+    Left = 104
+    Top = 648
+  end
+  object tmrScopeDocumentSearch: TTimer
+    Enabled = False
+    Interval = 300
+    OnTimer = tmrScopeDocumentSearchTimer
+    Left = 288
+    Top = 648
+  end
+  object tmrScopeAttributeSearch: TTimer
+    Enabled = False
+    Interval = 300
+    OnTimer = tmrScopeAttributeSearchTimer
+    Left = 648
+    Top = 552
+  end
+end

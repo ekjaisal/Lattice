@@ -1,0 +1,1362 @@
+object frmAppBase: TfrmAppBase
+  Left = 328
+  Height = 1080
+  Top = 139
+  Width = 1920
+  Caption = 'Lattice'
+  ClientHeight = 1050
+  ClientWidth = 1920
+  DesignTimePPI = 144
+  Font.CharSet = ANSI_CHARSET
+  Font.Height = -18
+  Font.Name = 'Arial'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
+  Menu = mnuAppBase
+  LCLVersion = '4.6.0.0'
+  WindowState = wsFullScreen
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnResize = FormResize
+  object pnlLeft: TPanel
+    Left = 0
+    Height = 1014
+    Top = 0
+    Width = 400
+    Align = alLeft
+    BevelOuter = bvNone
+    ClientHeight = 1014
+    ClientWidth = 400
+    TabOrder = 0
+    object pnlDocument: TPanel
+      AnchorSideLeft.Control = pnlLeft
+      AnchorSideTop.Control = pnlLeft
+      AnchorSideRight.Control = pnlLeft
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = splDocumentAttribute
+      Left = 12
+      Height = 790
+      Top = 12
+      Width = 388
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Left = 12
+      BorderSpacing.Top = 12
+      BevelOuter = bvNone
+      ClientHeight = 790
+      ClientWidth = 388
+      TabOrder = 2
+      object lblDocumentTitle: TLabel
+        AnchorSideLeft.Control = pnlDocument
+        AnchorSideTop.Control = pnlDocument
+        AnchorSideRight.Control = pnlDocument
+        AnchorSideRight.Side = asrBottom
+        Left = 0
+        Height = 21
+        Top = 0
+        Width = 388
+        Alignment = taCenter
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Bottom = 12
+        Caption = 'Documents'
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -18
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Font.Style = [fsBold]
+        Layout = tlCenter
+        ParentFont = False
+      end
+      object pnlDocumentList: TPanel
+        AnchorSideLeft.Control = pnlDocument
+        AnchorSideTop.Control = pnlDocumentAction
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = pnlDocument
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = pnlDocument
+        AnchorSideBottom.Side = asrBottom
+        Left = 0
+        Height = 716
+        Top = 74
+        Width = 388
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        BorderSpacing.Top = 12
+        BevelOuter = bvNone
+        ClientHeight = 716
+        ClientWidth = 388
+        TabOrder = 0
+        object lblCurrentSort: TLabel
+          Left = 6
+          Height = 18
+          Top = 0
+          Width = 376
+          Align = alTop
+          Alignment = taCenter
+          BorderSpacing.Left = 6
+          BorderSpacing.Right = 6
+          BorderSpacing.Bottom = 6
+          Caption = 'Sorted by Default'
+          Font.CharSet = ANSI_CHARSET
+          Font.Height = -16
+          Font.Name = 'Arial'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          ParentFont = False
+          Visible = False
+          WordWrap = True
+        end
+        object vstDocument: TLazVirtualStringTree
+          Left = 0
+          Height = 692
+          Top = 24
+          Width = 388
+          Align = alClient
+          BorderStyle = bsNone
+          Colors.UnfocusedSelectionColor = clHighlight
+          Colors.UnfocusedSelectionBorderColor = clHighlight
+          DefaultText = 'Node'
+          Header.AutoSizeIndex = 0
+          Header.Columns = <          
+            item
+              Position = 0
+              Text = 'Documents'
+              Width = 298
+            end          
+            item
+              Position = 1
+              Text = 'Codings'
+              Width = 90
+            end>
+          Header.Options = [hoAutoResize, hoColumnResize, hoDrag, hoHotTrack, hoShowSortGlyphs, hoVisible]
+          Header.ParentFont = True
+          Images = dmShared.imlMain
+          Indent = 0
+          Margin = 8
+          PopupMenu = pmnTreeDocument
+          TabOrder = 0
+          TreeOptions.PaintOptions = [toShowDropmark, toThemeAware, toUseBlendedImages, toUseExplorerTheme]
+          TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect]
+          ImagesWidth = 12
+        end
+      end
+      object pnlDocumentAction: TPanel
+        AnchorSideLeft.Control = pnlDocument
+        AnchorSideTop.Control = lblDocumentTitle
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = pnlDocument
+        AnchorSideRight.Side = asrBottom
+        Left = 0
+        Height = 29
+        Top = 33
+        Width = 388
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Bottom = 12
+        BevelOuter = bvNone
+        ClientHeight = 29
+        ClientWidth = 388
+        TabOrder = 1
+        object edtDocumentSearch: TEdit
+          AnchorSideLeft.Control = pnlDocumentAction
+          AnchorSideTop.Control = pnlDocumentAction
+          AnchorSideRight.Control = btnDocumentFilter
+          AnchorSideBottom.Control = pnlDocumentAction
+          AnchorSideBottom.Side = asrBottom
+          Left = 0
+          Height = 29
+          Hint = 'Search and Filter the Documents List by Name'
+          Top = 0
+          Width = 318
+          Alignment = taCenter
+          Anchors = [akTop, akLeft, akRight, akBottom]
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 0
+          TextHint = 'Search document name'
+          OnChange = edtDocumentSearchChange
+          OnKeyDown = edtDocumentSearchKeyDown
+        end
+        object btnDocumentSort: TSpeedButton
+          AnchorSideTop.Control = pnlDocumentAction
+          AnchorSideRight.Control = pnlDocumentAction
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = pnlDocumentAction
+          AnchorSideBottom.Side = asrBottom
+          Left = 359
+          Height = 29
+          Hint = 'Sort Documents'
+          Top = 0
+          Width = 29
+          AllowAllUp = True
+          Anchors = [akTop, akRight]
+          BorderSpacing.Left = 6
+          Flat = True
+          GroupIndex = 1
+          Images = dmShared.imlMain
+          ImageIndex = 7
+          ImageWidth = 12
+          ShowCaption = False
+          ShowHint = True
+          ParentShowHint = False
+          OnClick = btnDocumentSortClick
+        end
+        object btnDocumentFilter: TSpeedButton
+          AnchorSideTop.Control = pnlDocumentAction
+          AnchorSideRight.Control = btnDocumentSort
+          AnchorSideBottom.Control = pnlDocumentAction
+          AnchorSideBottom.Side = asrBottom
+          Left = 324
+          Height = 29
+          Hint = 'Filter Documents'
+          Top = 0
+          Width = 29
+          AllowAllUp = True
+          Anchors = [akTop, akRight, akBottom]
+          BorderSpacing.Left = 6
+          Flat = True
+          GroupIndex = 2
+          Images = dmShared.imlMain
+          ImageIndex = 6
+          ImageWidth = 12
+          ShowCaption = False
+          ShowHint = True
+          ParentShowHint = False
+          OnClick = btnDocumentFilterClick
+        end
+      end
+    end
+    object splDocumentAttribute: TSplitter
+      AnchorSideTop.Side = asrBottom
+      Cursor = crVSplit
+      Left = 0
+      Height = 12
+      Top = 802
+      Width = 400
+      Align = alBottom
+      MinSize = 1
+      ResizeAnchor = akBottom
+      ResizeStyle = rsPattern
+    end
+    object pnlAttribute: TPanel
+      AnchorSideTop.Side = asrBottom
+      Left = 12
+      Height = 200
+      Top = 814
+      Width = 388
+      Align = alBottom
+      BorderSpacing.Left = 12
+      BevelOuter = bvNone
+      ClientHeight = 200
+      ClientWidth = 388
+      TabOrder = 0
+      object vstAttribute: TLazVirtualStringTree
+        AnchorSideLeft.Control = pnlAttribute
+        AnchorSideTop.Control = lblAttributeTitle
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = pnlAttribute
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = pnlAttribute
+        AnchorSideBottom.Side = asrBottom
+        Left = 0
+        Height = 143
+        Top = 45
+        Width = 388
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        BorderSpacing.Bottom = 12
+        BorderStyle = bsNone
+        Colors.UnfocusedSelectionColor = clHighlight
+        Colors.UnfocusedSelectionBorderColor = clHighlight
+        DefaultNodeHeight = 29
+        Header.AutoSizeIndex = 1
+        Header.Columns = <        
+          item
+            Position = 0
+            Text = 'Attributes'
+            Width = 150
+          end        
+          item
+            Position = 1
+            Text = 'Values'
+            Width = 238
+          end>
+        Header.DefaultHeight = 25
+        Header.Height = 28
+        Header.Options = [hoAutoResize, hoColumnResize, hoShowSortGlyphs, hoVisible]
+        Header.ParentFont = True
+        Header.SortColumn = 0
+        HintMode = hmTooltip
+        Indent = 0
+        Margin = 4
+        ParentShowHint = False
+        PopupMenu = pmnListAttribute
+        ShowHint = True
+        TabOrder = 0
+        TextMargin = 4
+        TreeOptions.PaintOptions = [toThemeAware, toUseBlendedImages, toUseExplorerTheme]
+        TreeOptions.SelectionOptions = [toFullRowSelect, toRightClickSelect]
+        OnDblClick = vstAttributeDblClick
+        OnExit = vstAttributeExit
+        OnGetText = vstAttributeGetText
+        OnPaintText = vstAttributePaintText
+        OnHeaderClick = vstAttributeHeaderClick
+      end
+      object lblAttributeTitle: TLabel
+        AnchorSideLeft.Control = pnlAttribute
+        AnchorSideTop.Control = pnlAttribute
+        AnchorSideRight.Control = pnlAttribute
+        AnchorSideRight.Side = asrBottom
+        Left = 0
+        Height = 21
+        Top = 12
+        Width = 388
+        Alignment = taCenter
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Top = 12
+        BorderSpacing.Bottom = 12
+        Caption = 'Attributes'
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -18
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+    end
+  end
+  object splLeftCenter: TSplitter
+    Left = 400
+    Height = 1014
+    Top = 0
+    Width = 12
+    MinSize = 1
+    ResizeStyle = rsPattern
+  end
+  object pnlRight: TPanel
+    Left = 1520
+    Height = 1014
+    Top = 0
+    Width = 400
+    Align = alRight
+    BevelOuter = bvNone
+    ClientHeight = 1014
+    ClientWidth = 400
+    TabOrder = 2
+    object pnlLegend: TPanel
+      Left = 0
+      Height = 200
+      Top = 814
+      Width = 400
+      Align = alBottom
+      BevelOuter = bvNone
+      ClientHeight = 200
+      ClientWidth = 400
+      TabOrder = 0
+      object pbxLegendCodeName: TPaintBox
+        AnchorSideLeft.Control = pnlLegend
+        AnchorSideTop.Control = lblLegendTitle
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = pnlLegend
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = pnlLegend
+        AnchorSideBottom.Side = asrBottom
+        Left = 0
+        Height = 143
+        Top = 45
+        Width = 388
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        BorderSpacing.Right = 12
+        BorderSpacing.Bottom = 12
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Font.Style = [fsBold]
+        ParentFont = False
+        OnPaint = pbxLegendCodeNamePaint
+      end
+      object lblLegendTitle: TLabel
+        AnchorSideLeft.Control = pnlLegend
+        AnchorSideTop.Control = pnlLegend
+        AnchorSideRight.Control = pnlLegend
+        AnchorSideRight.Side = asrBottom
+        Left = 0
+        Height = 21
+        Top = 12
+        Width = 400
+        Alignment = taCenter
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Top = 12
+        BorderSpacing.Bottom = 12
+        Caption = 'Legend'
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -18
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+    end
+    object splCode: TSplitter
+      Cursor = crVSplit
+      Left = 0
+      Height = 12
+      Top = 802
+      Width = 400
+      Align = alBottom
+      MinSize = 1
+      ResizeAnchor = akBottom
+      ResizeStyle = rsPattern
+    end
+    object pnlCode: TPanel
+      AnchorSideLeft.Control = pnlRight
+      AnchorSideTop.Control = pnlRight
+      AnchorSideRight.Control = pnlRight
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = splCode
+      Left = 0
+      Height = 790
+      Top = 12
+      Width = 388
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Top = 12
+      BorderSpacing.Right = 12
+      BevelOuter = bvNone
+      ClientHeight = 790
+      ClientWidth = 388
+      TabOrder = 2
+      object lblCodeTitle: TLabel
+        AnchorSideLeft.Control = pnlCode
+        AnchorSideTop.Control = pnlCode
+        AnchorSideRight.Control = pnlCode
+        AnchorSideRight.Side = asrBottom
+        Left = 0
+        Height = 21
+        Top = 0
+        Width = 388
+        Alignment = taCenter
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Bottom = 12
+        Caption = 'Codes'
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -18
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object pnlCodeAction: TPanel
+        AnchorSideLeft.Control = pnlCode
+        AnchorSideTop.Control = lblCodeTitle
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = pnlCode
+        AnchorSideRight.Side = asrBottom
+        Left = 0
+        Height = 29
+        Top = 33
+        Width = 388
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Bottom = 12
+        BevelOuter = bvNone
+        ClientHeight = 29
+        ClientWidth = 388
+        TabOrder = 0
+        object edtCodeSearch: TEdit
+          AnchorSideLeft.Control = btnCodeAdd
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = pnlCodeAction
+          AnchorSideRight.Control = btnCodeSort
+          AnchorSideBottom.Control = pnlCodeAction
+          AnchorSideBottom.Side = asrBottom
+          Left = 81
+          Height = 29
+          Hint = 'Search and Filter the Code Tree by Name'
+          Top = 0
+          Width = 272
+          Alignment = taCenter
+          Anchors = [akTop, akLeft, akRight, akBottom]
+          BorderSpacing.Left = 6
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 0
+          TextHint = 'Search codes'
+          OnChange = edtCodeSearchChange
+          OnKeyDown = edtCodeSearchKeyDown
+        end
+        object btnCodeSort: TSpeedButton
+          AnchorSideTop.Control = pnlCodeAction
+          AnchorSideRight.Control = pnlCodeAction
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = pnlCodeAction
+          AnchorSideBottom.Side = asrBottom
+          Left = 359
+          Height = 29
+          Hint = 'Sort Codes'
+          Top = 0
+          Width = 29
+          AllowAllUp = True
+          Anchors = [akTop, akRight]
+          BorderSpacing.Left = 6
+          Flat = True
+          GroupIndex = 3
+          Images = dmShared.imlMain
+          ImageIndex = 7
+          ImageWidth = 12
+          ShowCaption = False
+          ShowHint = True
+          ParentShowHint = False
+          OnClick = btnCodeSortClick
+        end
+        object btnCodeAdd: TButton
+          AnchorSideLeft.Control = pnlCodeAction
+          AnchorSideTop.Control = pnlCodeAction
+          AnchorSideBottom.Control = pnlCodeAction
+          AnchorSideBottom.Side = asrBottom
+          Left = 0
+          Height = 29
+          Hint = 'Create New Code'
+          Top = 0
+          Width = 75
+          Anchors = [akTop, akLeft, akBottom]
+          Caption = '+ New'
+          DoubleBuffered = True
+          ParentDoubleBuffered = False
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 1
+          OnClick = btnCodeAddClick
+        end
+      end
+      object vstCode: TLazVirtualStringTree
+        AnchorSideLeft.Control = pnlCode
+        AnchorSideTop.Control = pnlCodeAction
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = pnlCode
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = pnlCode
+        AnchorSideBottom.Side = asrBottom
+        Left = 0
+        Height = 716
+        Top = 74
+        Width = 388
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        BorderStyle = bsNone
+        DefaultText = 'Node'
+        DragMode = dmAutomatic
+        Header.AutoSizeIndex = 0
+        Header.Columns = <        
+          item
+            Position = 0
+            Text = 'Codes'
+            Width = 298
+          end        
+          item
+            Position = 1
+            Text = 'Codings'
+            Width = 90
+          end>
+        Header.Options = [hoAutoResize, hoColumnResize, hoHotTrack, hoVisible]
+        Header.ParentFont = True
+        Images = dmShared.imlMain
+        PopupMenu = pmnTreeCode
+        TabOrder = 1
+        TreeOptions.MiscOptions = [toAcceptOLEDrop, toFullRepaintOnResize, toInitOnSave, toWheelPanning, toEditOnClick]
+        TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowRoot, toShowTreeLines, toThemeAware, toUseBlendedImages, toUseExplorerTheme]
+        TreeOptions.SelectionOptions = [toFullRowSelect, toMultiSelect]
+        ImagesWidth = 12
+      end
+    end
+  end
+  object splCenterRight: TSplitter
+    Left = 1508
+    Height = 1014
+    Top = 0
+    Width = 12
+    Align = alRight
+    MinSize = 1
+    ResizeAnchor = akRight
+    ResizeStyle = rsPattern
+  end
+  object pnlRead: TPanel
+    AnchorSideLeft.Control = splLeftCenter
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = splCenterRight
+    AnchorSideBottom.Control = stbMain
+    Left = 412
+    Height = 1014
+    Top = 0
+    Width = 1096
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BevelOuter = bvNone
+    ClientHeight = 1014
+    ClientWidth = 1096
+    TabOrder = 4
+    object pnlReadContainer: TPanel
+      Left = 0
+      Height = 945
+      Top = 69
+      Width = 1096
+      Align = alClient
+      BevelOuter = bvNone
+      Color = clWhite
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 1
+    end
+    object pnlReadHeader: TPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 0
+      Height = 69
+      Top = 0
+      Width = 1096
+      Align = alTop
+      BevelOuter = bvNone
+      ClientHeight = 69
+      ClientWidth = 1096
+      TabOrder = 0
+      object pnlReadSearch: TPanel
+        Left = 676
+        Height = 29
+        Top = 20
+        Width = 400
+        Align = alRight
+        BorderSpacing.Top = 20
+        BorderSpacing.Right = 20
+        BorderSpacing.Bottom = 20
+        BevelOuter = bvNone
+        ClientHeight = 29
+        ClientWidth = 400
+        TabOrder = 0
+        object btnReadSearchNext: TSpeedButton
+          Left = 371
+          Height = 29
+          Hint = 'Next'
+          Top = 0
+          Width = 29
+          Align = alRight
+          Flat = True
+          Images = dmShared.imlMain
+          ImageIndex = 5
+          ImageWidth = 12
+          Visible = False
+          ShowHint = True
+          ParentShowHint = False
+          OnClick = btnReadSearchNextClick
+        end
+        object btnReadSearchPrevious: TSpeedButton
+          Left = 341
+          Height = 29
+          Hint = 'Previous'
+          Top = 0
+          Width = 29
+          Align = alRight
+          Flat = True
+          Images = dmShared.imlMain
+          ImageIndex = 4
+          ImageWidth = 12
+          Visible = False
+          ShowHint = True
+          ParentShowHint = False
+          OnClick = btnReadSearchPreviousClick
+        end
+        object lblReadSearchCount: TLabel
+          Left = 370
+          Height = 29
+          Top = 0
+          Width = 1
+          Align = alRight
+          Alignment = taCenter
+          Layout = tlCenter
+          Visible = False
+        end
+        object edtReadSearch: TEdit
+          Left = 0
+          Height = 29
+          Hint = 'Search and Find Matching Text within the Document'
+          Top = 0
+          Width = 321
+          Align = alClient
+          BorderSpacing.Right = 20
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 0
+          TextHint = 'Find in document'
+          OnChange = edtReadSearchChange
+        end
+      end
+      object pnlReadNavigation: TPanel
+        Left = 20
+        Height = 29
+        Top = 20
+        Width = 215
+        Align = alLeft
+        AutoSize = True
+        BorderSpacing.Left = 20
+        BorderSpacing.Top = 20
+        BorderSpacing.Right = 10
+        BorderSpacing.Bottom = 20
+        BevelOuter = bvNone
+        ClientHeight = 29
+        ClientWidth = 215
+        TabOrder = 1
+        object lblReadDocumentTitle: TLabel
+          AnchorSideLeft.Control = btnReadDocumentPrevious
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = pnlReadNavigation
+          AnchorSideRight.Control = btnReadDocumentNext
+          AnchorSideBottom.Control = pnlReadNavigation
+          AnchorSideBottom.Side = asrBottom
+          Left = 29
+          Height = 29
+          Top = 0
+          Width = 158
+          Anchors = [akTop, akLeft, akBottom]
+          Caption = 'No Document Open'
+          Font.CharSet = ANSI_CHARSET
+          Font.Height = -18
+          Font.Name = 'Arial'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          Layout = tlCenter
+          ParentFont = False
+          ParentShowHint = False
+          ShowHint = True
+        end
+        object btnReadDocumentPrevious: TSpeedButton
+          AnchorSideLeft.Control = pnlReadNavigation
+          AnchorSideTop.Control = pnlReadNavigation
+          AnchorSideBottom.Control = pnlReadNavigation
+          AnchorSideBottom.Side = asrBottom
+          Left = 0
+          Height = 29
+          Hint = 'Previous'
+          Top = 0
+          Width = 29
+          Anchors = [akTop, akLeft, akBottom]
+          Flat = True
+          Images = dmShared.imlMain
+          ImageIndex = 4
+          ImageWidth = 12
+          Visible = False
+          ShowHint = True
+          ParentShowHint = False
+          OnClick = btnReadDocumentPreviousClick
+        end
+        object btnReadDocumentNext: TSpeedButton
+          AnchorSideLeft.Control = lblReadDocumentTitle
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = pnlReadNavigation
+          AnchorSideRight.Control = pnlReadNavigation
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = pnlReadNavigation
+          AnchorSideBottom.Side = asrBottom
+          Left = 187
+          Height = 29
+          Hint = 'Next'
+          Top = 0
+          Width = 28
+          Anchors = [akTop, akLeft, akBottom]
+          Flat = True
+          Images = dmShared.imlMain
+          ImageIndex = 5
+          ImageWidth = 12
+          Visible = False
+          ShowHint = True
+          ParentShowHint = False
+          OnClick = btnReadDocumentNextClick
+        end
+      end
+      object btnDocumentEditEnter: TSpeedButton
+        AnchorSideLeft.Control = pnlReadNavigation
+        AnchorSideLeft.Side = asrBottom
+        AnchorSideTop.Control = pnlReadHeader
+        AnchorSideBottom.Control = pnlReadHeader
+        AnchorSideBottom.Side = asrBottom
+        Left = 245
+        Height = 29
+        Hint = 'Enter Edit Mode'
+        Top = 20
+        Width = 29
+        Anchors = [akTop, akLeft, akBottom]
+        BorderSpacing.Left = 10
+        BorderSpacing.Top = 20
+        BorderSpacing.Bottom = 20
+        Flat = True
+        Images = dmShared.imlMain
+        ImageIndex = 9
+        ImageWidth = 12
+        Visible = False
+        ShowHint = True
+        ParentShowHint = False
+        OnClick = btnDocumentEditEnterClick
+      end
+      object btnDocumentEditExit: TSpeedButton
+        AnchorSideLeft.Control = btnDocumentEditEnter
+        AnchorSideLeft.Side = asrBottom
+        AnchorSideTop.Control = pnlReadHeader
+        AnchorSideBottom.Control = pnlReadHeader
+        AnchorSideBottom.Side = asrBottom
+        Left = 274
+        Height = 29
+        Hint = 'Exit Edit Mode'
+        Top = 20
+        Width = 29
+        Anchors = [akTop, akLeft, akBottom]
+        BorderSpacing.Top = 20
+        BorderSpacing.Right = 6
+        BorderSpacing.Bottom = 20
+        Flat = True
+        Images = dmShared.imlMain
+        ImageIndex = 11
+        ImageWidth = 12
+        Visible = False
+        ShowHint = True
+        ParentShowHint = False
+        OnClick = btnDocumentEditExitClick
+      end
+      object lblEditStatus: TLabel
+        AnchorSideLeft.Control = btnDocumentEditExit
+        AnchorSideLeft.Side = asrBottom
+        AnchorSideTop.Control = pnlReadHeader
+        AnchorSideBottom.Control = pnlReadHeader
+        AnchorSideBottom.Side = asrBottom
+        Left = 309
+        Height = 29
+        Top = 20
+        Width = 137
+        Anchors = [akTop, akLeft, akBottom]
+        BorderSpacing.Left = 6
+        BorderSpacing.Top = 20
+        BorderSpacing.Bottom = 20
+        Caption = 'No changes to save'
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clGray
+        Font.Height = -16
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Layout = tlCenter
+        ParentFont = False
+        Visible = False
+      end
+    end
+  end
+  object stbMain: TStatusBar
+    Left = 0
+    Height = 36
+    Top = 1014
+    Width = 1920
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -16
+    Font.Name = 'Arial'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    Panels = <    
+      item
+        Width = 960
+      end    
+      item
+        Alignment = taRightJustify
+        Width = 960
+      end>
+    ParentColor = False
+    ParentFont = False
+    SimplePanel = False
+  end
+  object mnuAppBase: TMainMenu
+    Images = dmShared.imlMain
+    ImagesWidth = 12
+    Left = 592
+    Top = 112
+    object mniProject: TMenuItem
+      Caption = 'Project'
+      ImageIndex = 12
+      object mniProjectOptimize: TMenuItem
+        Caption = 'Optimise Project'
+        ImageIndex = 34
+        OnClick = mniProjectOptimizeClick
+      end
+      object mniProjectSnapshot: TMenuItem
+        Caption = 'Snapshot Project'
+        ImageIndex = 35
+        OnClick = mniProjectSnapshotClick
+      end
+      object mniProjectClose: TMenuItem
+        Caption = 'Close Project'
+        ImageIndex = 11
+        OnClick = mniProjectCloseClick
+      end
+    end
+    object mniDocument: TMenuItem
+      Caption = 'Documents'
+      ImageIndex = 33
+      OnClick = mniDocumentClick
+      object mniDocumentImport: TMenuItem
+        Caption = 'Import Documents'
+        ImageIndex = 25
+        object mniDocumentImportText: TMenuItem
+          Caption = 'Import Plain-Text Files'
+          ImageIndex = 27
+          OnClick = mniDocumentImportTextClick
+        end
+        object mniDocumentImportWord: TMenuItem
+          Caption = 'Import DOCX/ODT Files as Plain-Text'
+          ImageIndex = 28
+          OnClick = mniDocumentImportWordClick
+        end
+        object mniDocumentImportPDF: TMenuItem
+          Caption = 'Import PDF Files as Plain-Text'
+          ImageIndex = 29
+          OnClick = mniDocumentImportPDFClick
+        end
+        object mniDocumentImportSeparatorOne: TMenuItem
+          Caption = '-'
+        end
+        object mniDocumentImportSheet: TMenuItem
+          Caption = 'Import from XLSX/ODS Spreadsheet'
+          ImageIndex = 30
+          OnClick = mniDocumentImportSheetClick
+        end
+        object mniDocumentImportJSON: TMenuItem
+          Caption = 'Import from JSON Structured Data'
+          ImageIndex = 31
+          OnClick = mniDocumentImportJSONClick
+        end
+        object mniDocumentImportSQLite: TMenuItem
+          Caption = 'Import from SQLite Database'
+          ImageIndex = 32
+          OnClick = mniDocumentImportSQLiteClick
+        end
+      end
+      object mniDocumentExport: TMenuItem
+        Caption = 'Export Documents'
+        ImageIndex = 26
+        object mniDocumentExportText: TMenuItem
+          Caption = 'Export as TXTs + Metadata'
+          ImageIndex = 27
+          OnClick = mniDocumentExportTextClick
+        end
+        object mniDocumentExportSeparatorOne: TMenuItem
+          Caption = '-'
+        end
+        object mniDocumentExportSheet: TMenuItem
+          Caption = 'Export as XLSX/ODS Spreadsheet'
+          ImageIndex = 30
+          OnClick = mniDocumentExportSheetClick
+        end
+        object mniDocumentExportJSON: TMenuItem
+          Caption = 'Export as JSON Structured Data'
+          ImageIndex = 31
+          OnClick = mniDocumentExportJSONClick
+        end
+        object mniDocumentExportXML: TMenuItem
+          Caption = 'Export as XML Structured Data'
+          ImageIndex = 52
+          OnClick = mniDocumentExportXMLClick
+        end
+      end
+    end
+    object mniAttribute: TMenuItem
+      Caption = 'Attributes'
+      ImageIndex = 13
+      OnClick = mniAttributeClick
+    end
+    object mniCode: TMenuItem
+      Caption = 'Codes'
+      ImageIndex = 1
+      object mniCodebookExport: TMenuItem
+        Caption = 'Export Codebook'
+        ImageIndex = 26
+        OnClick = mniCodebookExportClick
+      end
+      object mniCodeSystem: TMenuItem
+        Caption = 'Code System'
+        ImageIndex = 24
+        object mniCodeSystemImport: TMenuItem
+          Caption = 'Import Code System'
+          ImageIndex = 25
+          OnClick = mniCodeSystemImportClick
+        end
+        object mniCodeSystemExport: TMenuItem
+          Caption = 'Export Code System'
+          ImageIndex = 26
+          OnClick = mniCodeSystemExportClick
+        end
+      end
+    end
+    object mniMemo: TMenuItem
+      Caption = 'Memos'
+      ImageIndex = 36
+      object mniMemoProject: TMenuItem
+        Caption = 'Project Memo'
+        ImageIndex = 23
+        OnClick = mniMemoProjectClick
+      end
+      object mniMemoAnalytical: TMenuItem
+        Caption = 'Add Analytical Memo'
+        ImageIndex = 37
+        OnClick = mniMemoAnalyticalClick
+      end
+      object mniMemoManage: TMenuItem
+        Caption = 'Manage Memos'
+        ImageIndex = 8
+        OnClick = mniMemoManageClick
+      end
+    end
+    object mniRetrieval: TMenuItem
+      Caption = 'Retrieval'
+      ImageIndex = 14
+      OnClick = mniRetrievalClick
+    end
+    object mniAnalysis: TMenuItem
+      Caption = 'Analysis'
+      ImageIndex = 15
+      OnClick = mniAnalysisClick
+    end
+    object mniHelp: TMenuItem
+      Caption = 'Help'
+      ImageIndex = 16
+      object mniHelpGuide: TMenuItem
+        Caption = 'User Guide'
+        ImageIndex = 17
+        OnClick = mniHelpGuideClick
+      end
+      object mniHelpWebsite: TMenuItem
+        Caption = 'Visit Website'
+        ImageIndex = 18
+        OnClick = mniHelpWebsiteClick
+      end
+      object mniHelpSponsor: TMenuItem
+        Caption = 'Sponsor'
+        ImageIndex = 19
+        OnClick = mniHelpSponsorClick
+      end
+      object mniHelpLicense: TMenuItem
+        Caption = 'License'
+        ImageIndex = 20
+        OnClick = mniHelpLicenseClick
+      end
+      object mniHelpThirdParty: TMenuItem
+        Caption = 'Third-Party Notices'
+        ImageIndex = 21
+        OnClick = mniHelpThirdPartyClick
+      end
+      object mniHelpAbout: TMenuItem
+        Caption = 'About'
+        ImageIndex = 22
+        OnClick = mniHelpAboutClick
+      end
+    end
+  end
+  object dlgImport: TOpenDialog
+    Title = 'Select Files to Import'
+    Options = [ofAllowMultiSelect, ofEnableSizing, ofViewDetail]
+    Left = 1232
+    Top = 312
+  end
+  object pmnTreeCode: TPopupMenu
+    Images = dmShared.imlMain
+    ImagesWidth = 12
+    OnPopup = pmnTreeCodePopup
+    Left = 1384
+    Top = 312
+    object mniTreeCodeAddSubCode: TMenuItem
+      Caption = 'Add Sub-Code'
+      ImageIndex = 39
+      OnClick = mniTreeCodeAddSubCodeClick
+    end
+    object mniTreeCodeRename: TMenuItem
+      Caption = 'View/Modify Code Details'
+      ImageIndex = 9
+      OnClick = mniTreeCodeRenameClick
+    end
+    object mniTreeCodeColorChange: TMenuItem
+      Caption = 'Change Colour'
+      ImageIndex = 40
+      OnClick = mniTreeCodeColorChangeClick
+    end
+    object mniTreeCodeMerge: TMenuItem
+      Caption = 'Merge Selected Here'
+      ImageIndex = 41
+      OnClick = mniTreeCodeMergeClick
+    end
+    object mniTreeCodeDelete: TMenuItem
+      Caption = 'Delete Code'
+      ImageIndex = 38
+      OnClick = mniTreeCodeDeleteClick
+    end
+    object mniTreeCodeMemo: TMenuItem
+      Caption = 'Create/Modify Code Memo'
+      ImageIndex = 8
+      OnClick = mniTreeCodeMemoClick
+    end
+    object mniTreeCodeSeparatorOne: TMenuItem
+      Caption = '-'
+    end
+    object mniTreeCodeMoveUp: TMenuItem
+      Caption = 'Move Code Up'
+      ImageIndex = 42
+      ShortCut = 16422
+      OnClick = mniTreeCodeMoveUpClick
+    end
+    object mniTreeCodeMoveDown: TMenuItem
+      Caption = 'Move Code Down'
+      ImageIndex = 43
+      ShortCut = 16424
+      OnClick = mniTreeCodeMoveDownClick
+    end
+    object mniTreeCodePromote: TMenuItem
+      Caption = 'Promote Code Level'
+      ImageIndex = 44
+      ShortCut = 16421
+      OnClick = mniTreeCodePromoteClick
+    end
+    object mniTreeCodeDemote: TMenuItem
+      Caption = 'Demote Code Level'
+      ImageIndex = 45
+      ShortCut = 16423
+      OnClick = mniTreeCodeDemoteClick
+    end
+    object mniTreeCodeSeparatorTwo: TMenuItem
+      Caption = '-'
+    end
+    object mniTreeCodeExpandAll: TMenuItem
+      Caption = 'Expand Branch/All'
+      ImageIndex = 46
+      OnClick = mniTreeCodeExpandAllClick
+    end
+    object mniTreeCodeCollapseAll: TMenuItem
+      Caption = 'Collapse Branch/All'
+      ImageIndex = 47
+      OnClick = mniTreeCodeCollapseAllClick
+    end
+  end
+  object dlgPickColor: TColorDialog
+    Title = 'Select Colour'
+    Color = clBlack
+    CustomColors.Strings = (
+      'ColorA=000000'
+      'ColorB=000080'
+      'ColorC=008000'
+      'ColorD=008080'
+      'ColorE=800000'
+      'ColorF=800080'
+      'ColorG=808000'
+      'ColorH=808080'
+      'ColorI=C0C0C0'
+      'ColorJ=0000FF'
+      'ColorK=00FF00'
+      'ColorL=00FFFF'
+      'ColorM=FF0000'
+      'ColorN=FF00FF'
+      'ColorO=FFFF00'
+      'ColorP=FFFFFF'
+      'ColorQ=C0DCC0'
+      'ColorR=F0CAA6'
+      'ColorS=F0FBFF'
+      'ColorT=A4A0A0'
+    )
+    Left = 1072
+    Top = 312
+  end
+  object pmnText: TPopupMenu
+    Images = dmShared.imlMain
+    ImagesWidth = 12
+    OnPopup = pmnTextPopup
+    Left = 592
+    Top = 408
+  end
+  object pmnListAttribute: TPopupMenu
+    Images = dmShared.imlMain
+    ImagesWidth = 12
+    OnPopup = pmnListAttributePopup
+    Left = 592
+    Top = 312
+    object mniListAttributeValueCopy: TMenuItem
+      Caption = 'Copy Value'
+      ImageIndex = 48
+      OnClick = mniListAttributeValueCopyClick
+    end
+  end
+  object conMain: TSQLite3Connection
+    Connected = False
+    LoginPrompt = False
+    KeepConnection = False
+    Transaction = trnMain
+    AlwaysUseBigint = False
+    Left = 768
+    Top = 112
+  end
+  object trnMain: TSQLTransaction
+    Active = False
+    Database = conMain
+    Left = 864
+    Top = 112
+  end
+  object qryMain: TSQLQuery
+    FieldDefs = <>
+    Database = conMain
+    Transaction = trnMain
+    Params = <>
+    Macros = <>
+    Left = 960
+    Top = 112
+  end
+  object dlgExportSystem: TSaveDialog
+    Title = 'Export Code System'
+    DefaultExt = '.json'
+    Filter = 'Coding Scheme (*.json)|*.json'
+    Left = 920
+    Top = 408
+  end
+  object pmnTreeDocument: TPopupMenu
+    Images = dmShared.imlMain
+    ImagesWidth = 12
+    OnPopup = pmnTreeDocumentPopup
+    Left = 592
+    Top = 200
+    object mniTreeDocumentRename: TMenuItem
+      Caption = 'Rename Document'
+      ImageIndex = 9
+      OnClick = mniTreeDocumentRenameClick
+    end
+    object mniTreeDocumentSeparatorOne: TMenuItem
+      Caption = '-'
+    end
+    object mniTreeDocumentAttributeAdd: TMenuItem
+      Caption = 'Add Attribute'
+      ImageIndex = 13
+      OnClick = mniTreeDocumentAttributeAddClick
+    end
+    object mniTreeDocumentAttributeEdit: TMenuItem
+      Caption = 'Edit Attribute Value'
+      ImageIndex = 13
+      OnClick = mniTreeDocumentAttributeEditClick
+    end
+    object mniTreeDocumentAttributeDelete: TMenuItem
+      Caption = 'Delete Attribute'
+      ImageIndex = 13
+      OnClick = mniTreeDocumentAttributeDeleteClick
+    end
+    object mniTreeDocumentMemo: TMenuItem
+      Caption = 'Create/Modify Document Memo'
+      ImageIndex = 8
+      OnClick = mniTreeDocumentMemoClick
+    end
+    object mniTreeDocumentSeparatorTwo: TMenuItem
+      Caption = '-'
+    end
+    object mniTreeDocumentSelectAll: TMenuItem
+      Caption = 'Select All'
+      ImageIndex = 33
+      ShortCut = 16449
+      OnClick = mniTreeDocumentSelectAllClick
+    end
+    object mniTreeDocumentDelete: TMenuItem
+      Caption = 'Delete Document'
+      ImageIndex = 38
+      OnClick = mniTreeDocumentDeleteClick
+    end
+  end
+  object dlgNewProject: TSaveDialog
+    Title = 'Create New Project'
+    DefaultExt = '.lattice'
+    Filter = 'Lattice Project Files (*.lattice)|*.lattice'
+    Left = 920
+    Top = 312
+  end
+  object dlgOpenProject: TOpenDialog
+    Title = 'Open Existing Project'
+    Filter = 'Lattice Project Files (*.lattice)|*.lattice'
+    Left = 768
+    Top = 312
+  end
+  object qryUtil: TSQLQuery
+    FieldDefs = <>
+    Database = conMain
+    Transaction = trnMain
+    Params = <>
+    Macros = <>
+    Left = 1056
+    Top = 120
+  end
+  object conImport: TSQLite3Connection
+    Connected = False
+    LoginPrompt = False
+    KeepConnection = False
+    Transaction = trnImport
+    AlwaysUseBigint = False
+    Left = 768
+    Top = 200
+  end
+  object trnImport: TSQLTransaction
+    Active = False
+    Database = conImport
+    Left = 864
+    Top = 200
+  end
+  object qryImport: TSQLQuery
+    FieldDefs = <>
+    Database = conImport
+    Transaction = trnImport
+    Params = <>
+    Macros = <>
+    Left = 960
+    Top = 200
+  end
+  object qryCheck: TSQLQuery
+    FieldDefs = <>
+    Database = conMain
+    Transaction = trnMain
+    Params = <>
+    Macros = <>
+    Left = 1056
+    Top = 200
+  end
+  object qryDocumentData: TSQLQuery
+    FieldDefs = <>
+    Database = conMain
+    Transaction = trnMain
+    Params = <>
+    Macros = <>
+    Left = 1160
+    Top = 120
+  end
+  object tmrDocumentSearch: TTimer
+    Enabled = False
+    Interval = 300
+    OnTimer = tmrDocumentSearchTimer
+    Left = 848
+    Top = 512
+  end
+  object tmrCodeSearch: TTimer
+    Enabled = False
+    Interval = 300
+    OnTimer = tmrCodeSearchTimer
+    Left = 1016
+    Top = 512
+  end
+  object dlgSnapshotSave: TSaveDialog
+    Title = 'Save Project Snapshot'
+    DefaultExt = '.lattice'
+    Filter = 'Lattice Project Files (*.lattice)|*.lattice'
+    Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
+    Left = 1232
+    Top = 408
+  end
+  object dlgExportCodebook: TSaveDialog
+    Title = 'Export Codebook'
+    DefaultExt = '.xlsx'
+    Filter = 'Excel Spreadsheet (*.xlsx)|*.xlsx|OpenDocument Spreadsheet (*.ods)|*.ods|CSV File (*.csv)|*.csv'
+    Left = 1072
+    Top = 408
+  end
+  object dlgExportDirectory: TSelectDirectoryDialog
+    Title = 'Select Export Directory'
+    Left = 768
+    Top = 408
+  end
+end

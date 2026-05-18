@@ -1,0 +1,443 @@
+object frmDialogFilter: TfrmDialogFilter
+  Left = 500
+  Height = 600
+  Top = 150
+  Width = 720
+  AutoSize = True
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Filter Documents'
+  ClientHeight = 600
+  ClientWidth = 720
+  Constraints.MinWidth = 600
+  DesignTimePPI = 144
+  Font.CharSet = ANSI_CHARSET
+  Font.Name = 'Arial'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
+  Position = poMainFormCenter
+  LCLVersion = '4.6.0.0'
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  object pnlFeedback: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 0
+    Height = 100
+    Top = 0
+    Width = 720
+    Anchors = [akTop, akLeft, akRight]
+    BevelOuter = bvNone
+    ClientHeight = 100
+    ClientWidth = 720
+    Color = 15921906
+    ParentBackground = False
+    ParentColor = False
+    TabOrder = 0
+    object lblFilterFeedback: TLabel
+      AnchorSideLeft.Control = pnlFeedback
+      AnchorSideTop.Control = pnlFeedback
+      AnchorSideRight.Control = pnlFeedback
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlFeedback
+      AnchorSideBottom.Side = asrBottom
+      Left = 20
+      Height = 60
+      Top = 20
+      Width = 680
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BorderSpacing.Around = 20
+      Caption = 'Loading status...'
+      Font.CharSet = ANSI_CHARSET
+      Font.Color = 3881787
+      Font.Height = -16
+      Font.Name = 'Arial'
+      Font.Pitch = fpVariable
+      Font.Quality = fqDraft
+      ParentColor = False
+      ParentFont = False
+      WordWrap = True
+    end
+  end
+  object lblTitlePattern: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = pnlFeedback
+    AnchorSideTop.Side = asrBottom
+    Left = 20
+    Height = 21
+    Top = 120
+    Width = 183
+    BorderSpacing.Left = 20
+    BorderSpacing.Top = 20
+    Caption = 'Document Title Pattern'
+    ParentColor = False
+  end
+  object edtTitlePattern: TEdit
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = lblTitlePattern
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 20
+    Height = 29
+    Top = 149
+    Width = 680
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = False
+    BorderSpacing.Left = 20
+    BorderSpacing.Top = 8
+    BorderSpacing.Right = 20
+    TabOrder = 1
+    TextHint = 'e.g. Interview* (Use * for any text, ? for single character)'
+    OnChange = InputChange
+  end
+  object lblBodyText: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = edtTitlePattern
+    AnchorSideTop.Side = asrBottom
+    Left = 20
+    Height = 21
+    Top = 198
+    Width = 324
+    BorderSpacing.Left = 20
+    BorderSpacing.Top = 20
+    Caption = 'Document Content Match (FTS5 Syntax)'
+    ParentColor = False
+  end
+  object edtBodyText: TEdit
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = lblBodyText
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 20
+    Height = 29
+    Top = 227
+    Width = 680
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = False
+    BorderSpacing.Left = 20
+    BorderSpacing.Top = 8
+    BorderSpacing.Right = 20
+    TabOrder = 2
+    TextHint = 'e.g. "climate" AND "policy"'
+    OnChange = InputChange
+  end
+  object lblAttribute: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = edtBodyText
+    AnchorSideTop.Side = asrBottom
+    Left = 20
+    Height = 21
+    Top = 276
+    Width = 134
+    BorderSpacing.Left = 20
+    BorderSpacing.Top = 20
+    Caption = 'Filter by Attribute'
+    ParentColor = False
+  end
+  object cmbAttribute: TComboBox
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = lblAttribute
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 20
+    Height = 29
+    Top = 305
+    Width = 680
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = False
+    BorderSpacing.Left = 20
+    BorderSpacing.Top = 8
+    BorderSpacing.Right = 20
+    ItemHeight = 21
+    Style = csDropDownList
+    TabOrder = 3
+    OnChange = cmbAttributeChange
+  end
+  object pnlOpVal: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = cmbAttribute
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 20
+    Height = 173
+    Top = 354
+    Width = 680
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = True
+    BorderSpacing.Left = 20
+    BorderSpacing.Top = 20
+    BorderSpacing.Right = 20
+    BevelOuter = bvNone
+    ClientHeight = 173
+    ClientWidth = 680
+    TabOrder = 4
+    Visible = False
+    object lblOperator: TLabel
+      AnchorSideLeft.Control = pnlOpVal
+      AnchorSideTop.Control = pnlOpVal
+      Left = 0
+      Height = 21
+      Top = 0
+      Width = 71
+      Caption = 'Operator'
+      ParentColor = False
+    end
+    object cmbOperator: TComboBox
+      AnchorSideLeft.Control = pnlOpVal
+      AnchorSideTop.Control = lblOperator
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = pnlOpVal
+      AnchorSideRight.Side = asrBottom
+      Left = 0
+      Height = 29
+      Top = 29
+      Width = 680
+      Anchors = [akTop, akLeft, akRight]
+      AutoSize = False
+      BorderSpacing.Top = 8
+      ItemHeight = 21
+      Items.Strings = (
+        'Equals'
+        'Does Not Equal'
+        'Contains'
+        'Does Not Contain'
+        'Starts With'
+        'Ends With'
+        'Greater Than'
+        'Less Than'
+        'Between'
+      )
+      Style = csDropDownList
+      TabOrder = 0
+      OnChange = InputChange
+    end
+    object lblAttributeValue: TLabel
+      AnchorSideLeft.Control = pnlOpVal
+      AnchorSideTop.Control = cmbOperator
+      AnchorSideTop.Side = asrBottom
+      Left = 0
+      Height = 21
+      Top = 78
+      Width = 115
+      BorderSpacing.Top = 20
+      Caption = 'Attribute Value'
+      ParentColor = False
+    end
+    object pnlAttributeInput: TPanel
+      AnchorSideLeft.Control = pnlOpVal
+      AnchorSideTop.Control = lblAttributeValue
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = pnlOpVal
+      AnchorSideRight.Side = asrBottom
+      Left = 0
+      Height = 66
+      Top = 107
+      Width = 680
+      Anchors = [akTop, akLeft, akRight]
+      AutoSize = True
+      BorderSpacing.Top = 8
+      BevelOuter = bvNone
+      ClientHeight = 66
+      ClientWidth = 680
+      TabOrder = 1
+      object edtAttributeValueText: TEdit
+        AnchorSideLeft.Control = pnlAttributeInput
+        AnchorSideTop.Control = pnlAttributeInput
+        AnchorSideRight.Control = pnlAttributeInput
+        AnchorSideRight.Side = asrBottom
+        Left = 0
+        Height = 29
+        Top = 0
+        Width = 680
+        Anchors = [akTop, akLeft, akRight]
+        AutoSize = False
+        TabOrder = 0
+        OnChange = InputChange
+      end
+      object pnlValNumeric: TPanel
+        AnchorSideLeft.Control = pnlAttributeInput
+        AnchorSideTop.Control = pnlAttributeInput
+        AnchorSideRight.Control = pnlAttributeInput
+        AnchorSideRight.Side = asrBottom
+        Left = 0
+        Height = 66
+        Top = 0
+        Width = 680
+        Anchors = [akTop, akLeft, akRight]
+        AutoSize = True
+        BevelOuter = bvNone
+        ClientHeight = 66
+        ClientWidth = 680
+        TabOrder = 1
+        Visible = False
+        object fseAttributeValueNum: TFloatSpinEdit
+          AnchorSideLeft.Control = pnlValNumeric
+          AnchorSideTop.Control = pnlValNumeric
+          AnchorSideRight.Control = pnlValNumeric
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 29
+          Top = 0
+          Width = 680
+          Anchors = [akTop, akLeft, akRight]
+          AutoSize = False
+          TabOrder = 0
+          OnChange = InputChange
+        end
+        object fseAttributeValueNumEnd: TFloatSpinEdit
+          AnchorSideLeft.Control = pnlValNumeric
+          AnchorSideTop.Control = fseAttributeValueNum
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = pnlValNumeric
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 29
+          Top = 37
+          Width = 680
+          Anchors = [akTop, akLeft, akRight]
+          AutoSize = False
+          BorderSpacing.Top = 8
+          TabOrder = 1
+          Visible = False
+        end
+      end
+      object pnlValDate: TPanel
+        AnchorSideLeft.Control = pnlAttributeInput
+        AnchorSideTop.Control = pnlAttributeInput
+        AnchorSideRight.Control = pnlAttributeInput
+        AnchorSideRight.Side = asrBottom
+        Left = 0
+        Height = 66
+        Top = 0
+        Width = 680
+        Anchors = [akTop, akLeft, akRight]
+        AutoSize = True
+        BevelOuter = bvNone
+        ClientHeight = 66
+        ClientWidth = 680
+        TabOrder = 2
+        Visible = False
+        object deValDate: TDateEdit
+          AnchorSideLeft.Control = pnlValDate
+          AnchorSideTop.Control = pnlValDate
+          AnchorSideRight.Control = pnlValDate
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 29
+          Top = 0
+          Width = 680
+          CalendarDisplaySettings = [dsShowHeadings, dsShowDayNames]
+          DateOrder = doNone
+          ButtonWidth = 35
+          Anchors = [akTop, akLeft, akRight]
+          NumGlyphs = 1
+          MaxLength = 0
+          TabOrder = 0
+          OnChange = InputChange
+        end
+        object deValDateEnd: TDateEdit
+          AnchorSideLeft.Control = pnlValDate
+          AnchorSideTop.Control = deValDate
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = pnlValDate
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 29
+          Top = 37
+          Width = 680
+          CalendarDisplaySettings = [dsShowHeadings, dsShowDayNames]
+          DateOrder = doNone
+          ButtonWidth = 35
+          Anchors = [akTop, akLeft, akRight]
+          BorderSpacing.Top = 8
+          NumGlyphs = 1
+          MaxLength = 0
+          TabOrder = 1
+          Visible = False
+        end
+      end
+      object cmbAttributeValueCat: TComboBox
+        AnchorSideLeft.Control = pnlAttributeInput
+        AnchorSideTop.Control = pnlAttributeInput
+        AnchorSideRight.Control = pnlAttributeInput
+        AnchorSideRight.Side = asrBottom
+        Left = 0
+        Height = 29
+        Top = 0
+        Width = 680
+        Anchors = [akTop, akLeft, akRight]
+        AutoSize = False
+        ItemHeight = 21
+        Style = csDropDownList
+        TabOrder = 3
+        Visible = False
+        OnChange = InputChange
+      end
+    end
+  end
+  object pnlActions: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = pnlOpVal
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 20
+    Height = 29
+    Top = 547
+    Width = 680
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Around = 20
+    BevelOuter = bvNone
+    ClientHeight = 29
+    ClientWidth = 680
+    TabOrder = 5
+    object btnApply: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = pnlActions
+      AnchorSideRight.Side = asrBottom
+      Left = 580
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight]
+      Caption = 'Apply'
+      TabOrder = 0
+      OnClick = btnApplyClick
+    end
+    object btnClear: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = btnApply
+      Left = 470
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight]
+      BorderSpacing.Right = 10
+      Caption = 'Clear'
+      TabOrder = 1
+      OnClick = btnClearClick
+    end
+    object btnCancel: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = btnClear
+      Left = 360
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight]
+      BorderSpacing.Right = 10
+      Caption = 'Cancel'
+      ModalResult = 2
+      TabOrder = 2
+    end
+  end
+end

@@ -1,0 +1,522 @@
+object frmDialogAbout: TfrmDialogAbout
+  Left = 500
+  Height = 720
+  Top = 250
+  Width = 1080
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'About Lattice'
+  ClientHeight = 720
+  ClientWidth = 1080
+  DesignTimePPI = 144
+  Font.CharSet = ANSI_CHARSET
+  Font.Name = 'Arial'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
+  Position = poMainFormCenter
+  LCLVersion = '4.6.0.0'
+  OnCreate = FormCreate
+  object pcAbout: TPageControl
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = btnClose
+    Left = 20
+    Height = 631
+    Top = 20
+    Width = 1040
+    TabStop = False
+    ActivePage = tsInfo
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Around = 20
+    TabIndex = 0
+    TabOrder = 0
+    object tsInfo: TTabSheet
+      Caption = 'About'
+      ClientHeight = 597
+      ClientWidth = 1032
+      Font.CharSet = ANSI_CHARSET
+      Font.Height = -18
+      Font.Name = 'Arial'
+      Font.Pitch = fpVariable
+      Font.Quality = fqDraft
+      ParentFont = False
+      object pnlInfoBackground: TPanel
+        Left = 0
+        Height = 597
+        Top = 0
+        Width = 1032
+        Align = alClient
+        BevelOuter = bvNone
+        ClientHeight = 597
+        ClientWidth = 1032
+        Color = clWindow
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        object pnlIdentity: TPanel
+          AnchorSideLeft.Control = pnlInfoBackground
+          AnchorSideLeft.Side = asrCenter
+          AnchorSideTop.Control = pnlInfoBackground
+          Left = 241
+          Height = 144
+          Top = 80
+          Width = 550
+          AutoSize = True
+          BorderSpacing.Left = 20
+          BorderSpacing.Top = 80
+          BorderSpacing.Right = 20
+          BorderSpacing.Bottom = 20
+          BevelOuter = bvNone
+          ClientHeight = 144
+          ClientWidth = 550
+          Color = clWindow
+          ParentBackground = False
+          ParentColor = False
+          TabOrder = 0
+          object imgLogo: TPaintBox
+            AnchorSideLeft.Control = pnlIdentity
+            AnchorSideTop.Control = pnlIdentity
+            AnchorSideTop.Side = asrCenter
+            Left = 0
+            Height = 144
+            Top = 0
+            Width = 170
+            BorderSpacing.Right = 20
+            OnPaint = imgLogoPaint
+          end
+          object pnlNameVersionTag: TPanel
+            AnchorSideLeft.Control = imgLogo
+            AnchorSideLeft.Side = asrBottom
+            AnchorSideTop.Control = pnlIdentity
+            AnchorSideTop.Side = asrCenter
+            Left = 190
+            Height = 142
+            Top = 1
+            Width = 360
+            AutoSize = True
+            BorderSpacing.Left = 20
+            BevelOuter = bvNone
+            ClientHeight = 142
+            ClientWidth = 360
+            Color = clWindow
+            ParentBackground = False
+            ParentColor = False
+            TabOrder = 0
+            object lblAppName: TLabel
+              AnchorSideLeft.Control = pnlNameVersionTag
+              AnchorSideTop.Control = pnlNameVersionTag
+              Left = 0
+              Height = 65
+              Top = 0
+              Width = 181
+              Caption = 'Lattice'
+              Font.CharSet = ANSI_CHARSET
+              Font.Height = -56
+              Font.Name = 'Arial'
+              Font.Pitch = fpVariable
+              Font.Quality = fqDraft
+              Font.Style = [fsBold]
+              ParentColor = False
+              ParentFont = False
+            end
+            object lblVersion: TLabel
+              AnchorSideLeft.Control = lblAppName
+              AnchorSideTop.Control = lblAppName
+              AnchorSideTop.Side = asrBottom
+              AnchorSideBottom.Side = asrCenter
+              Left = 0
+              Height = 21
+              Top = 70
+              Width = 59
+              BorderSpacing.Top = 5
+              BorderSpacing.Bottom = 20
+              Caption = 'Version'
+              Font.CharSet = ANSI_CHARSET
+              Font.Color = clGray
+              Font.Name = 'Arial'
+              Font.Pitch = fpVariable
+              Font.Quality = fqDraft
+              ParentColor = False
+              ParentFont = False
+            end
+            object lblTagline: TLabel
+              AnchorSideLeft.Control = lblAppName
+              AnchorSideTop.Control = lblVersion
+              AnchorSideTop.Side = asrBottom
+              AnchorSideBottom.Control = pnlNameVersionTag
+              AnchorSideBottom.Side = asrBottom
+              Left = 0
+              Height = 21
+              Top = 111
+              Width = 360
+              BorderSpacing.Top = 20
+              BorderSpacing.Bottom = 10
+              Caption = 'Structure Meaning. Foreground Mechanisms.'
+              Font.CharSet = ANSI_CHARSET
+              Font.Name = 'Arial'
+              Font.Pitch = fpVariable
+              Font.Quality = fqDraft
+              ParentColor = False
+              ParentFont = False
+            end
+          end
+        end
+        object btnWebsite: TSpeedButton
+          AnchorSideLeft.Control = pnlInfoBackground
+          AnchorSideLeft.Side = asrCenter
+          AnchorSideBottom.Control = btnRepository
+          Cursor = crHandPoint
+          Left = 414
+          Height = 31
+          Top = 414
+          Width = 204
+          Anchors = [akLeft, akBottom]
+          AutoSize = True
+          BorderSpacing.Left = 20
+          BorderSpacing.Top = 5
+          BorderSpacing.Right = 20
+          BorderSpacing.Bottom = 5
+          Caption = 'https://lattice.jaisal.in'
+          Flat = True
+          Images = ilDialogAboutIcon
+          ImageIndex = 1
+          ImageWidth = 18
+          Spacing = 10
+          OnClick = LinkClick
+        end
+        object btnRepository: TSpeedButton
+          AnchorSideLeft.Control = pnlInfoBackground
+          AnchorSideLeft.Side = asrCenter
+          AnchorSideBottom.Control = btnSponsor
+          Cursor = crHandPoint
+          Left = 365
+          Height = 31
+          Top = 450
+          Width = 302
+          Anchors = [akLeft, akBottom]
+          AutoSize = True
+          BorderSpacing.Left = 20
+          BorderSpacing.Top = 5
+          BorderSpacing.Right = 20
+          BorderSpacing.Bottom = 5
+          Caption = 'https://github.com/ekjaisal/Lattice'
+          Flat = True
+          Images = ilDialogAboutIcon
+          ImageIndex = 2
+          ImageWidth = 18
+          Spacing = 10
+          OnClick = LinkClick
+        end
+        object btnSponsor: TSpeedButton
+          AnchorSideLeft.Control = pnlInfoBackground
+          AnchorSideLeft.Side = asrCenter
+          AnchorSideBottom.Control = pnlInfoBackground
+          AnchorSideBottom.Side = asrBottom
+          Cursor = crHandPoint
+          Left = 406
+          Height = 31
+          Top = 486
+          Width = 220
+          Anchors = [akLeft, akBottom]
+          AutoSize = True
+          BorderSpacing.Left = 20
+          BorderSpacing.Top = 5
+          BorderSpacing.Right = 20
+          BorderSpacing.Bottom = 80
+          Caption = 'https://sponsor.jaisal.in'
+          Flat = True
+          Images = ilDialogAboutIcon
+          ImageIndex = 3
+          ImageWidth = 18
+          Spacing = 10
+          OnClick = LinkClick
+        end
+        object btnCopyright: TSpeedButton
+          AnchorSideLeft.Control = pnlInfoBackground
+          AnchorSideLeft.Side = asrCenter
+          AnchorSideBottom.Control = btnWebsite
+          Cursor = crHandPoint
+          Left = 452
+          Height = 31
+          Top = 378
+          Width = 128
+          Anchors = [akLeft, akBottom]
+          AutoSize = True
+          BorderSpacing.Left = 20
+          BorderSpacing.Top = 20
+          BorderSpacing.Right = 20
+          BorderSpacing.Bottom = 5
+          Caption = 'Jaisal E. K.'
+          Flat = True
+          Images = ilDialogAboutIcon
+          ImageIndex = 0
+          ImageWidth = 18
+          Spacing = 10
+          OnClick = LinkClick
+        end
+      end
+    end
+    object tsUserGuide: TTabSheet
+      Caption = 'User Guide'
+      ClientHeight = 597
+      ClientWidth = 1032
+      object pnlGuideBackground: TPanel
+        Left = 0
+        Height = 597
+        Top = 0
+        Width = 1032
+        Align = alClient
+        BevelOuter = bvNone
+        ClientHeight = 597
+        ClientWidth = 1032
+        Color = clWindow
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        object memUserGuide: TMemo
+          AnchorSideLeft.Control = pnlGuideBackground
+          AnchorSideTop.Control = pnlGuideBackground
+          AnchorSideRight.Control = pnlGuideBackground
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = pnlGuideBackground
+          AnchorSideBottom.Side = asrBottom
+          Left = 20
+          Height = 557
+          Top = 20
+          Width = 992
+          Anchors = [akTop, akLeft, akRight, akBottom]
+          BorderSpacing.Around = 20
+          BorderStyle = bsNone
+          Color = clWindow
+          Font.CharSet = ANSI_CHARSET
+          Font.Height = -18
+          Font.Name = 'Consolas'
+          Font.Pitch = fpFixed
+          Font.Quality = fqDraft
+          ParentFont = False
+          PopupMenu = pmnDialogAboutMemo
+          ReadOnly = True
+          ScrollBars = ssAutoVertical
+          TabOrder = 0
+          OnClick = memCaretHide
+          OnEnter = memCaretHide
+        end
+      end
+    end
+    object tsLicense: TTabSheet
+      Caption = 'License'
+      ClientHeight = 597
+      ClientWidth = 1032
+      object pnlLicenseBackground: TPanel
+        Left = 0
+        Height = 597
+        Top = 0
+        Width = 1032
+        Align = alClient
+        BevelOuter = bvNone
+        ClientHeight = 597
+        ClientWidth = 1032
+        Color = clWindow
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        object memLicense: TMemo
+          AnchorSideLeft.Control = pnlLicenseBackground
+          AnchorSideTop.Control = pnlLicenseBackground
+          AnchorSideRight.Control = pnlLicenseBackground
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = pnlLicenseBackground
+          AnchorSideBottom.Side = asrBottom
+          Left = 20
+          Height = 557
+          Top = 20
+          Width = 992
+          Anchors = [akTop, akLeft, akRight, akBottom]
+          BorderSpacing.Around = 20
+          BorderStyle = bsNone
+          Color = clWindow
+          Font.CharSet = ANSI_CHARSET
+          Font.Height = -18
+          Font.Name = 'Consolas'
+          Font.Pitch = fpFixed
+          Font.Quality = fqDraft
+          ParentFont = False
+          PopupMenu = pmnDialogAboutMemo
+          ReadOnly = True
+          ScrollBars = ssAutoVertical
+          TabOrder = 0
+          WordWrap = False
+          OnClick = memCaretHide
+          OnEnter = memCaretHide
+        end
+      end
+    end
+    object tsThirdParty: TTabSheet
+      Caption = 'Third-Party Notices'
+      ClientHeight = 597
+      ClientWidth = 1032
+      object pnlThirdPartyBackground: TPanel
+        Left = 0
+        Height = 597
+        Top = 0
+        Width = 1032
+        Align = alClient
+        BevelOuter = bvNone
+        ClientHeight = 597
+        ClientWidth = 1032
+        Color = clWindow
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        object memThirdParty: TMemo
+          AnchorSideLeft.Control = pnlThirdPartyBackground
+          AnchorSideTop.Control = pnlThirdPartyBackground
+          AnchorSideRight.Control = pnlThirdPartyBackground
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = pnlThirdPartyBackground
+          AnchorSideBottom.Side = asrBottom
+          Left = 20
+          Height = 557
+          Top = 20
+          Width = 992
+          Anchors = [akTop, akLeft, akRight, akBottom]
+          BorderSpacing.Around = 20
+          BorderStyle = bsNone
+          Color = clWindow
+          Font.CharSet = ANSI_CHARSET
+          Font.Height = -18
+          Font.Name = 'Consolas'
+          Font.Pitch = fpFixed
+          Font.Quality = fqDraft
+          ParentFont = False
+          PopupMenu = pmnDialogAboutMemo
+          ReadOnly = True
+          ScrollBars = ssAutoVertical
+          TabOrder = 0
+          WordWrap = False
+          OnClick = memCaretHide
+          OnEnter = memCaretHide
+        end
+      end
+    end
+  end
+  object btnClose: TButton
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 960
+    Height = 29
+    Top = 671
+    Width = 100
+    Anchors = [akRight, akBottom]
+    BorderSpacing.Right = 20
+    BorderSpacing.Bottom = 20
+    Caption = 'Close'
+    Font.CharSet = ANSI_CHARSET
+    Font.Height = -18
+    Font.Name = 'Arial'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    ParentFont = False
+    TabOrder = 1
+    OnClick = btnCloseClick
+  end
+  object ilDialogAboutIcon: TImageList
+    Height = 24
+    Width = 24
+    Left = 344
+    Top = 344
+    Bitmap = {
+      4C7A060000001800000018000000A50800000000000078DAED5A796C5445189F
+      A117D052ECD65E402F617BA4E5B08BB4D2CA169035A688505482015A0D6D85A2
+      69AC16BC8889013CFE2031461384D22A04FFD318144441C4489153215C11148D
+      B156B044435B2CB4F5F7ED9B07D3B7F376DFB65D40B3934CD87E6FE6F7BEF9EE
+      6F1E8CFDBF47241B392A9DDD5D3D96CFDC88B93D579B1B415B3A94C58EEC2B2E
+      F62601EFFD225ED95534A8B207FFFE51C42BBED566E57941EBC2BB1A22596C82
+      3FD8F12C633AF65EC0ECB0B3196B6C2C35C3B806B4CC4C56F21AD65C2EC4BBB1
+      678A45ECFBC05B67012F3B14CD92ECBED6DB5872663E2F3B4ABC606FB1B7B5C3
+      58D228ACBB58C0CB0F0D65B668EBB2B4C5809F6338C779FC36951564F901F02F
+      0D674929C667712C635232733C9DC21CCF81CFA25016DEEB399D15E7BE0C9D6D
+      506147B3C4346077DB59F16A036FC326F0B9DBDCFA94E6443E7F1B6CE036796D
+      0E9FF92630AEA8CE007BABA17D312C255DA603FB13922D78AF028F31E063B858
+      DB99CD5D0D069D8F238C6496B758219B2D90DF5983AE0BB4F58E2A85FD4CB5B1
+      B469463AE90058EB14F8BB1C7CFE57320DB875840FFB8EB2AAEBC9BC623F74B0
+      CD48076DC764BE78AF4C4B6179B5840F99445BC7AF6C02D6670AFE1B20E75F55
+      F2496705D56AF9A43A8D74603403BFDE48BF03F184B08CBE0AFD6E27FDC22E2B
+      2258D410E858D66FA3E19DD98401AC2ACF38164BBED56567CED77AD36D36D8E2
+      0EA37DE2BD1FC10E7BD927DEB7161857819564E25F9BF0BC0DFE9526D343E04B
+      BA7F61D690DC3CFDC7ED5F1D1467CD7483352381DF8A787218BEE3477C88B55D
+      8F0FDE63297873818F7F447C1BE33BBEA566839F6356E29B223EB7431FABE047
+      76056E562E2B7983E233660BF6DCE36F7EC9E50F6D92F24B0BCEB4AF10FEE37E
+      B746BB0A9DD543CF71FDC88FC9B0C765E41F941F458EAC076D09EC64040B8E60
+      FD63A5FE51CDFED73F9DD8FF7616733D45B9793C2F6D405C6BA4DFA03D8967EF
+      50BE15F58FD3CFFAE704FC3617B12D14BF4F62FE10CEA206538CC6EF33F41CCF
+      42B0661C7E9FA2DAC14AFD035E2E229E1CD16B03C4CB05240BC4FF59D7F366DE
+      1C91971FF58C6FE6F50FCE4EF54F871CD710FBBF265EE57583581803EDF44429
+      5F634F16C522C86CBD9A77ADFEC1BE3FA1D7DDFA241D82F69B4CA3891AAF999E
+      C934F0DFEAABFEC119F6E8EBC1DF71413B60C4279AA8B38E4BB43D426E66F54F
+      73EFFAC1B154AB1F929214B92841D4524B0CF5CFEFAAFA07EFDF95CFCB9B0CF5
+      CF8B8481F38679FA4742A8D0FBF3BDEB878A7D66F50FE4DC64E05FC70F55D4CC
+      4A7CCA1166F58F423ED5423E890AF9240AFC278CF251D53F69AC60A942BF27FA
+      A25F6055A9E298B0C5564FFB2C6FB6669F15AD16EA9F0EB92F027F7B283EF4AE
+      87DCFE754AF62FD44C19E45F56EA1FECFD4EAFCD50E396D199115BEE97625489
+      B0F385A2C6A3FEE828F8F7A7FE3982F7A5238685E3F78F229E45508C23DE29C6
+      E1EF30AC198D78F5BDA87FACC6D0E9855A7C6EB373E7AB596C462DC58E3BF9EC
+      75E3F99CF5F43B9BB96AF18CEA9F76F0DD62B53F35AD7FD4F945AF7FE283F54F
+      70DC4A633C9FBB05FDD6FAC0D474B678CAB376DEFBAE62A0066C9FEA2DEA65B3
+      02813F89971FA0D9D7FD147F5097394DFA39AA737AE80CD7D7DBA762CF342BD8
+      E8E7EADCF18BBBEA95CFB97315C91EB1215EEAAB376A7747CE3A335C8AC354BF
+      6AF9B0B49162B1620D9FCC2B7F76F0F95B0DF408DA437B0983B00CB132CEC117
+      7D237858C1589899DC8A096304CB9DE7F9348CCEBE8230088B30898A7A381EB9
+      E21CDDBB61DF83DE6497C3676EC0BABFB067B0D91AC2202CC2C4BA38193F89E5
+      CE36DB4798849D6B727FA70FC290F1ADCA876422F2B0498DAF968F55FD924E49
+      B7A46385DEBDEAD7C43E1B3DE38173956A0FD6BEE7CB3E0D76328D7CCC6A3C88
+      C35AABFE158878E0E37EC7231E0CE4A018ACC583BED720DE0674B70136B12998
+      518363007D224FD4BB3BECACF815C4B2DB070A9BE200F903F539E88F9AA846A7
+      584CF7D403818F5EE5207ABB53E03946BCCF41F73938CB56F44BCFC431FBB8FE
+      E013BF59DCB5BA573F85DE48EA39E81BD1F27EE09F855C76521E402F16813EAA
+      259F971F864E46A317B3210F50CFD3D3D77320CE558ABE7A2774FCAE96EF731E
+      90EFD2455FDFE733E01D15745F46B212DF4F1E936C6BB4869F57DD5F5D6B7D76
+      F97EEA35F1CEC793595E29F5CE78EFDFC35842A2F7BDE121C8E9B371CE9529DC
+      F1B23C6127B5D1E21B07EAB874601ED4F58B5EB5D9572E832D4741BEBB4DFB52
+      CD4E2EA1469D20F5FE999879D079B80FBE23E94E8F7C08E75D14C2C255F70874
+      177201FADD2CCB0AF46CCC7C3ABB4E8F65A91990C14BFAD927F0B97B091B672C
+      F5263BAC39033E0E43EEB5D8F3E1B56FDA98F97C5113CE3144BB6F2A3F673C3B
+      E45E69A8DD12E09F9F4A7733A7E5F5D0EF4FA06F865E96E8F6AB7FE374DB12F8
+      16772CEEFA95FE35E0C7CBF8985FD0B72EF0F130E431C270E775AFB0FF6556F1
+      7DDB697828F89D371172A1FD745F049E86F7077F28B3C5A2969D8358B41678BF
+      68B8E527D3D99465C08E94E2490F6A9006C2C4796B84FC6BE86FE304FD916C3E
+      EBAD02ED7B57B7B0D336D4A61FC7B31C97AA36850D7CE9D5CE3DED9EF03E1FC3
+      9C2F208615C24EC2BC9D3382454640475354FC1A27D6DDE50B2F3882E3460DF8
+      53D9353FB238E9DED52A3EC50D3D7E5899EEFB70ACF717FFBFB29EE4AD3AAFA9
+      4C90FB91DF53ADE2FBAB4B9147565AC6977281A55AD1B03E881FC4F7175F919F
+      BB07129F7C50F639F8E8C240C9E756586F3CAFB7E92F3E72C3593F6BAD6E6FF2
+      0E8EE018C8319695BC2EFD7F34B2BD05A287A66FDFED925DB6833646E4EC8552
+      AFD195CD5C6BBCE4DFAE6BFE25E56EF42583F1779DD4BF3F4B34F1EE34BDC717
+      FF1FA073A0FCDDDFFA84CE29D7037EE363AFB7F84CB294EB197F07C94AD7D9CD
+      186413AAEF5E7EF4D911BA5D99C89FFE9F6D5D3FE4BF9C6CF7A6D94FE0ED33A0
+      F209B47E6F403F1750FF0A747CB801F673C52C3E274BF1996CCC4B7CBE62869F
+      ABE5976E457EB11BF24B9B597EC962AED52C382C8F7F01421673D3
+    }
+  end
+  object pmnDialogAboutMemo: TPopupMenu
+    Images = ilDialogAboutIcon
+    ImagesWidth = 18
+    OnPopup = pmnDialogAboutMemoPopup
+    Left = 544
+    Top = 344
+    object mniDialogAboutMemoCopy: TMenuItem
+      Caption = 'Copy'
+      ImageIndex = 4
+      OnClick = mniDialogAboutMemoCopyClick
+    end
+    object mniDialogAboutMemoSelectAll: TMenuItem
+      Caption = 'Select All'
+      ImageIndex = 5
+      OnClick = mniDialogAboutMemoSelectAllClick
+    end
+  end
+end

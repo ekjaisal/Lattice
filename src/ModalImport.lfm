@@ -1,0 +1,427 @@
+object frmModalImport: TfrmModalImport
+  Left = 450
+  Height = 720
+  Top = 200
+  Width = 1080
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Import Manager'
+  ClientHeight = 720
+  ClientWidth = 1080
+  DesignTimePPI = 144
+  Font.CharSet = ANSI_CHARSET
+  Font.Height = -18
+  Font.Name = 'Arial'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
+  Position = poMainFormCenter
+  LCLVersion = '4.6.0.0'
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  object pnlActions: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 0
+    Height = 29
+    Top = 671
+    Width = 1080
+    Anchors = [akLeft, akRight, akBottom]
+    BorderSpacing.Bottom = 20
+    BevelOuter = bvNone
+    ClientHeight = 29
+    ClientWidth = 1080
+    TabOrder = 0
+    object btnImport: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = pnlActions
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 960
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 20
+      Caption = 'Import'
+      Default = True
+      TabOrder = 0
+      OnClick = btnImportClick
+    end
+    object btnCancel: TButton
+      AnchorSideTop.Control = pnlActions
+      AnchorSideRight.Control = btnImport
+      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Side = asrBottom
+      Left = 850
+      Height = 29
+      Top = 0
+      Width = 100
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Cancel'
+      ModalResult = 2
+      TabOrder = 1
+    end
+  end
+  object pnlMap: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = pnlActions
+    Left = 20
+    Height = 631
+    Top = 20
+    Width = 1040
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Around = 20
+    BevelOuter = bvNone
+    ClientHeight = 631
+    ClientWidth = 1040
+    TabOrder = 1
+    object pnlRight: TPanel
+      AnchorSideLeft.Control = splSplitter
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = pnlMap
+      AnchorSideRight.Control = pnlMap
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = pnlMap
+      AnchorSideBottom.Side = asrBottom
+      Left = 604
+      Height = 631
+      Top = 0
+      Width = 436
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BevelOuter = bvNone
+      ClientHeight = 631
+      ClientWidth = 436
+      TabOrder = 0
+      object lblInstructions: TLabel
+        AnchorSideLeft.Control = pnlRight
+        AnchorSideTop.Control = pnlRight
+        AnchorSideRight.Control = pnlRight
+        AnchorSideRight.Side = asrBottom
+        Left = 20
+        Height = 42
+        Top = 20
+        Width = 416
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Left = 20
+        BorderSpacing.Top = 20
+        Caption = 'Map the selected source column to a target field in the database, then click Apply Mapping.'
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -18
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        ParentFont = False
+        WordWrap = True
+      end
+      object lblTargetType: TLabel
+        AnchorSideLeft.Control = pnlRight
+        AnchorSideTop.Control = lblInstructions
+        AnchorSideTop.Side = asrBottom
+        Left = 20
+        Height = 21
+        Top = 82
+        Width = 103
+        BorderSpacing.Left = 20
+        BorderSpacing.Top = 20
+        Caption = 'Target Field'
+        Font.CharSet = ANSI_CHARSET
+        Font.Height = -18
+        Font.Name = 'Arial'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        Font.Style = [fsBold]
+        ParentFont = False
+      end
+      object cmbTargetType: TComboBox
+        AnchorSideLeft.Control = pnlRight
+        AnchorSideTop.Control = lblTargetType
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = pnlRight
+        AnchorSideRight.Side = asrBottom
+        Left = 20
+        Height = 29
+        Top = 109
+        Width = 416
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Left = 20
+        BorderSpacing.Top = 6
+        BorderSpacing.Bottom = 20
+        ItemHeight = 21
+        Items.Strings = (
+          'Skip'
+          'Document Name'
+          'Document Content'
+          'Attribute'
+        )
+        Style = csDropDownList
+        TabOrder = 0
+        OnChange = cmbTargetTypeChange
+      end
+      object pnlAttributeSettings: TPanel
+        AnchorSideLeft.Control = pnlRight
+        AnchorSideTop.Control = cmbTargetType
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = pnlRight
+        AnchorSideRight.Side = asrBottom
+        Left = 20
+        Height = 208
+        Top = 158
+        Width = 416
+        Anchors = [akTop, akLeft, akRight]
+        AutoSize = True
+        BorderSpacing.Left = 20
+        BorderSpacing.Bottom = 20
+        BevelOuter = bvNone
+        ClientHeight = 208
+        ClientWidth = 416
+        TabOrder = 1
+        Visible = False
+        object lblAttributeMode: TLabel
+          AnchorSideLeft.Control = pnlAttributeSettings
+          AnchorSideTop.Control = pnlAttributeSettings
+          Left = 0
+          Height = 21
+          Top = 0
+          Width = 158
+          Caption = 'Creation Behavior'
+          Font.CharSet = ANSI_CHARSET
+          Font.Height = -18
+          Font.Name = 'Arial'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object cmbAttributeMode: TComboBox
+          AnchorSideLeft.Control = pnlAttributeSettings
+          AnchorSideTop.Control = lblAttributeMode
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = pnlAttributeSettings
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 29
+          Top = 27
+          Width = 416
+          Anchors = [akTop, akLeft, akRight]
+          BorderSpacing.Top = 6
+          ItemHeight = 21
+          Items.Strings = (
+            'Use Existing Attribute'
+            'Create New Attribute'
+          )
+          Style = csDropDownList
+          TabOrder = 0
+          OnChange = cmbAttributeModeChange
+        end
+        object lblExistingAttribute: TLabel
+          AnchorSideLeft.Control = pnlAttributeSettings
+          AnchorSideTop.Control = cmbAttributeMode
+          AnchorSideTop.Side = asrBottom
+          Left = 0
+          Height = 21
+          Top = 76
+          Width = 135
+          BorderSpacing.Top = 20
+          Caption = 'Select Attribute'
+          Font.CharSet = ANSI_CHARSET
+          Font.Height = -18
+          Font.Name = 'Arial'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object cmbExistingAttribute: TComboBox
+          AnchorSideLeft.Control = pnlAttributeSettings
+          AnchorSideTop.Control = lblExistingAttribute
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = pnlAttributeSettings
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 29
+          Top = 103
+          Width = 416
+          Anchors = [akTop, akLeft, akRight]
+          BorderSpacing.Top = 6
+          ItemHeight = 21
+          Style = csDropDownList
+          TabOrder = 1
+        end
+        object lblNewAttributeName: TLabel
+          AnchorSideLeft.Control = pnlAttributeSettings
+          AnchorSideTop.Control = cmbAttributeMode
+          AnchorSideTop.Side = asrBottom
+          Left = 0
+          Height = 21
+          Top = 76
+          Width = 51
+          BorderSpacing.Top = 20
+          Caption = 'Name'
+          Font.CharSet = ANSI_CHARSET
+          Font.Height = -18
+          Font.Name = 'Arial'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object edtNewAttributeName: TEdit
+          AnchorSideLeft.Control = pnlAttributeSettings
+          AnchorSideTop.Control = lblNewAttributeName
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = pnlAttributeSettings
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 29
+          Top = 103
+          Width = 416
+          Anchors = [akTop, akLeft, akRight]
+          AutoSize = False
+          BorderSpacing.Top = 6
+          TabOrder = 2
+          TextHint = 'Enter attribute name'
+        end
+        object lblNewAttributeType: TLabel
+          AnchorSideLeft.Control = pnlAttributeSettings
+          AnchorSideTop.Control = edtNewAttributeName
+          AnchorSideTop.Side = asrBottom
+          Left = 0
+          Height = 21
+          Top = 152
+          Width = 87
+          BorderSpacing.Top = 20
+          Caption = 'Data Type'
+          Font.CharSet = ANSI_CHARSET
+          Font.Height = -18
+          Font.Name = 'Arial'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object cmbNewAttributeType: TComboBox
+          AnchorSideLeft.Control = pnlAttributeSettings
+          AnchorSideTop.Control = lblNewAttributeType
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = pnlAttributeSettings
+          AnchorSideRight.Side = asrBottom
+          Left = 0
+          Height = 29
+          Top = 179
+          Width = 416
+          Anchors = [akTop, akLeft, akRight]
+          BorderSpacing.Top = 6
+          ItemHeight = 21
+          Items.Strings = (
+            'Text'
+            'Numeric'
+            'Date-Time'
+            'Categorical'
+            'URL or Path'
+          )
+          Style = csDropDownList
+          TabOrder = 3
+        end
+      end
+      object btnApply: TButton
+        AnchorSideTop.Control = pnlAttributeSettings
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = pnlRight
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = pnlRight
+        AnchorSideBottom.Side = asrBottom
+        Left = 286
+        Height = 29
+        Top = 386
+        Width = 150
+        Anchors = [akTop, akRight]
+        BorderSpacing.Top = 20
+        Caption = 'Apply Mapping'
+        TabOrder = 2
+        OnClick = btnApplyClick
+      end
+    end
+    object pnlLeft: TPanel
+      AnchorSideLeft.Control = pnlMap
+      AnchorSideTop.Control = pnlMap
+      AnchorSideRight.Control = splSplitter
+      AnchorSideBottom.Control = pnlMap
+      AnchorSideBottom.Side = asrBottom
+      Left = 0
+      Height = 631
+      Top = 0
+      Width = 592
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      BevelOuter = bvNone
+      ClientHeight = 631
+      ClientWidth = 592
+      TabOrder = 1
+      object vstMapping: TLazVirtualStringTree
+        AnchorSideLeft.Control = pnlLeft
+        AnchorSideTop.Control = pnlLeft
+        AnchorSideRight.Control = pnlLeft
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = pnlLeft
+        AnchorSideBottom.Side = asrBottom
+        Left = 0
+        Height = 631
+        Top = 0
+        Width = 592
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        BorderStyle = bsNone
+        Colors.UnfocusedSelectionColor = clHighlight
+        Colors.UnfocusedSelectionBorderColor = clHighlight
+        DefaultNodeHeight = 29
+        Header.AutoSizeIndex = -1
+        Header.Columns = <        
+          item
+            Position = 0
+            Text = 'Source Column'
+            Width = 220
+          end        
+          item
+            Position = 1
+            Text = 'Target Mapping'
+            Width = 372
+          end>
+        Header.DefaultHeight = 25
+        Header.Height = 28
+        Header.Options = [hoAutoResize, hoColumnResize, hoVisible]
+        Header.ParentFont = True
+        HintMode = hmTooltip
+        Indent = 0
+        Margin = 4
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 0
+        TextMargin = 4
+        TreeOptions.PaintOptions = [toThemeAware, toUseBlendedImages, toUseExplorerTheme]
+        TreeOptions.SelectionOptions = [toFullRowSelect]
+        OnFocusChanged = vstMappingFocusChanged
+        OnGetText = vstMappingGetText
+        OnPaintText = vstMappingPaintText
+      end
+    end
+    object splSplitter: TSplitter
+      AnchorSideTop.Control = pnlMap
+      AnchorSideBottom.Control = pnlMap
+      AnchorSideBottom.Side = asrBottom
+      Left = 592
+      Height = 631
+      Top = 0
+      Width = 12
+      Align = alNone
+      Anchors = [akTop, akLeft, akBottom]
+      ResizeStyle = rsPattern
+    end
+  end
+end
