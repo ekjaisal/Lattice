@@ -12,9 +12,9 @@ title: "Lattice"
 version: "1.0.0"
 date-released: 2026-05-18
 abstract: >-
-  A free and open-source Computer-Assisted Qualitative Data
-  Analysis Software (CAQDAS) designed to be native,
-  lightweight, fast, and scalable.
+  A free and open-source Computer-Assisted Qualitative Data Analysis
+  Software (CAQDAS) for coding textual data, retrieving coded segments,
+  and analysing patterns.
 url: "https://lattice.jaisal.in"
 repository-code: "https://github.com/ekjaisal/Lattice"
 identifiers:
