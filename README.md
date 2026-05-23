@@ -90,7 +90,7 @@ Lattice is built and shipped with a ready-to-set-up installer. However, if requi
 
 2. **Sync the Package Database**
    
-   Launch the MSYS2 UCRT64 (or MINGW64) terminal and run the following update command:
+   Launch the MSYS2 MINGW64 terminal and run the following update command:
 
    ```bash
    pacman -Syu
