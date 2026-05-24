@@ -18,3 +18,5 @@ releases/
 *.identcache
 Thumbs.db
 .DS_Store
+/*-lattice.txt
+/*-lattice.bat
