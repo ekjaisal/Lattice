@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -22,7 +22,8 @@ unit ServiceDatabase;
 interface
 
 uses
-  Classes, DB, Generics.Collections, Graphics, SysUtils, Types, SQLDB, SQLite3Conn, EngineText, ServiceThread;
+  Classes, DB, Generics.Collections, Graphics, SysUtils, Types, SQLDB,
+  SQLite3Conn, EngineText, ServiceThread;
 
 type
   { Important: Database Configuration Interceptor }
@@ -62,7 +63,7 @@ type
     AttributeOperator: String;
     AttributeValue: String;
   end;
-  
+
   TFrequencyResult = record
     CodeID: String;
     CodeName: String;
@@ -204,13 +205,13 @@ implementation
 
 uses
   Character, Dialogs, LazUTF8, Math, AppIdentity, DialogProgress, MonoLexID;
-  
+
 type
   TThreadOptimize = class(TBackgroundWorker)
   protected
     procedure DoHeavyLifting; override;
   end;
-  
+
   TThreadSnapshot = class(TBackgroundWorker)
   private
     FTargetPath: String;
@@ -219,8 +220,7 @@ type
   public
     constructor Create(const ADBPath, ATargetPath: String);
   end;
-  
-type
+
   TThreadLoadProject = class(TBackgroundWorker)
   public
     FDocumentCache: TDocumentCacheArray;
@@ -229,7 +229,7 @@ type
   protected
     procedure DoHeavyLifting; override;
   end;
-  
+
   TThreadFrequency = class(TBackgroundWorker)
   private
     FCodeID, FDocumentID: TStringDynArray;
@@ -242,7 +242,7 @@ type
     constructor Create(const ADBPath: String; const ACodeID, ADocumentID: TStringDynArray; const AAttributeSQL: String; ALimit: Integer);
     property ResultArray: TFrequencyArray read FResultArray;
   end;
-  
+
   TThreadCoOccurrence = class(TBackgroundWorker)
   private
     FCodeIDX, FCodeIDY, FDocumentID: TStringDynArray;
@@ -255,7 +255,7 @@ type
     constructor Create(const ADBPath: String; const ACodeIDX, ACodeIDY, ADocumentID: TStringDynArray; const AAttributeSQL: String; ALimit: Integer);
     property ResultArray: TCoOccurrenceArray read FResultArray;
   end;
-  
+
   TThreadCrosstab = class(TBackgroundWorker)
   private
     FCodeID, FDocumentID: TStringDynArray;
@@ -267,7 +267,7 @@ type
     constructor Create(const ADBPath: String; const ACodeID, ADocumentID: TStringDynArray; const AAttributeSQL, AAttributeKey: String);
     property ResultArray: TCrosstabArray read FResultArray;
   end;
-  
+
   TThreadCoverage = class(TBackgroundWorker)
   private
     FDocumentID: TStringDynArray;
@@ -294,20 +294,28 @@ type
     property ResultArray: TWordCloudArray read FResultArray;
   end;
 
-function TServiceDatabase.GetChronicleValue(const AKey, ADefault: String): String;
+procedure TSQLite3Connection.DoInternalConnect;
 begin
-  Result := ADefault;
-  FQuery.Close;
-  FQuery.SQL.Text := 'SELECT value FROM chronicle WHERE key = :k';
-  FQuery.Params.ParamByName('k').AsString := AKey;
-  FQuery.Open;
-  if not FQuery.EOF then Result := FQuery.Fields[0].AsString;
-  FQuery.Close;
+  inherited DoInternalConnect;
+  execsql('PRAGMA journal_mode=WAL;');
+  execsql('PRAGMA foreign_keys=ON;');
+  execsql('PRAGMA encoding = "UTF-8"');
 end;
 
-procedure TServiceDatabase.SetChronicleValue(const AKey, AValue: String);
+procedure TSQLite3Connection.ExecuteMaintenance;
 begin
-  ExecuteSafe('INSERT OR REPLACE INTO chronicle (key, value) VALUES (' + QuotedStr(AKey) + ', ' + QuotedStr(AValue) + ')');
+  execsql('PRAGMA wal_checkpoint(TRUNCATE);');
+  execsql('INSERT INTO docs_fts(docs_fts) VALUES(''optimize'');');
+  execsql('ANALYZE;');
+  execsql('VACUUM;');
+end;
+
+constructor TServiceDatabase.Create(AConnection: TSQLite3Connection);
+begin
+  inherited Create;
+  FConnection := AConnection;
+  FQuery := TSQLQuery.Create(nil);
+  FQuery.Database := FConnection;
 end;
 
 procedure TServiceDatabase.InitializeProject;
@@ -367,6 +375,22 @@ begin
   FConnection.ExecuteDirect('INSERT OR IGNORE INTO preferences (key, value) VALUES (''DocumentSortField'', ''id'');');
   FConnection.ExecuteDirect('INSERT OR IGNORE INTO preferences (key, value) VALUES (''DocumentSortOrder'', ''ASC'');');
   FConnection.ExecuteDirect('INSERT OR IGNORE INTO preferences (key, value) VALUES (''DocumentSortCriteria'', ''Import Time'');');
+end;
+
+function TServiceDatabase.GetChronicleValue(const AKey, ADefault: String): String;
+begin
+  Result := ADefault;
+  FQuery.Close;
+  FQuery.SQL.Text := 'SELECT value FROM chronicle WHERE key = :k';
+  FQuery.Params.ParamByName('k').AsString := AKey;
+  FQuery.Open;
+  if not FQuery.EOF then Result := FQuery.Fields[0].AsString;
+  FQuery.Close;
+end;
+
+procedure TServiceDatabase.SetChronicleValue(const AKey, AValue: String);
+begin
+  ExecuteSafe('INSERT OR REPLACE INTO chronicle (key, value) VALUES (' + QuotedStr(AKey) + ', ' + QuotedStr(AValue) + ')');
 end;
 
 procedure TThreadLoadProject.DoHeavyLifting;
@@ -430,269 +454,6 @@ begin
   end;
 end;
 
-procedure TThreadOptimize.DoHeavyLifting;
-begin
-  SyncUpdateStatus('Rebuilding database indices...');
-  if not FTransaction.Active then
-    FTransaction.StartTransaction;
-  FConnection.ExecuteDirect('COMMIT');
-  FConnection.ExecuteDirect('VACUUM');
-  FConnection.ExecuteDirect('BEGIN');
-  SyncUpdateStatus('Optimising query planner...');
-  FConnection.ExecuteDirect('PRAGMA optimize');
-  FTransaction.Commit;
-end;
-
-constructor TThreadSnapshot.Create(const ADBPath, ATargetPath: String);
-begin
-  inherited Create(ADBPath);
-  FTargetPath := ATargetPath;
-end;
-
-procedure TThreadSnapshot.DoHeavyLifting;
-begin
-  SyncUpdateStatus('Creating project snapshot...');
-  if not FTransaction.Active then
-    FTransaction.StartTransaction;
-  FConnection.ExecuteDirect('COMMIT');
-  FConnection.ExecuteDirect('VACUUM INTO ' + QuotedStr(FTargetPath) + ';');
-  FConnection.ExecuteDirect('BEGIN');
-end;
-
-procedure TSQLite3Connection.DoInternalConnect;
-begin
-  inherited DoInternalConnect;
-  execsql('PRAGMA journal_mode=WAL;');
-  execsql('PRAGMA foreign_keys=ON;');
-  execsql('PRAGMA encoding = "UTF-8"');
-end;
-
-procedure TSQLite3Connection.ExecuteMaintenance;
-begin
-  execsql('PRAGMA wal_checkpoint(TRUNCATE);');
-  execsql('INSERT INTO docs_fts(docs_fts) VALUES(''optimize'');');
-  execsql('ANALYZE;');
-  execsql('VACUUM;');
-end;
-
-procedure TServiceDatabase.OptimizeProject;
-var
-  Worker: TThreadOptimize;
-begin
-  if FConnection.Transaction.Active then FConnection.Transaction.Commit;
-  Worker := TThreadOptimize.Create(FConnection.DatabaseName);
-  try
-    Worker.Start;
-    TfrmDialogProgress.Prepare('Optimising Project', 'Preparing database...');
-    frmDialogProgress.ShowModal;
-    if not Worker.Success then
-      raise Exception.Create('Failed to optimise project: ' + Worker.ErrorMessage);
-  finally
-    Worker.Free;
-  end;
-end;
-
-constructor TServiceDatabase.Create(AConnection: TSQLite3Connection);
-begin
-  inherited Create;
-  FConnection := AConnection;
-  FQuery := TSQLQuery.Create(nil);
-  FQuery.Database := FConnection;
-end;
-
-procedure TServiceDatabase.SnapshotProject(const TargetPath: String);
-var
-  Worker: TThreadSnapshot;
-begin
-  if FConnection.Transaction.Active then FConnection.Transaction.Commit;
-  Worker := TThreadSnapshot.Create(FConnection.DatabaseName, TargetPath);
-  try
-    Worker.Start;
-    TfrmDialogProgress.Prepare('Snapshotting Project', 'Initialising...');
-    frmDialogProgress.ShowModal;
-    if not Worker.Success then
-      raise Exception.Create(Worker.ErrorMessage);
-  finally
-    Worker.Free;
-  end;
-end;
-
-procedure TThreadBatchDocumentDelete.DoHeavyLifting;
-var
-  i: Integer;
-  Q: TSQLQuery;
-begin
-  FDeletedCount := Length(FDocumentID);
-  if FDeletedCount = 0 then Exit;
-
-  SyncUpdateStatus('Preparing batch scope...');
-  FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_batch_docs');
-  FConnection.ExecuteDirect('CREATE TEMP TABLE temp_batch_docs (id TEXT PRIMARY KEY)');
-
-  if not FTransaction.Active then FTransaction.StartTransaction;
-
-  Q := TSQLQuery.Create(nil);
-  try
-    Q.Database := FConnection;
-    Q.Transaction := FTransaction;
-    Q.SQL.Text := 'INSERT INTO temp_batch_docs (id) VALUES (:id)';
-    Q.Prepare;
-    for i := Low(FDocumentID) to High(FDocumentID) do
-    begin
-      Q.Params[0].AsString := FDocumentID[i];
-      Q.ExecSQL;
-    end;
-  finally
-    Q.Free;
-  end;
-
-  SyncUpdateStatus('Removing associated segment memos...');
-  FConnection.ExecuteDirect('DELETE FROM memos WHERE memo_type = ''Segment'' AND SUBSTR(reference, 1, INSTR(reference, '':'') - 1) IN (SELECT id FROM temp_batch_docs)');
-
-  SyncUpdateStatus('Removing associated document memos...');
-  FConnection.ExecuteDirect('DELETE FROM memos WHERE memo_type = ''Document'' AND reference IN (SELECT id FROM temp_batch_docs)');
-
-  SyncUpdateStatus('Removing document attributes...');
-  FConnection.ExecuteDirect('DELETE FROM document_attributes WHERE document_id IN (SELECT id FROM temp_batch_docs)');
-
-  SyncUpdateStatus('Removing coding applications...');
-  FConnection.ExecuteDirect('DELETE FROM codings WHERE document_id IN (SELECT id FROM temp_batch_docs)');
-
-  SyncUpdateStatus('Deleting document records...');
-  FConnection.ExecuteDirect('DELETE FROM documents WHERE id IN (SELECT id FROM temp_batch_docs)');
-
-  SyncUpdateStatus('Finalising transaction...');
-  FTransaction.Commit;
-end;
-
-procedure TThreadBatchAttribute.DoHeavyLifting;
-var
-  i: Integer;
-  Q: TSQLQuery;
-  ColumnName, AttributeType, JsonExpr: String;
-begin
-  FAddedCount := 0;
-  FSkippedCount := 0;
-  if Length(FDocumentID) = 0 then Exit;
-  SyncUpdateStatus('Fetching attribute metadata...');
-  Q := TSQLQuery.Create(nil);
-  try
-    Q.Database := FConnection;
-    Q.Transaction := FTransaction;
-    Q.SQL.Text := 'SELECT attribute_key, attribute_type FROM attribute_registry WHERE id = :id';
-    Q.Params.ParamByName('id').AsString := FAttributeID;
-    Q.Open;
-    if not Q.EOF then
-    begin
-      ColumnName := Q.Fields[0].AsString;
-      AttributeType := Q.Fields[1].AsString;
-    end
-    else
-    begin
-      ColumnName := '';
-      AttributeType := '';
-    end;
-    Q.Close;
-    if ColumnName = '' then Exit;
-    SyncUpdateStatus('Preparing scope...');
-    FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_batch_attr_docs');
-    FConnection.ExecuteDirect('CREATE TEMP TABLE temp_batch_attr_docs (id TEXT PRIMARY KEY)');
-    if not FTransaction.Active then FTransaction.StartTransaction;
-    Q.SQL.Text := 'INSERT INTO temp_batch_attr_docs (id) VALUES (:id)';
-    Q.Prepare;
-    for i := Low(FDocumentID) to High(FDocumentID) do
-    begin
-      Q.Params[0].AsString := FDocumentID[i];
-      Q.ExecSQL;
-    end;
-    if AttributeType = 'Numeric' then
-      JsonExpr := 'CAST(:v AS REAL)'
-    else
-      JsonExpr := ':v';
-    case FAction of
-      baaAdd:
-        begin
-          SyncUpdateStatus('Applying attributes to documents...');
-          Q.SQL.Text := 'UPDATE document_attributes SET attributes = json_set(attributes, ''$.'' || :col, ' + JsonExpr + ') ' +
-                        'WHERE document_id IN (SELECT id FROM temp_batch_attr_docs) AND (json_extract(attributes, ''$.'' || :col) IS NULL OR CAST(json_extract(attributes, ''$.'' || :col) AS TEXT) = '''')';
-          Q.Params.ParamByName('col').AsString := ColumnName;
-          Q.Params.ParamByName('v').AsString := Trim(FValue);
-          Q.ExecSQL;
-          FAddedCount := Q.RowsAffected;
-          FSkippedCount := Length(FDocumentID) - FAddedCount;
-        end;
-      baaEdit:
-        begin
-          SyncUpdateStatus('Modifying attribute values...');
-          if FUpdateOnlyExisting then
-          begin
-            Q.SQL.Text := 'UPDATE document_attributes SET attributes = json_set(attributes, ''$.'' || :col, ' + JsonExpr + ') ' +
-                          'WHERE document_id IN (SELECT id FROM temp_batch_attr_docs) AND json_extract(attributes, ''$.'' || :col) IS NOT NULL AND CAST(json_extract(attributes, ''$.'' || :col) AS TEXT) <> ''''';
-          end
-          else
-          begin
-            Q.SQL.Text := 'UPDATE document_attributes SET attributes = json_set(attributes, ''$.'' || :col, ' + JsonExpr + ') ' +
-                          'WHERE document_id IN (SELECT id FROM temp_batch_attr_docs)';
-          end;
-          Q.Params.ParamByName('col').AsString := ColumnName;
-          Q.Params.ParamByName('v').AsString := Trim(FValue);
-          Q.ExecSQL;
-          FAddedCount := Q.RowsAffected;
-        end;
-      baaDelete:
-        begin
-          SyncUpdateStatus('Removing attributes from documents...');
-          Q.SQL.Text := 'UPDATE document_attributes SET attributes = json_remove(attributes, ''$.'' || :col) ' +
-                        'WHERE document_id IN (SELECT id FROM temp_batch_attr_docs) AND json_extract(attributes, ''$.'' || :col) IS NOT NULL AND CAST(json_extract(attributes, ''$.'' || :col) AS TEXT) <> ''''';
-          Q.Params.ParamByName('col').AsString := ColumnName;
-          Q.ExecSQL;
-          FAddedCount := Q.RowsAffected;
-        end;
-    end;
-    SyncUpdateStatus('Finalising transaction...');
-    FTransaction.Commit;
-  finally
-    Q.Free;
-  end;
-end;
-
-destructor TServiceDatabase.Destroy;
-begin
-  FQuery.Free;
-  inherited Destroy;
-end;
-
-procedure TServiceDatabase.CloseProject;
-begin
-  if not Assigned(FConnection) or not FConnection.Connected then Exit;
-  if Assigned(FConnection.Transaction) and FConnection.Transaction.Active then
-    FConnection.Transaction.Commit;
-  try
-    if not FConnection.Transaction.Active then
-      FConnection.Transaction.StartTransaction;
-    FConnection.ExecuteDirect('PRAGMA wal_checkpoint(TRUNCATE);');
-    FConnection.Transaction.Commit;
-  except
-    if FConnection.Transaction.Active then
-      FConnection.Transaction.Rollback;
-  end;
-  FConnection.Close;
-end;
-
-procedure TServiceDatabase.ExecuteSafe(const SQL: String);
-begin
-  if FConnection.Transaction.Active then FConnection.Transaction.Commit;
-  FQuery.Close;
-  FQuery.SQL.Text := SQL;
-  try
-    FQuery.ExecSQL;
-    FConnection.Transaction.Commit;
-  except
-    FConnection.Transaction.Rollback;
-    raise;
-  end;
-end;
-
 procedure TServiceDatabase.GetDashboardStatistic(out TotalDocument, CodedDocument, TotalCode, TotalCoding, TotalSegmentMemo: Integer);
 begin
   TotalDocument := 0; CodedDocument := 0; TotalCode := 0; TotalCoding := 0; TotalSegmentMemo := 0;
@@ -720,609 +481,167 @@ begin
   FQuery.Close;
 end;
 
-function TServiceDatabase.GetCodeName(const CodeID: String): String;
+procedure TServiceDatabase.CloseProject;
 begin
-  Result := '';
-  if CodeID = '' then Exit;
-  FQuery.Close;
-  FQuery.SQL.Text := 'SELECT name FROM codes WHERE id = :id';
-  FQuery.Params.ParamByName('id').AsString := CodeID;
-  FQuery.Open;
-  if not FQuery.EOF then Result := FQuery.FieldByName('name').AsString;
-  FQuery.Close;
-end;
-
-function TServiceDatabase.CodeExists(const AName: String; const ParentID: String; out ExistingID: String): Boolean;
-begin
-  Result := False;
-  ExistingID := '';
-  FQuery.Close;
-  FQuery.SQL.Text := 'SELECT id FROM codes WHERE LOWER(name) = LOWER(:n) AND parent_id = :p';
-  FQuery.Params.ParamByName('n').AsString := Trim(AName);
-  FQuery.Params.ParamByName('p').AsString := ParentID;
-  FQuery.Open;
-  if not FQuery.EOF then
-  begin
-    ExistingID := FQuery.FieldByName('id').AsString;
-    Result := True;
-  end;
-  FQuery.Close;
-end;
-
-procedure TServiceDatabase.AddCode(const AName, ADescription: String; AColor: TColor; const ParentID: String);
-var
-  MaxSort: Integer;
-begin
-  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
+  if not Assigned(FConnection) or not FConnection.Connected then Exit;
+  if Assigned(FConnection.Transaction) and FConnection.Transaction.Active then
+    FConnection.Transaction.Commit;
   try
-    FQuery.Close;
-    FQuery.SQL.Text := 'SELECT COALESCE(MAX(sort_order), 0) FROM codes WHERE parent_id = :p';
-    FQuery.Params.ParamByName('p').AsString := ParentID;
-    FQuery.Open;
-    MaxSort := FQuery.Fields[0].AsInteger + 10;
-    FQuery.Close;
-    FQuery.SQL.Text := 'INSERT INTO codes (id, name, description, color, parent_id, sort_order) VALUES (:g, :n, :d, :c, :p, :s)';
-    FQuery.Params.ParamByName('g').AsString := NewMonoLexID;
-    FQuery.Params.ParamByName('n').AsString := Trim(AName);
-    FQuery.Params.ParamByName('d').AsString := Trim(ADescription);
-    FQuery.Params.ParamByName('c').AsInteger := Integer(AColor);
-    FQuery.Params.ParamByName('p').AsString := ParentID;
-    FQuery.Params.ParamByName('s').AsInteger := MaxSort;
-    FQuery.ExecSQL;
+    if not FConnection.Transaction.Active then
+      FConnection.Transaction.StartTransaction;
+    FConnection.ExecuteDirect('PRAGMA wal_checkpoint(TRUNCATE);');
     FConnection.Transaction.Commit;
   except
-    FConnection.Transaction.Rollback;
-    raise;
-  end;
-end;
-
-procedure TServiceDatabase.UpdateCodeColor(const CodeID: String; AColor: TColor);
-begin
-  ExecuteSafe('UPDATE codes SET color = ' + IntToStr(Integer(AColor)) + ' WHERE id = ' + QuotedStr(CodeID));
-end;
-
-procedure TServiceDatabase.UpdateCodeDetails(const CodeID: String; const AName, ADescription: String);
-begin
-  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
-  try
-    FQuery.Close;
-    FQuery.SQL.Text := 'UPDATE codes SET name = :n, description = :d WHERE id = :id';
-    FQuery.Params.ParamByName('n').AsString := Trim(AName);
-    FQuery.Params.ParamByName('d').AsString := Trim(ADescription);
-    FQuery.Params.ParamByName('id').AsString := CodeID;
-    FQuery.ExecSQL;
-    FQuery.SQL.Text := 'UPDATE memos SET title = :mt WHERE memo_type = ''Code'' AND reference = :tid';
-    FQuery.Params.ParamByName('mt').AsString := 'Code Memo · ' + Trim(AName);
-    FQuery.Params.ParamByName('tid').AsString := CodeID;
-    FQuery.ExecSQL;
-    FConnection.Transaction.Commit;
-  except
-    FConnection.Transaction.Rollback;
-    raise;
-  end;
-end;
-
-procedure TServiceDatabase.UpdateCodeColorBatch(const CodeIDs: TStringDynArray; AColor: TColor);
-begin
-  if Length(CodeIDs) = 0 then Exit;
-  PopulateTempTable('temp_color_update', CodeIDs);
-  ExecuteSafe('UPDATE codes SET color = ' + IntToStr(Integer(AColor)) + ' WHERE id IN (SELECT id FROM temp_color_update)');
-end;
-
-procedure TThreadLiveEditSave.DoHeavyLifting;
-var
-  i: Integer;
-  DocTitle: String;
-  Q: TSQLQuery;
-begin
-  Q := TSQLQuery.Create(nil);
-  try
-    Q.Database := FConnection;
-    Q.Transaction := FTransaction;
-    if not FTransaction.Active then FTransaction.StartTransaction;
-    SyncUpdateStatus('Preparing to save document...');
-    Q.SQL.Text := 'SELECT title FROM documents WHERE id = :did';
-    Q.Params.ParamByName('did').AsString := FDocumentID;
-    Q.Open;
-    if not Q.EOF then DocTitle := Q.Fields[0].AsString else DocTitle := 'Document';
-    Q.Close;
-    SyncUpdateStatus('Writing document text...');
-    Q.SQL.Text := 'UPDATE documents SET content = :b WHERE id = :did';
-    Q.Params.ParamByName('b').AsString := FNewText;
-    Q.Params.ParamByName('did').AsString := FDocumentID;
-    Q.ExecSQL;
-    SyncUpdateStatus('Synchronising code brackets...');
-    for i := 0 to High(FCodings) do
-    begin
-      if FCodings[i].NewLength <= 0 then
-      begin
-        Q.SQL.Text := 'DELETE FROM codings WHERE id = :id';
-        Q.Params.ParamByName('id').AsString := FCodings[i].ID;
-      end
-      else
-      begin
-        Q.SQL.Text := 'UPDATE codings SET start_position = :s, length = :l WHERE id = :id';
-        Q.Params.ParamByName('id').AsString := FCodings[i].ID;
-        Q.Params.ParamByName('s').AsInteger := FCodings[i].NewStart;
-        Q.Params.ParamByName('l').AsInteger := FCodings[i].NewLength;
-      end;
-      Q.ExecSQL;
-    end;
-    SyncUpdateStatus('Synchronising segment memos...');
-    for i := 0 to High(FMemos) do
-    begin
-      if FMemos[i].NewLength <= 0 then
-      begin
-        Q.SQL.Text := 'DELETE FROM memos WHERE memo_type = ''Segment'' AND reference = :old_ref';
-        Q.Params.ParamByName('old_ref').AsString := FMemos[i].ID; 
-      end
-      else
-      begin
-        Q.SQL.Text := 'UPDATE memos SET reference = :ref, title = :title WHERE memo_type = ''Segment'' AND reference = :old_ref';
-        Q.Params.ParamByName('old_ref').AsString := FMemos[i].ID; 
-        Q.Params.ParamByName('ref').AsString := FDocumentID + ':' + IntToStr(FMemos[i].NewStart) + ':' + IntToStr(FMemos[i].NewLength);
-        Q.Params.ParamByName('title').AsString := 'Segment Memo · ' + DocTitle + ' · ' + IntToStr(FMemos[i].NewStart) + '–' + IntToStr(FMemos[i].NewStart + FMemos[i].NewLength);
-      end;
-      Q.ExecSQL;
-    end;
-    SyncUpdateStatus('Finalising transaction...');
-    FTransaction.Commit;
-  finally
-    Q.Free;
-  end;
-end;
-
-procedure TServiceDatabase.GetRecursiveCount(const CodeID: String; out TotalCode, TotalCoding, TotalMemo: Integer);
-begin
-  TotalCode := 0; TotalCoding := 0; TotalMemo := 0;
-  FQuery.Close;
-  FQuery.SQL.Text :=
-    'WITH RECURSIVE descendant_codes(id) AS ( ' +
-    '  SELECT :root_id UNION ALL SELECT codes.id FROM codes ' +
-    '  JOIN descendant_codes ON codes.parent_id = descendant_codes.id ' +
-    ') SELECT ' +
-    '  (SELECT COUNT(*) FROM descendant_codes) as code_count, ' +
-    '  (SELECT COUNT(*) FROM codings WHERE code_id IN descendant_codes) as coding_count, ' +
-    '  (SELECT COUNT(*) FROM memos WHERE memo_type = ''Code'' AND reference IN descendant_codes) as memo_count';
-  FQuery.Params.ParamByName('root_id').AsString := CodeID;
-  FQuery.Open;
-  if not FQuery.EOF then
-  begin
-    TotalCode := FQuery.FieldByName('code_count').AsInteger;
-    TotalCoding := FQuery.FieldByName('coding_count').AsInteger;
-    TotalMemo := FQuery.FieldByName('memo_count').AsInteger;
-  end;
-  FQuery.Close;
-end;
-
-procedure TThreadBatchCodeDeleteRecursive.DoHeavyLifting;
-var
-  Q: TSQLQuery;
-begin
-  Q := TSQLQuery.Create(nil);
-  try
-    Q.Database := FConnection;
-    Q.Transaction := FTransaction;
-    if not FTransaction.Active then FTransaction.StartTransaction;
-    SyncUpdateStatus('Identifying code hierarchy...');
-    FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_del_codes');
-    FConnection.ExecuteDirect('CREATE TEMP TABLE temp_del_codes (id TEXT PRIMARY KEY)');
-    Q.SQL.Text := 
-      'INSERT INTO temp_del_codes (id) ' +
-      'WITH RECURSIVE descendants(id) AS ( SELECT :root_id UNION ALL ' +
-      'SELECT codes.id FROM codes JOIN descendants ON codes.parent_id = descendants.id ) ' +
-      'SELECT id FROM descendants';
-    Q.Params.ParamByName('root_id').AsString := FCodeID;
-    Q.ExecSQL;
-    SyncUpdateStatus('Removing associated code memos...');
-    FConnection.ExecuteDirect('DELETE FROM memos WHERE memo_type = ''Code'' AND reference IN (SELECT id FROM temp_del_codes)');
-    SyncUpdateStatus('Removing coding applications...');
-    FConnection.ExecuteDirect('DELETE FROM codings WHERE code_id IN (SELECT id FROM temp_del_codes)');
-    SyncUpdateStatus('Deleting codes...');
-    FConnection.ExecuteDirect('DELETE FROM codes WHERE id IN (SELECT id FROM temp_del_codes)');
-    SyncUpdateStatus('Finalising transaction...');
-    FTransaction.Commit;
-  finally
-    Q.Free;
-  end;
-end;
-
-procedure TThreadBatchMergeCode.DoHeavyLifting;
-var
-  i: Integer;
-  Q: TSQLQuery;
-begin
-  Q := TSQLQuery.Create(nil);
-  try
-    Q.Database := FConnection;
-    Q.Transaction := FTransaction;
-    if not FTransaction.Active then FTransaction.StartTransaction;
-    for i := Low(FSourceID) to High(FSourceID) do
-    begin
-      SyncUpdateStatus('Merging code ' + IntToStr(i + 1) + ' of ' + IntToStr(Length(FSourceID)) + '...');
-      Q.Close;
-      Q.SQL.Text := 'UPDATE codings SET code_id = :tid WHERE code_id = :sid';
-      Q.Params.ParamByName('tid').AsString := FTargetID;
-      Q.Params.ParamByName('sid').AsString := FSourceID[i];
-      Q.ExecSQL;
-      Q.SQL.Text := 'UPDATE codes SET parent_id = :tid WHERE parent_id = :sid';
-      Q.Params.ParamByName('tid').AsString := FTargetID;
-      Q.Params.ParamByName('sid').AsString := FSourceID[i];
-      Q.ExecSQL;
-      Q.SQL.Text := 'UPDATE codes SET name = name || '' (Merged)'' ' +
-                   'WHERE parent_id = :tid AND id IN ( SELECT c1.id FROM codes c1 ' +
-                   'JOIN codes c2 ON c1.parent_id = c2.parent_id AND c1.name = c2.name AND c1.id > c2.id ' +
-                   'WHERE c1.parent_id = :tid )';
-      Q.Params.ParamByName('tid').AsString := FTargetID;
-      Q.ExecSQL;
-      Q.SQL.Text := 'DELETE FROM codes WHERE id = :sid';
-      Q.Params.ParamByName('sid').AsString := FSourceID[i];
-      Q.ExecSQL;
-    end;
-    SyncUpdateStatus('Cleaning up duplicate codings...');
-    Q.SQL.Text := 'DELETE FROM codings WHERE id IN ( SELECT c2.id FROM codings c1 ' +
-                  'JOIN codings c2 ON c1.document_id = c2.document_id AND c1.code_id = c2.code_id AND c1.id < c2.id ' +
-                  'WHERE NOT (c1.start_position + c1.length <= c2.start_position OR c2.start_position + c2.length <= c1.start_position) )';
-    Q.ExecSQL;
-    SyncUpdateStatus('Finalising transaction...');
-    FTransaction.Commit;
-  finally
-    Q.Free;
-  end;
-end;
-
-procedure TServiceDatabase.SetCodeExpandedState(const CodeID: String; IsExpanded, Recursive: Boolean);
-var
-  ExpVal: Integer;
-begin
-  if IsExpanded then ExpVal := 1 else ExpVal := 0;
-  if Recursive then
-  begin
-    if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
-    try
-      if CodeID = '' then
-        FQuery.SQL.Text := 'UPDATE codes SET is_expanded = ' + IntToStr(ExpVal)
-      else
-      begin
-        FQuery.SQL.Text := 'WITH RECURSIVE descendants(id) AS ( SELECT :root UNION ALL ' +
-                           'SELECT c.id FROM codes c JOIN descendants d ON c.parent_id = d.id ) ' +
-                           'UPDATE codes SET is_expanded = ' + IntToStr(ExpVal) + ' WHERE id IN descendants';
-        FQuery.Params.ParamByName('root').AsString := CodeID;
-      end;
-      FQuery.ExecSQL;
-      FConnection.Transaction.Commit;
-    except
+    if FConnection.Transaction.Active then
       FConnection.Transaction.Rollback;
-    end;
-  end
-  else
-    ExecuteSafe('UPDATE codes SET is_expanded = ' + IntToStr(ExpVal) + ' WHERE id = ' + QuotedStr(CodeID));
+  end;
+  FConnection.Close;
 end;
 
-function TServiceDatabase.AddCoding(const DocumentID, CodeID: String; StartPos, Length: Integer; out ConflictMsg: String): Boolean;
-var
-  EndPos: Integer;
+destructor TServiceDatabase.Destroy;
 begin
-  Result := False;
-  ConflictMsg := '';
-  EndPos := StartPos + Length;
-  FQuery.Close;
-  FQuery.SQL.Text := 'SELECT id FROM codings WHERE document_id = :d AND code_id = :c AND NOT (:e <= start_position OR :s >= (start_position + length)) LIMIT 1';
-  FQuery.Params.ParamByName('d').AsString := DocumentID;
-  FQuery.Params.ParamByName('c').AsString := CodeID;
-  FQuery.Params.ParamByName('s').AsInteger := StartPos;
-  FQuery.Params.ParamByName('e').AsInteger := EndPos;
-  FQuery.Open;
-  if not FQuery.EOF then
-  begin
-    FQuery.Close;
-    Exit;
-  end;
-  FQuery.Close;
-  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
+  FQuery.Free;
+  inherited Destroy;
+end;
+
+procedure TThreadOptimize.DoHeavyLifting;
+begin
+  SyncUpdateStatus('Rebuilding database indices...');
+  if not FTransaction.Active then
+    FTransaction.StartTransaction;
+  FConnection.ExecuteDirect('COMMIT');
+  FConnection.ExecuteDirect('VACUUM');
+  FConnection.ExecuteDirect('BEGIN');
+  SyncUpdateStatus('Optimising query planner...');
+  FConnection.ExecuteDirect('PRAGMA optimize');
+  FTransaction.Commit;
+end;
+
+procedure TServiceDatabase.OptimizeProject;
+var
+  Worker: TThreadOptimize;
+begin
+  if FConnection.Transaction.Active then FConnection.Transaction.Commit;
+  Worker := TThreadOptimize.Create(FConnection.DatabaseName);
   try
-    FQuery.SQL.Text := 'INSERT INTO codings (id, document_id, code_id, start_position, length) VALUES (:g, :d, :c, :s, :l)';
-    FQuery.Params.ParamByName('g').AsString := NewMonoLexID;
-    FQuery.Params.ParamByName('d').AsString := DocumentID;
-    FQuery.Params.ParamByName('c').AsString := CodeID;
-    FQuery.Params.ParamByName('s').AsInteger := StartPos;
-    FQuery.Params.ParamByName('l').AsInteger := Length;
+    Worker.Start;
+    TfrmDialogProgress.Prepare('Optimising Project', 'Preparing database...');
+    frmDialogProgress.ShowModal;
+    if not Worker.Success then
+      raise Exception.Create('Failed to optimise project: ' + Worker.ErrorMessage);
+  finally
+    Worker.Free;
+  end;
+end;
+
+constructor TThreadSnapshot.Create(const ADBPath, ATargetPath: String);
+begin
+  inherited Create(ADBPath);
+  FTargetPath := ATargetPath;
+end;
+
+procedure TThreadSnapshot.DoHeavyLifting;
+begin
+  SyncUpdateStatus('Creating project snapshot...');
+  if not FTransaction.Active then
+    FTransaction.StartTransaction;
+  FConnection.ExecuteDirect('COMMIT');
+  FConnection.ExecuteDirect('VACUUM INTO ' + QuotedStr(FTargetPath) + ';');
+  FConnection.ExecuteDirect('BEGIN');
+end;
+
+procedure TServiceDatabase.SnapshotProject(const TargetPath: String);
+var
+  Worker: TThreadSnapshot;
+begin
+  if FConnection.Transaction.Active then FConnection.Transaction.Commit;
+  Worker := TThreadSnapshot.Create(FConnection.DatabaseName, TargetPath);
+  try
+    Worker.Start;
+    TfrmDialogProgress.Prepare('Snapshotting Project', 'Initialising...');
+    frmDialogProgress.ShowModal;
+    if not Worker.Success then
+      raise Exception.Create(Worker.ErrorMessage);
+  finally
+    Worker.Free;
+  end;
+end;
+
+procedure TServiceDatabase.ExecuteSafe(const SQL: String);
+begin
+  if FConnection.Transaction.Active then FConnection.Transaction.Commit;
+  FQuery.Close;
+  FQuery.SQL.Text := SQL;
+  try
     FQuery.ExecSQL;
     FConnection.Transaction.Commit;
-    Result := True;
   except
-    on E: Exception do
-    begin
-      FConnection.Transaction.Rollback;
-      ConflictMsg := E.Message;
-    end;
+    FConnection.Transaction.Rollback;
+    raise;
   end;
 end;
 
-procedure TServiceDatabase.DeleteCoding(const CodingID: String);
-begin
-  ExecuteSafe('DELETE FROM codings WHERE id = ' + QuotedStr(CodingID));
-end;
-
-function TServiceDatabase.GetCodingAtPosition(const DocumentID: String; CharPos: Integer): String;
-begin
-  Result := '';
-  FQuery.Close;
-  FQuery.SQL.Text := 'SELECT id FROM codings WHERE document_id = :d AND :p >= start_position AND :p < (start_position + length) LIMIT 1';
-  FQuery.Params.ParamByName('d').AsString := DocumentID;
-  FQuery.Params.ParamByName('p').AsInteger := CharPos;
-  FQuery.Open;
-  if not FQuery.EOF then Result := FQuery.Fields[0].AsString;
-  FQuery.Close;
-end;
-
-function TServiceDatabase.GetAllCodeFlat(const FilterText, SortField, SortOrder: String): TCodeFlatArray;
+procedure TServiceDatabase.PopulateTempTable(const TableName: String; const IDArray: TStringDynArray);
 var
-  Capacity, Count: Integer;
-  Q: TSQLQuery;
-  fId, fName, fParent, fColor, fExpanded, fUsage, fMemo: TField;
-  OrderClause: String;
+  i: Integer;
 begin
-  Result := nil;
-  if SortField = 'sort_order' then
-    OrderClause := 'ORDER BY c.parent_id ASC, c.sort_order ASC, c.id ASC'
-  else if SortField = 'usage_cnt' then
-    OrderClause := 'ORDER BY COALESCE(cu.cum_cnt, 0) ' + SortOrder + ', c.name ASC'
-  else
-    OrderClause := 'ORDER BY c.name ' + SortOrder;
+  ExecuteSafe('DROP TABLE IF EXISTS ' + TableName);
+  ExecuteSafe('CREATE TEMP TABLE ' + TableName + ' (id TEXT PRIMARY KEY)');
+  if Length(IDArray) = 0 then Exit;
+  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
+  try
+    FQuery.Close;
+    FQuery.SQL.Text := 'INSERT INTO ' + TableName + ' (id) VALUES (:id)';
+    FQuery.Prepare;
+    for i := Low(IDArray) to High(IDArray) do
+    begin
+      FQuery.Params[0].AsString := IDArray[i];
+      FQuery.ExecSQL;
+    end;
+    FConnection.Transaction.Commit;
+  except
+    FConnection.Transaction.Rollback;
+    raise;
+  end;
+end;
+
+procedure TThreadBatchDocumentDelete.DoHeavyLifting;
+var
+  i: Integer;
+  Q: TSQLQuery;
+begin
+  FDeletedCount := Length(FDocumentID);
+  if FDeletedCount = 0 then Exit;
+  SyncUpdateStatus('Preparing batch scope...');
+  FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_batch_docs');
+  FConnection.ExecuteDirect('CREATE TEMP TABLE temp_batch_docs (id TEXT PRIMARY KEY)');
+  if not FTransaction.Active then FTransaction.StartTransaction;
   Q := TSQLQuery.Create(nil);
   try
-    Q.Database := FQuery.Database;
-    Q.Transaction := FQuery.Transaction;
-    Q.UniDirectional := True;
-    if FilterText = '' then
+    Q.Database := FConnection;
+    Q.Transaction := FTransaction;
+    Q.SQL.Text := 'INSERT INTO temp_batch_docs (id) VALUES (:id)';
+    Q.Prepare;
+    for i := Low(FDocumentID) to High(FDocumentID) do
     begin
-      Q.SQL.Text :=
-        'WITH RECURSIVE descendant_map(ancestor_id, descendant_id) AS ( ' +
-        '  SELECT id, id FROM codes ' +
-        '  UNION ALL ' +
-        '  SELECT d.ancestor_id, ch.id FROM descendant_map d JOIN codes ch ON ch.parent_id = d.descendant_id ' +
-        '), ' +
-        'cumulative_usage AS ( ' +
-        '  SELECT d.ancestor_id as code_id, COUNT(co.id) as cum_cnt ' +
-        '  FROM descendant_map d JOIN codings co ON co.code_id = d.descendant_id ' +
-        '  GROUP BY d.ancestor_id ' +
-        '), ' +
-        'code_usage AS (SELECT code_id, COUNT(id) as cnt FROM codings GROUP BY code_id), ' +
-        'code_memos AS (SELECT reference, 1 as has_m FROM memos WHERE memo_type = ''Code'' GROUP BY reference) ' +
-        'SELECT c.id, c.name, c.parent_id, c.color, COALESCE(c.is_expanded, 0) as is_expanded, ' +
-        'COALESCE(u.cnt, 0) as usage_cnt, ' +
-        'COALESCE(m.has_m, 0) as has_memo ' +
-        'FROM codes c ' +
-        'LEFT JOIN code_usage u ON u.code_id = c.id ' +
-        'LEFT JOIN cumulative_usage cu ON cu.code_id = c.id ' +
-        'LEFT JOIN code_memos m ON m.reference = c.id ' +
-        OrderClause;
-    end
-    else
-    begin
-      Q.SQL.Text :=
-        'WITH RECURSIVE search_matches AS (SELECT id FROM codes WHERE name LIKE :f), ' +
-        'visible_nodes(id) AS (SELECT id FROM codes WHERE id IN search_matches UNION SELECT p.parent_id FROM codes p JOIN visible_nodes v ON p.id = v.id WHERE p.parent_id <> ''''), ' +
-        'descendant_map(ancestor_id, descendant_id) AS ( ' +
-        '  SELECT id, id FROM codes ' +
-        '  UNION ALL ' +
-        '  SELECT d.ancestor_id, ch.id FROM descendant_map d JOIN codes ch ON ch.parent_id = d.descendant_id ' +
-        '), ' +
-        'cumulative_usage AS ( ' +
-        '  SELECT d.ancestor_id as code_id, COUNT(co.id) as cum_cnt ' +
-        '  FROM descendant_map d JOIN codings co ON co.code_id = d.descendant_id ' +
-        '  GROUP BY d.ancestor_id ' +
-        '), ' +
-        'code_usage AS (SELECT code_id, COUNT(id) as cnt FROM codings GROUP BY code_id), ' +
-        'code_memos AS (SELECT reference, 1 as has_m FROM memos WHERE memo_type = ''Code'' GROUP BY reference) ' +
-        'SELECT c.id, c.name, c.parent_id, c.color, COALESCE(c.is_expanded, 0) as is_expanded, ' +
-        'COALESCE(u.cnt, 0) as usage_cnt, ' +
-        'COALESCE(m.has_m, 0) as has_memo ' +
-        'FROM codes c ' +
-        'LEFT JOIN code_usage u ON u.code_id = c.id ' +
-        'LEFT JOIN cumulative_usage cu ON cu.code_id = c.id ' +
-        'LEFT JOIN code_memos m ON m.reference = c.id ' +
-        'WHERE c.id IN visible_nodes ' + OrderClause;
-      Q.Params.ParamByName('f').AsString := '%' + FilterText + '%';
+      Q.Params[0].AsString := FDocumentID[i];
+      Q.ExecSQL;
     end;
-    Q.Open;
-    Capacity := 4096;
-    SetLength(Result, Capacity);
-    Count := 0;
-    fId := Q.FieldByName('id');
-    fName := Q.FieldByName('name');
-    fParent := Q.FieldByName('parent_id');
-    fColor := Q.FieldByName('color');
-    fExpanded := Q.FieldByName('is_expanded');
-    fUsage := Q.FieldByName('usage_cnt');
-    fMemo := Q.FieldByName('has_memo');
-    while not Q.EOF do
-    begin
-      if Count >= Capacity then
-      begin
-        Capacity := Capacity * 2;
-        SetLength(Result, Capacity);
-      end;
-      Result[Count].ID := fId.AsString;
-      Result[Count].Name := fName.AsString;
-      Result[Count].ParentID := fParent.AsString;
-      Result[Count].Color := fColor.AsInteger;
-      Result[Count].IsExpanded := fExpanded.AsInteger > 0;
-      Result[Count].UsageCount := fUsage.AsInteger;
-      Result[Count].HasMemo := fMemo.AsInteger > 0;
-      Inc(Count);
-      Q.Next;
-    end;
-    SetLength(Result, Count);
   finally
     Q.Free;
   end;
-end;
-
-procedure TServiceDatabase.MoveCode(const TargetID: String; const SourceID: TStringDynArray; DropMode: Integer);
-var
-  i: Integer;
-  TargetParent: String;
-  TargetOrder, Counter: Integer;
-begin
-  if Length(SourceID) = 0 then Exit;
-  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
-  try
-    if DropMode = 0 then
-    begin
-      FQuery.Close;
-      FQuery.SQL.Text := 'SELECT COALESCE(MAX(sort_order), 0) FROM codes WHERE parent_id = :p';
-      FQuery.Params.ParamByName('p').AsString := TargetID;
-      FQuery.Open;
-      Counter := FQuery.Fields[0].AsInteger + 10;
-      FQuery.Close;
-      FQuery.SQL.Text := 'UPDATE codes SET parent_id = :tid, sort_order = :s WHERE id = :sid';
-      for i := Low(SourceID) to High(SourceID) do
-      begin
-        FQuery.Params.ParamByName('tid').AsString := TargetID;
-        FQuery.Params.ParamByName('sid').AsString := SourceID[i];
-        FQuery.Params.ParamByName('s').AsInteger := Counter;
-        FQuery.ExecSQL;
-        Inc(Counter, 10);
-      end;
-    end
-    else
-    begin
-      FQuery.Close;
-      if TargetID = '' then
-      begin
-        TargetParent := '';
-        TargetOrder := 0;
-      end
-      else
-      begin
-        FQuery.SQL.Text := 'SELECT parent_id, sort_order FROM codes WHERE id = :tid';
-        FQuery.Params.ParamByName('tid').AsString := TargetID;
-        FQuery.Open;
-        TargetParent := FQuery.FieldByName('parent_id').AsString;
-        TargetOrder := FQuery.FieldByName('sort_order').AsInteger;
-        FQuery.Close;
-      end;
-      FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_source_codes');
-      FConnection.ExecuteDirect('CREATE TEMP TABLE temp_source_codes (id TEXT PRIMARY KEY)');
-      FQuery.SQL.Text := 'INSERT INTO temp_source_codes (id) VALUES (:id)';
-      for i := Low(SourceID) to High(SourceID) do
-      begin
-        FQuery.Params.ParamByName('id').AsString := SourceID[i];
-        FQuery.ExecSQL;
-      end;
-      FQuery.SQL.Text := 'UPDATE codes SET parent_id = :p WHERE id IN (SELECT id FROM temp_source_codes)';
-      FQuery.Params.ParamByName('p').AsString := TargetParent;
-      FQuery.ExecSQL;
-      FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_ordered_siblings');
-      FConnection.ExecuteDirect('CREATE TEMP TABLE temp_ordered_siblings (seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT)');
-      if DropMode = 1 then
-      begin
-        FQuery.SQL.Text := 
-          'INSERT INTO temp_ordered_siblings (id) ' +
-          'SELECT id FROM codes WHERE parent_id = :p AND id NOT IN (SELECT id FROM temp_source_codes) AND (sort_order < :so OR (sort_order = :so AND id < :tid)) ORDER BY sort_order ASC, id ASC';
-      end
-      else
-      begin
-        FQuery.SQL.Text := 
-          'INSERT INTO temp_ordered_siblings (id) ' +
-          'SELECT id FROM codes WHERE parent_id = :p AND id NOT IN (SELECT id FROM temp_source_codes) AND (sort_order <= :so OR (sort_order = :so AND id <= :tid)) ORDER BY sort_order ASC, id ASC';
-      end;
-      FQuery.Params.ParamByName('p').AsString := TargetParent;
-      FQuery.Params.ParamByName('so').AsInteger := TargetOrder;
-      FQuery.Params.ParamByName('tid').AsString := TargetID;
-      FQuery.ExecSQL;
-      FConnection.ExecuteDirect('INSERT INTO temp_ordered_siblings (id) SELECT id FROM temp_source_codes');
-      if DropMode = 1 then
-      begin
-        FQuery.SQL.Text := 
-          'INSERT INTO temp_ordered_siblings (id) ' +
-          'SELECT id FROM codes WHERE parent_id = :p AND id NOT IN (SELECT id FROM temp_source_codes) AND (sort_order > :so OR (sort_order = :so AND id >= :tid)) ORDER BY sort_order ASC, id ASC';
-      end
-      else
-      begin
-        FQuery.SQL.Text := 
-          'INSERT INTO temp_ordered_siblings (id) ' +
-          'SELECT id FROM codes WHERE parent_id = :p AND id NOT IN (SELECT id FROM temp_source_codes) AND (sort_order > :so OR (sort_order = :so AND id > :tid)) ORDER BY sort_order ASC, id ASC';
-      end;
-      FQuery.Params.ParamByName('p').AsString := TargetParent;
-      FQuery.Params.ParamByName('so').AsInteger := TargetOrder;
-      FQuery.Params.ParamByName('tid').AsString := TargetID;
-      FQuery.ExecSQL;
-      FConnection.ExecuteDirect('UPDATE codes SET sort_order = (SELECT seq * 10 FROM temp_ordered_siblings WHERE temp_ordered_siblings.id = codes.id) WHERE parent_id = ' + QuotedStr(TargetParent));
-    end;
-    FConnection.Transaction.Commit;
-  except
-    FConnection.Transaction.Rollback;
-    raise;
-  end;
-end;
-
-procedure TServiceDatabase.PersistAnalyticalSort(const SortField, SortOrder: String);
-var
-  OrderClause: String;
-begin
-  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
-  try
-    if SortField = 'usage_cnt' then
-      OrderClause := 'ORDER BY COALESCE(cu.cum_cnt, 0) ' + SortOrder + ', c.name ASC'
-    else if SortField = 'created_at' then
-      OrderClause := 'ORDER BY c.created_at ' + SortOrder + ', c.id ASC'
-    else
-      OrderClause := 'ORDER BY c.name ' + SortOrder;
-    FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_sort_persist');
-    FConnection.ExecuteDirect('CREATE TEMP TABLE temp_sort_persist (id TEXT PRIMARY KEY, seq INTEGER)');
-    FConnection.ExecuteDirect(
-      'WITH RECURSIVE descendant_map(ancestor_id, descendant_id) AS ( ' +
-      '  SELECT id, id FROM codes ' +
-      '  UNION ALL ' +
-      '  SELECT d.ancestor_id, ch.id FROM descendant_map d JOIN codes ch ON ch.parent_id = d.descendant_id ' +
-      '), ' +
-      'cumulative_usage AS ( ' +
-      '  SELECT d.ancestor_id as code_id, COUNT(co.id) as cum_cnt ' +
-      '  FROM descendant_map d JOIN codings co ON co.code_id = d.descendant_id ' +
-      '  GROUP BY d.ancestor_id ' +
-      ') ' +
-      'INSERT INTO temp_sort_persist (id, seq) ' +
-      'SELECT c.id, ROW_NUMBER() OVER (PARTITION BY c.parent_id ' + OrderClause + ') * 10 ' +
-      'FROM codes c ' +
-      'LEFT JOIN cumulative_usage cu ON cu.code_id = c.id'
-    );
-    FConnection.ExecuteDirect('UPDATE codes SET sort_order = (SELECT seq FROM temp_sort_persist WHERE temp_sort_persist.id = codes.id)');
-    FConnection.Transaction.Commit;
-  except
-    FConnection.Transaction.Rollback;
-    raise;
-  end;
-end;
-
-function TServiceDatabase.GetUserPreference(const AKey, ADefault: String): String;
-begin
-  Result := ADefault;
-  FQuery.Close;
-  FQuery.SQL.Text := 'SELECT value FROM preferences WHERE key = :k';
-  FQuery.Params.ParamByName('k').AsString := AKey;
-  FQuery.Open;
-  if not FQuery.EOF then Result := FQuery.Fields[0].AsString;
-  FQuery.Close;
-end;
-
-procedure TServiceDatabase.SaveUserPreference(const AKey, AValue: String);
-begin
-  ExecuteSafe('INSERT OR REPLACE INTO preferences (key, value) VALUES (' +
-              QuotedStr(AKey) + ', ' + QuotedStr(AValue) + ')');
-end;
-
-function TServiceDatabase.GetAttributeType(const AttributeName: String): String;
-begin
-  Result := 'Text';
-  FQuery.Close;
-  FQuery.SQL.Text := 'SELECT attribute_type FROM attribute_registry WHERE name = :n';
-  FQuery.Params.ParamByName('n').AsString := AttributeName;
-  FQuery.Open;
-  if not FQuery.EOF then Result := FQuery.Fields[0].AsString;
-  FQuery.Close;
+  SyncUpdateStatus('Removing associated segment memos...');
+  FConnection.ExecuteDirect('DELETE FROM memos WHERE memo_type = ''Segment'' AND SUBSTR(reference, 1, INSTR(reference, '':'') - 1) IN (SELECT id FROM temp_batch_docs)');
+  SyncUpdateStatus('Removing associated document memos...');
+  FConnection.ExecuteDirect('DELETE FROM memos WHERE memo_type = ''Document'' AND reference IN (SELECT id FROM temp_batch_docs)');
+  SyncUpdateStatus('Removing document attributes...');
+  FConnection.ExecuteDirect('DELETE FROM document_attributes WHERE document_id IN (SELECT id FROM temp_batch_docs)');
+  SyncUpdateStatus('Removing coding applications...');
+  FConnection.ExecuteDirect('DELETE FROM codings WHERE document_id IN (SELECT id FROM temp_batch_docs)');
+  SyncUpdateStatus('Deleting document records...');
+  FConnection.ExecuteDirect('DELETE FROM documents WHERE id IN (SELECT id FROM temp_batch_docs)');
+  SyncUpdateStatus('Finalising transaction...');
+  FTransaction.Commit;
 end;
 
 function TServiceDatabase.BuildDocumentWhereClause(const Filter: TDocumentFilterDefinition): String;
@@ -1472,24 +791,6 @@ begin
   end;
 end;
 
-function TServiceDatabase.CheckSpreadsheetTruncationRisk(const DocumentID: TStringDynArray): Boolean;
-var
-  i: Integer;
-begin
-  Result := False;
-  if Length(DocumentID) = 0 then Exit;
-  PopulateTempTable('temp_truncation_check', DocumentID);
-  FQuery.Close;
-  FQuery.SQL.Text := 'SELECT MAX(LENGTH(content)) FROM documents WHERE id IN (SELECT id FROM temp_truncation_check)';
-  FQuery.Open;
-  if not FQuery.EOF then
-  begin
-    if FQuery.Fields[0].AsInteger > 32700 then
-      Result := True;
-  end;
-  FQuery.Close;
-end;
-
 function TServiceDatabase.GetDocumentScopeID(const SelectedID: TStringDynArray; const Filter: TDocumentFilterDefinition): TStringDynArray;
 var
   Count, Capacity: Integer;
@@ -1519,15 +820,610 @@ begin
   FQuery.Close;
 end;
 
-function StringArrayToCommaStr(const Arr: TStringDynArray): String;
-var i: Integer;
+function TServiceDatabase.CheckSpreadsheetTruncationRisk(const DocumentID: TStringDynArray): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  if Length(DocumentID) = 0 then Exit;
+  PopulateTempTable('temp_truncation_check', DocumentID);
+  FQuery.Close;
+  FQuery.SQL.Text := 'SELECT MAX(LENGTH(content)) FROM documents WHERE id IN (SELECT id FROM temp_truncation_check)';
+  FQuery.Open;
+  if not FQuery.EOF then
+  begin
+    if FQuery.Fields[0].AsInteger > 32700 then
+      Result := True;
+  end;
+  FQuery.Close;
+end;
+
+function TServiceDatabase.GetAllCodeFlat(const FilterText, SortField, SortOrder: String): TCodeFlatArray;
+var
+  Capacity, Count: Integer;
+  Q: TSQLQuery;
+  fId, fName, fParent, fColor, fExpanded, fUsage, fMemo: TField;
+  OrderClause: String;
+begin
+  Result := nil;
+  if SortField = 'sort_order' then
+    OrderClause := 'ORDER BY c.parent_id ASC, c.sort_order ASC, c.id ASC'
+  else if SortField = 'usage_cnt' then
+    OrderClause := 'ORDER BY COALESCE(cu.cum_cnt, 0) ' + SortOrder + ', c.name ASC'
+  else
+    OrderClause := 'ORDER BY c.name ' + SortOrder;
+  Q := TSQLQuery.Create(nil);
+  try
+    Q.Database := FQuery.Database;
+    Q.Transaction := FQuery.Transaction;
+    Q.UniDirectional := True;
+    if FilterText = '' then
+    begin
+      Q.SQL.Text :=
+        'WITH RECURSIVE descendant_map(ancestor_id, descendant_id) AS ( ' +
+        '  SELECT id, id FROM codes ' +
+        '  UNION ALL ' +
+        '  SELECT d.ancestor_id, ch.id FROM descendant_map d JOIN codes ch ON ch.parent_id = d.descendant_id ' +
+        '), ' +
+        'cumulative_usage AS ( ' +
+        '  SELECT d.ancestor_id as code_id, COUNT(co.id) as cum_cnt ' +
+        '  FROM descendant_map d JOIN codings co ON co.code_id = d.descendant_id ' +
+        '  GROUP BY d.ancestor_id ' +
+        '), ' +
+        'code_usage AS (SELECT code_id, COUNT(id) as cnt FROM codings GROUP BY code_id), ' +
+        'code_memos AS (SELECT reference, 1 as has_m FROM memos WHERE memo_type = ''Code'' GROUP BY reference) ' +
+        'SELECT c.id, c.name, c.parent_id, c.color, COALESCE(c.is_expanded, 0) as is_expanded, ' +
+        'COALESCE(u.cnt, 0) as usage_cnt, ' +
+        'COALESCE(m.has_m, 0) as has_memo ' +
+        'FROM codes c ' +
+        'LEFT JOIN code_usage u ON u.code_id = c.id ' +
+        'LEFT JOIN cumulative_usage cu ON cu.code_id = c.id ' +
+        'LEFT JOIN code_memos m ON m.reference = c.id ' +
+        OrderClause;
+    end
+    else
+    begin
+      Q.SQL.Text :=
+        'WITH RECURSIVE search_matches AS (SELECT id FROM codes WHERE name LIKE :f), ' +
+        'visible_nodes(id) AS (SELECT id FROM codes WHERE id IN search_matches UNION SELECT p.parent_id FROM codes p JOIN visible_nodes v ON p.id = v.id WHERE p.parent_id <> ''''), ' +
+        'descendant_map(ancestor_id, descendant_id) AS ( ' +
+        '  SELECT id, id FROM codes ' +
+        '  UNION ALL ' +
+        '  SELECT d.ancestor_id, ch.id FROM descendant_map d JOIN codes ch ON ch.parent_id = d.descendant_id ' +
+        '), ' +
+        'cumulative_usage AS ( ' +
+        '  SELECT d.ancestor_id as code_id, COUNT(co.id) as cum_cnt ' +
+        '  FROM descendant_map d JOIN codings co ON co.code_id = d.descendant_id ' +
+        '  GROUP BY d.ancestor_id ' +
+        '), ' +
+        'code_usage AS (SELECT code_id, COUNT(id) as cnt FROM codings GROUP BY code_id), ' +
+        'code_memos AS (SELECT reference, 1 as has_m FROM memos WHERE memo_type = ''Code'' GROUP BY reference) ' +
+        'SELECT c.id, c.name, c.parent_id, c.color, COALESCE(c.is_expanded, 0) as is_expanded, ' +
+        'COALESCE(u.cnt, 0) as usage_cnt, ' +
+        'COALESCE(m.has_m, 0) as has_memo ' +
+        'FROM codes c ' +
+        'LEFT JOIN code_usage u ON u.code_id = c.id ' +
+        'LEFT JOIN cumulative_usage cu ON cu.code_id = c.id ' +
+        'LEFT JOIN code_memos m ON m.reference = c.id ' +
+        'WHERE c.id IN visible_nodes ' + OrderClause;
+      Q.Params.ParamByName('f').AsString := '%' + FilterText + '%';
+    end;
+    Q.Open;
+    Capacity := 4096;
+    SetLength(Result, Capacity);
+    Count := 0;
+    fId := Q.FieldByName('id');
+    fName := Q.FieldByName('name');
+    fParent := Q.FieldByName('parent_id');
+    fColor := Q.FieldByName('color');
+    fExpanded := Q.FieldByName('is_expanded');
+    fUsage := Q.FieldByName('usage_cnt');
+    fMemo := Q.FieldByName('has_memo');
+    while not Q.EOF do
+    begin
+      if Count >= Capacity then
+      begin
+        Capacity := Capacity * 2;
+        SetLength(Result, Capacity);
+      end;
+      Result[Count].ID := fId.AsString;
+      Result[Count].Name := fName.AsString;
+      Result[Count].ParentID := fParent.AsString;
+      Result[Count].Color := fColor.AsInteger;
+      Result[Count].IsExpanded := fExpanded.AsInteger > 0;
+      Result[Count].UsageCount := fUsage.AsInteger;
+      Result[Count].HasMemo := fMemo.AsInteger > 0;
+      Inc(Count);
+      Q.Next;
+    end;
+    SetLength(Result, Count);
+  finally
+    Q.Free;
+  end;
+end;
+
+function TServiceDatabase.GetCodeName(const CodeID: String): String;
 begin
   Result := '';
-  for i := Low(Arr) to High(Arr) do
+  if CodeID = '' then Exit;
+  FQuery.Close;
+  FQuery.SQL.Text := 'SELECT name FROM codes WHERE id = :id';
+  FQuery.Params.ParamByName('id').AsString := CodeID;
+  FQuery.Open;
+  if not FQuery.EOF then Result := FQuery.FieldByName('name').AsString;
+  FQuery.Close;
+end;
+
+function TServiceDatabase.CodeExists(const AName: String; const ParentID: String; out ExistingID: String): Boolean;
+begin
+  Result := False;
+  ExistingID := '';
+  FQuery.Close;
+  FQuery.SQL.Text := 'SELECT id FROM codes WHERE LOWER(name) = LOWER(:n) AND parent_id = :p';
+  FQuery.Params.ParamByName('n').AsString := Trim(AName);
+  FQuery.Params.ParamByName('p').AsString := ParentID;
+  FQuery.Open;
+  if not FQuery.EOF then
   begin
-    if Result <> '' then Result := Result + ',';
-    Result := Result + QuotedStr(Arr[i]);
+    ExistingID := FQuery.FieldByName('id').AsString;
+    Result := True;
   end;
+  FQuery.Close;
+end;
+
+procedure TServiceDatabase.AddCode(const AName, ADescription: String; AColor: TColor; const ParentID: String);
+var
+  MaxSort: Integer;
+begin
+  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
+  try
+    FQuery.Close;
+    FQuery.SQL.Text := 'SELECT COALESCE(MAX(sort_order), 0) FROM codes WHERE parent_id = :p';
+    FQuery.Params.ParamByName('p').AsString := ParentID;
+    FQuery.Open;
+    MaxSort := FQuery.Fields[0].AsInteger + 10;
+    FQuery.Close;
+    FQuery.SQL.Text := 'INSERT INTO codes (id, name, description, color, parent_id, sort_order) VALUES (:g, :n, :d, :c, :p, :s)';
+    FQuery.Params.ParamByName('g').AsString := NewMonoLexID;
+    FQuery.Params.ParamByName('n').AsString := Trim(AName);
+    FQuery.Params.ParamByName('d').AsString := Trim(ADescription);
+    FQuery.Params.ParamByName('c').AsInteger := Integer(AColor);
+    FQuery.Params.ParamByName('p').AsString := ParentID;
+    FQuery.Params.ParamByName('s').AsInteger := MaxSort;
+    FQuery.ExecSQL;
+    FConnection.Transaction.Commit;
+  except
+    FConnection.Transaction.Rollback;
+    raise;
+  end;
+end;
+
+procedure TServiceDatabase.UpdateCodeColor(const CodeID: String; AColor: TColor);
+begin
+  ExecuteSafe('UPDATE codes SET color = ' + IntToStr(Integer(AColor)) + ' WHERE id = ' + QuotedStr(CodeID));
+end;
+
+procedure TServiceDatabase.UpdateCodeColorBatch(const CodeIDs: TStringDynArray; AColor: TColor);
+begin
+  if Length(CodeIDs) = 0 then Exit;
+  PopulateTempTable('temp_color_update', CodeIDs);
+  ExecuteSafe('UPDATE codes SET color = ' + IntToStr(Integer(AColor)) + ' WHERE id IN (SELECT id FROM temp_color_update)');
+end;
+
+procedure TServiceDatabase.UpdateCodeDetails(const CodeID: String; const AName, ADescription: String);
+begin
+  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
+  try
+    FQuery.Close;
+    FQuery.SQL.Text := 'UPDATE codes SET name = :n, description = :d WHERE id = :id';
+    FQuery.Params.ParamByName('n').AsString := Trim(AName);
+    FQuery.Params.ParamByName('d').AsString := Trim(ADescription);
+    FQuery.Params.ParamByName('id').AsString := CodeID;
+    FQuery.ExecSQL;
+    FQuery.SQL.Text := 'UPDATE memos SET title = :mt WHERE memo_type = ''Code'' AND reference = :tid';
+    FQuery.Params.ParamByName('mt').AsString := 'Code Memo · ' + Trim(AName);
+    FQuery.Params.ParamByName('tid').AsString := CodeID;
+    FQuery.ExecSQL;
+    FConnection.Transaction.Commit;
+  except
+    FConnection.Transaction.Rollback;
+    raise;
+  end;
+end;
+
+procedure TServiceDatabase.GetRecursiveCount(const CodeID: String; out TotalCode, TotalCoding, TotalMemo: Integer);
+begin
+  TotalCode := 0; TotalCoding := 0; TotalMemo := 0;
+  FQuery.Close;
+  FQuery.SQL.Text :=
+    'WITH RECURSIVE descendant_codes(id) AS ( ' +
+    '  SELECT :root_id UNION ALL SELECT codes.id FROM codes ' +
+    '  JOIN descendant_codes ON codes.parent_id = descendant_codes.id ' +
+    ') SELECT ' +
+    '  (SELECT COUNT(*) FROM descendant_codes) as code_count, ' +
+    '  (SELECT COUNT(*) FROM codings WHERE code_id IN descendant_codes) as coding_count, ' +
+    '  (SELECT COUNT(*) FROM memos WHERE memo_type = ''Code'' AND reference IN descendant_codes) as memo_count';
+  FQuery.Params.ParamByName('root_id').AsString := CodeID;
+  FQuery.Open;
+  if not FQuery.EOF then
+  begin
+    TotalCode := FQuery.FieldByName('code_count').AsInteger;
+    TotalCoding := FQuery.FieldByName('coding_count').AsInteger;
+    TotalMemo := FQuery.FieldByName('memo_count').AsInteger;
+  end;
+  FQuery.Close;
+end;
+
+procedure TServiceDatabase.SetCodeExpandedState(const CodeID: String; IsExpanded, Recursive: Boolean);
+var
+  ExpVal: Integer;
+begin
+  if IsExpanded then ExpVal := 1 else ExpVal := 0;
+  if Recursive then
+  begin
+    if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
+    try
+      if CodeID = '' then
+        FQuery.SQL.Text := 'UPDATE codes SET is_expanded = ' + IntToStr(ExpVal)
+      else
+      begin
+        FQuery.SQL.Text := 'WITH RECURSIVE descendants(id) AS ( SELECT :root UNION ALL ' +
+                           'SELECT c.id FROM codes c JOIN descendants d ON c.parent_id = d.id ) ' +
+                           'UPDATE codes SET is_expanded = ' + IntToStr(ExpVal) + ' WHERE id IN descendants';
+        FQuery.Params.ParamByName('root').AsString := CodeID;
+      end;
+      FQuery.ExecSQL;
+      FConnection.Transaction.Commit;
+    except
+      FConnection.Transaction.Rollback;
+    end;
+  end
+  else
+    ExecuteSafe('UPDATE codes SET is_expanded = ' + IntToStr(ExpVal) + ' WHERE id = ' + QuotedStr(CodeID));
+end;
+
+procedure TServiceDatabase.MoveCode(const TargetID: String; const SourceID: TStringDynArray; DropMode: Integer);
+var
+  i: Integer;
+  TargetParent: String;
+  TargetOrder, Counter: Integer;
+begin
+  if Length(SourceID) = 0 then Exit;
+  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
+  try
+    if DropMode = 0 then
+    begin
+      FQuery.Close;
+      FQuery.SQL.Text := 'SELECT COALESCE(MAX(sort_order), 0) FROM codes WHERE parent_id = :p';
+      FQuery.Params.ParamByName('p').AsString := TargetID;
+      FQuery.Open;
+      Counter := FQuery.Fields[0].AsInteger + 10;
+      FQuery.Close;
+      FQuery.SQL.Text := 'UPDATE codes SET parent_id = :tid, sort_order = :s WHERE id = :sid';
+      for i := Low(SourceID) to High(SourceID) do
+      begin
+        FQuery.Params.ParamByName('tid').AsString := TargetID;
+        FQuery.Params.ParamByName('sid').AsString := SourceID[i];
+        FQuery.Params.ParamByName('s').AsInteger := Counter;
+        FQuery.ExecSQL;
+        Inc(Counter, 10);
+      end;
+    end
+    else
+    begin
+      FQuery.Close;
+      if TargetID = '' then
+      begin
+        TargetParent := '';
+        TargetOrder := 0;
+      end
+      else
+      begin
+        FQuery.SQL.Text := 'SELECT parent_id, sort_order FROM codes WHERE id = :tid';
+        FQuery.Params.ParamByName('tid').AsString := TargetID;
+        FQuery.Open;
+        TargetParent := FQuery.FieldByName('parent_id').AsString;
+        TargetOrder := FQuery.FieldByName('sort_order').AsInteger;
+        FQuery.Close;
+      end;
+      FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_source_codes');
+      FConnection.ExecuteDirect('CREATE TEMP TABLE temp_source_codes (id TEXT PRIMARY KEY)');
+      FQuery.SQL.Text := 'INSERT INTO temp_source_codes (id) VALUES (:id)';
+      for i := Low(SourceID) to High(SourceID) do
+      begin
+        FQuery.Params.ParamByName('id').AsString := SourceID[i];
+        FQuery.ExecSQL;
+      end;
+      FQuery.SQL.Text := 'UPDATE codes SET parent_id = :p WHERE id IN (SELECT id FROM temp_source_codes)';
+      FQuery.Params.ParamByName('p').AsString := TargetParent;
+      FQuery.ExecSQL;
+      FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_ordered_siblings');
+      FConnection.ExecuteDirect('CREATE TEMP TABLE temp_ordered_siblings (seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT)');
+      if DropMode = 1 then
+      begin
+        FQuery.SQL.Text := 
+          'INSERT INTO temp_ordered_siblings (id) ' +
+          'SELECT id FROM codes WHERE parent_id = :p AND id NOT IN (SELECT id FROM temp_source_codes) AND (sort_order < :so OR (sort_order = :so AND id < :tid)) ORDER BY sort_order ASC, id ASC';
+      end
+      else
+      begin
+        FQuery.SQL.Text := 
+          'INSERT INTO temp_ordered_siblings (id) ' +
+          'SELECT id FROM codes WHERE parent_id = :p AND id NOT IN (SELECT id FROM temp_source_codes) AND (sort_order <= :so OR (sort_order = :so AND id <= :tid)) ORDER BY sort_order ASC, id ASC';
+      end;
+      FQuery.Params.ParamByName('p').AsString := TargetParent;
+      FQuery.Params.ParamByName('so').AsInteger := TargetOrder;
+      FQuery.Params.ParamByName('tid').AsString := TargetID;
+      FQuery.ExecSQL;
+      FConnection.ExecuteDirect('INSERT INTO temp_ordered_siblings (id) SELECT id FROM temp_source_codes');
+      if DropMode = 1 then
+      begin
+        FQuery.SQL.Text := 
+          'INSERT INTO temp_ordered_siblings (id) ' +
+          'SELECT id FROM codes WHERE parent_id = :p AND id NOT IN (SELECT id FROM temp_source_codes) AND (sort_order > :so OR (sort_order = :so AND id >= :tid)) ORDER BY sort_order ASC, id ASC';
+      end
+      else
+      begin
+        FQuery.SQL.Text := 
+          'INSERT INTO temp_ordered_siblings (id) ' +
+          'SELECT id FROM codes WHERE parent_id = :p AND id NOT IN (SELECT id FROM temp_source_codes) AND (sort_order > :so OR (sort_order = :so AND id > :tid)) ORDER BY sort_order ASC, id ASC';
+      end;
+      FQuery.Params.ParamByName('p').AsString := TargetParent;
+      FQuery.Params.ParamByName('so').AsInteger := TargetOrder;
+      FQuery.Params.ParamByName('tid').AsString := TargetID;
+      FQuery.ExecSQL;
+      FConnection.ExecuteDirect('UPDATE codes SET sort_order = (SELECT seq * 10 FROM temp_ordered_siblings WHERE temp_ordered_siblings.id = codes.id) WHERE parent_id = ' + QuotedStr(TargetParent));
+    end;
+    FConnection.Transaction.Commit;
+  except
+    FConnection.Transaction.Rollback;
+    raise;
+  end;
+end;
+
+procedure TServiceDatabase.PersistAnalyticalSort(const SortField, SortOrder: String);
+var
+  OrderClause: String;
+begin
+  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
+  try
+    if SortField = 'usage_cnt' then
+      OrderClause := 'ORDER BY COALESCE(cu.cum_cnt, 0) ' + SortOrder + ', c.name ASC'
+    else if SortField = 'created_at' then
+      OrderClause := 'ORDER BY c.created_at ' + SortOrder + ', c.id ASC'
+    else
+      OrderClause := 'ORDER BY c.name ' + SortOrder;
+    FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_sort_persist');
+    FConnection.ExecuteDirect('CREATE TEMP TABLE temp_sort_persist (id TEXT PRIMARY KEY, seq INTEGER)');
+    FConnection.ExecuteDirect(
+      'WITH RECURSIVE descendant_map(ancestor_id, descendant_id) AS ( ' +
+      '  SELECT id, id FROM codes ' +
+      '  UNION ALL ' +
+      '  SELECT d.ancestor_id, ch.id FROM descendant_map d JOIN codes ch ON ch.parent_id = d.descendant_id ' +
+      '), ' +
+      'cumulative_usage AS ( ' +
+      '  SELECT d.ancestor_id as code_id, COUNT(co.id) as cum_cnt ' +
+      '  FROM descendant_map d JOIN codings co ON co.code_id = d.descendant_id ' +
+      '  GROUP BY d.ancestor_id ' +
+      ') ' +
+      'INSERT INTO temp_sort_persist (id, seq) ' +
+      'SELECT c.id, ROW_NUMBER() OVER (PARTITION BY c.parent_id ' + OrderClause + ') * 10 ' +
+      'FROM codes c ' +
+      'LEFT JOIN cumulative_usage cu ON cu.code_id = c.id'
+    );
+    FConnection.ExecuteDirect('UPDATE codes SET sort_order = (SELECT seq FROM temp_sort_persist WHERE temp_sort_persist.id = codes.id)');
+    FConnection.Transaction.Commit;
+  except
+    FConnection.Transaction.Rollback;
+    raise;
+  end;
+end;
+
+procedure TThreadBatchCodeDeleteRecursive.DoHeavyLifting;
+var
+  Q: TSQLQuery;
+begin
+  Q := TSQLQuery.Create(nil);
+  try
+    Q.Database := FConnection;
+    Q.Transaction := FTransaction;
+    if not FTransaction.Active then FTransaction.StartTransaction;
+    SyncUpdateStatus('Identifying code hierarchy...');
+    FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_del_codes');
+    FConnection.ExecuteDirect('CREATE TEMP TABLE temp_del_codes (id TEXT PRIMARY KEY)');
+    Q.SQL.Text := 
+      'INSERT INTO temp_del_codes (id) ' +
+      'WITH RECURSIVE descendants(id) AS ( SELECT :root_id UNION ALL ' +
+      'SELECT codes.id FROM codes JOIN descendants ON codes.parent_id = descendants.id ) ' +
+      'SELECT id FROM descendants';
+    Q.Params.ParamByName('root_id').AsString := FCodeID;
+    Q.ExecSQL;
+    SyncUpdateStatus('Removing associated code memos...');
+    FConnection.ExecuteDirect('DELETE FROM memos WHERE memo_type = ''Code'' AND reference IN (SELECT id FROM temp_del_codes)');
+    SyncUpdateStatus('Removing coding applications...');
+    FConnection.ExecuteDirect('DELETE FROM codings WHERE code_id IN (SELECT id FROM temp_del_codes)');
+    SyncUpdateStatus('Deleting codes...');
+    FConnection.ExecuteDirect('DELETE FROM codes WHERE id IN (SELECT id FROM temp_del_codes)');
+    SyncUpdateStatus('Finalising transaction...');
+    FTransaction.Commit;
+  finally
+    Q.Free;
+  end;
+end;
+
+procedure TThreadBatchMergeCode.DoHeavyLifting;
+var
+  i: Integer;
+  Q: TSQLQuery;
+begin
+  Q := TSQLQuery.Create(nil);
+  try
+    Q.Database := FConnection;
+    Q.Transaction := FTransaction;
+    if not FTransaction.Active then FTransaction.StartTransaction;
+    for i := Low(FSourceID) to High(FSourceID) do
+    begin
+      SyncUpdateStatus('Merging code ' + IntToStr(i + 1) + ' of ' + IntToStr(Length(FSourceID)) + '...');
+      Q.Close;
+      Q.SQL.Text := 'UPDATE codings SET code_id = :tid WHERE code_id = :sid';
+      Q.Params.ParamByName('tid').AsString := FTargetID;
+      Q.Params.ParamByName('sid').AsString := FSourceID[i];
+      Q.ExecSQL;
+      Q.SQL.Text := 'UPDATE codes SET parent_id = :tid WHERE parent_id = :sid';
+      Q.Params.ParamByName('tid').AsString := FTargetID;
+      Q.Params.ParamByName('sid').AsString := FSourceID[i];
+      Q.ExecSQL;
+      Q.SQL.Text := 'UPDATE codes SET name = name || '' (Merged)'' ' +
+                   'WHERE parent_id = :tid AND id IN ( SELECT c1.id FROM codes c1 ' +
+                   'JOIN codes c2 ON c1.parent_id = c2.parent_id AND c1.name = c2.name AND c1.id > c2.id ' +
+                   'WHERE c1.parent_id = :tid )';
+      Q.Params.ParamByName('tid').AsString := FTargetID;
+      Q.ExecSQL;
+      Q.SQL.Text := 'DELETE FROM codes WHERE id = :sid';
+      Q.Params.ParamByName('sid').AsString := FSourceID[i];
+      Q.ExecSQL;
+    end;
+    SyncUpdateStatus('Cleaning up duplicate codings...');
+    Q.SQL.Text := 'DELETE FROM codings WHERE id IN ( SELECT c2.id FROM codings c1 ' +
+                  'JOIN codings c2 ON c1.document_id = c2.document_id AND c1.code_id = c2.code_id AND c1.id < c2.id ' +
+                  'WHERE NOT (c1.start_position + c1.length <= c2.start_position OR c2.start_position + c2.length <= c1.start_position) )';
+    Q.ExecSQL;
+    SyncUpdateStatus('Finalising transaction...');
+    FTransaction.Commit;
+  finally
+    Q.Free;
+  end;
+end;
+
+function TServiceDatabase.AddCoding(const DocumentID, CodeID: String; StartPos, Length: Integer; out ConflictMsg: String): Boolean;
+var
+  EndPos: Integer;
+begin
+  Result := False;
+  ConflictMsg := '';
+  EndPos := StartPos + Length;
+  FQuery.Close;
+  FQuery.SQL.Text := 'SELECT id FROM codings WHERE document_id = :d AND code_id = :c AND NOT (:e <= start_position OR :s >= (start_position + length)) LIMIT 1';
+  FQuery.Params.ParamByName('d').AsString := DocumentID;
+  FQuery.Params.ParamByName('c').AsString := CodeID;
+  FQuery.Params.ParamByName('s').AsInteger := StartPos;
+  FQuery.Params.ParamByName('e').AsInteger := EndPos;
+  FQuery.Open;
+  if not FQuery.EOF then
+  begin
+    FQuery.Close;
+    Exit;
+  end;
+  FQuery.Close;
+  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
+  try
+    FQuery.SQL.Text := 'INSERT INTO codings (id, document_id, code_id, start_position, length) VALUES (:g, :d, :c, :s, :l)';
+    FQuery.Params.ParamByName('g').AsString := NewMonoLexID;
+    FQuery.Params.ParamByName('d').AsString := DocumentID;
+    FQuery.Params.ParamByName('c').AsString := CodeID;
+    FQuery.Params.ParamByName('s').AsInteger := StartPos;
+    FQuery.Params.ParamByName('l').AsInteger := Length;
+    FQuery.ExecSQL;
+    FConnection.Transaction.Commit;
+    Result := True;
+  except
+    on E: Exception do
+    begin
+      FConnection.Transaction.Rollback;
+      ConflictMsg := E.Message;
+    end;
+  end;
+end;
+
+procedure TServiceDatabase.DeleteCoding(const CodingID: String);
+begin
+  ExecuteSafe('DELETE FROM codings WHERE id = ' + QuotedStr(CodingID));
+end;
+
+function TServiceDatabase.GetCodingAtPosition(const DocumentID: String; CharPos: Integer): String;
+begin
+  Result := '';
+  FQuery.Close;
+  FQuery.SQL.Text := 'SELECT id FROM codings WHERE document_id = :d AND :p >= start_position AND :p < (start_position + length) LIMIT 1';
+  FQuery.Params.ParamByName('d').AsString := DocumentID;
+  FQuery.Params.ParamByName('p').AsInteger := CharPos;
+  FQuery.Open;
+  if not FQuery.EOF then Result := FQuery.Fields[0].AsString;
+  FQuery.Close;
+end;
+
+procedure TThreadLiveEditSave.DoHeavyLifting;
+var
+  i: Integer;
+  DocTitle: String;
+  Q: TSQLQuery;
+begin
+  Q := TSQLQuery.Create(nil);
+  try
+    Q.Database := FConnection;
+    Q.Transaction := FTransaction;
+    if not FTransaction.Active then FTransaction.StartTransaction;
+    SyncUpdateStatus('Preparing to save document...');
+    Q.SQL.Text := 'SELECT title FROM documents WHERE id = :did';
+    Q.Params.ParamByName('did').AsString := FDocumentID;
+    Q.Open;
+    if not Q.EOF then DocTitle := Q.Fields[0].AsString else DocTitle := 'Document';
+    Q.Close;
+    SyncUpdateStatus('Writing document text...');
+    Q.SQL.Text := 'UPDATE documents SET content = :b WHERE id = :did';
+    Q.Params.ParamByName('b').AsString := FNewText;
+    Q.Params.ParamByName('did').AsString := FDocumentID;
+    Q.ExecSQL;
+    SyncUpdateStatus('Synchronising code brackets...');
+    for i := 0 to High(FCodings) do
+    begin
+      if FCodings[i].NewLength <= 0 then
+      begin
+        Q.SQL.Text := 'DELETE FROM codings WHERE id = :id';
+        Q.Params.ParamByName('id').AsString := FCodings[i].ID;
+      end
+      else
+      begin
+        Q.SQL.Text := 'UPDATE codings SET start_position = :s, length = :l WHERE id = :id';
+        Q.Params.ParamByName('id').AsString := FCodings[i].ID;
+        Q.Params.ParamByName('s').AsInteger := FCodings[i].NewStart;
+        Q.Params.ParamByName('l').AsInteger := FCodings[i].NewLength;
+      end;
+      Q.ExecSQL;
+    end;
+    SyncUpdateStatus('Synchronising segment memos...');
+    for i := 0 to High(FMemos) do
+    begin
+      if FMemos[i].NewLength <= 0 then
+      begin
+        Q.SQL.Text := 'DELETE FROM memos WHERE memo_type = ''Segment'' AND reference = :old_ref';
+        Q.Params.ParamByName('old_ref').AsString := FMemos[i].ID; 
+      end
+      else
+      begin
+        Q.SQL.Text := 'UPDATE memos SET reference = :ref, title = :title WHERE memo_type = ''Segment'' AND reference = :old_ref';
+        Q.Params.ParamByName('old_ref').AsString := FMemos[i].ID; 
+        Q.Params.ParamByName('ref').AsString := FDocumentID + ':' + IntToStr(FMemos[i].NewStart) + ':' + IntToStr(FMemos[i].NewLength);
+        Q.Params.ParamByName('title').AsString := 'Segment Memo · ' + DocTitle + ' · ' + IntToStr(FMemos[i].NewStart) + '–' + IntToStr(FMemos[i].NewStart + FMemos[i].NewLength);
+      end;
+      Q.ExecSQL;
+    end;
+    SyncUpdateStatus('Finalising transaction...');
+    FTransaction.Commit;
+  finally
+    Q.Free;
+  end;
+end;
+
+function TServiceDatabase.GetAttributeType(const AttributeName: String): String;
+begin
+  Result := 'Text';
+  FQuery.Close;
+  FQuery.SQL.Text := 'SELECT attribute_type FROM attribute_registry WHERE name = :n';
+  FQuery.Params.ParamByName('n').AsString := AttributeName;
+  FQuery.Open;
+  if not FQuery.EOF then Result := FQuery.Fields[0].AsString;
+  FQuery.Close;
 end;
 
 procedure TServiceDatabase.GetAllAttributeName(List: TStrings);
@@ -1541,19 +1437,6 @@ begin
     List.Add(FQuery.FieldByName('name').AsString);
     FQuery.Next;
   end;
-  FQuery.Close;
-end;
-
-function TServiceDatabase.CountDocumentsWithAttribute(const DocumentID: TStringDynArray; const ColumnName: String): Integer;
-begin
-  Result := 0;
-  if Length(DocumentID) = 0 then Exit;
-  PopulateTempTable('temp_attr_count_docs', DocumentID);
-  FQuery.Close;
-  FQuery.SQL.Text := 'SELECT COUNT(*) FROM document_attributes WHERE document_id IN (SELECT id FROM temp_attr_count_docs) AND json_extract(attributes, ''$.'' || :col) IS NOT NULL AND CAST(json_extract(attributes, ''$.'' || :col) AS TEXT) <> ''''';
-  FQuery.Params.ParamByName('col').AsString := ColumnName;
-  FQuery.Open;
-  if not FQuery.EOF then Result := FQuery.Fields[0].AsInteger;
   FQuery.Close;
 end;
 
@@ -1619,27 +1502,107 @@ begin
   FQuery.Close;
 end;
 
-procedure TServiceDatabase.PopulateTempTable(const TableName: String; const IDArray: TStringDynArray);
+function TServiceDatabase.CountDocumentsWithAttribute(const DocumentID: TStringDynArray; const ColumnName: String): Integer;
+begin
+  Result := 0;
+  if Length(DocumentID) = 0 then Exit;
+  PopulateTempTable('temp_attr_count_docs', DocumentID);
+  FQuery.Close;
+  FQuery.SQL.Text := 'SELECT COUNT(*) FROM document_attributes WHERE document_id IN (SELECT id FROM temp_attr_count_docs) AND json_extract(attributes, ''$.'' || :col) IS NOT NULL AND CAST(json_extract(attributes, ''$.'' || :col) AS TEXT) <> ''''';
+  FQuery.Params.ParamByName('col').AsString := ColumnName;
+  FQuery.Open;
+  if not FQuery.EOF then Result := FQuery.Fields[0].AsInteger;
+  FQuery.Close;
+end;
+
+procedure TThreadBatchAttribute.DoHeavyLifting;
 var
   i: Integer;
+  Q: TSQLQuery;
+  ColumnName, AttributeType, JsonExpr: String;
 begin
-  ExecuteSafe('DROP TABLE IF EXISTS ' + TableName);
-  ExecuteSafe('CREATE TEMP TABLE ' + TableName + ' (id TEXT PRIMARY KEY)');
-  if Length(IDArray) = 0 then Exit;
-  if not FConnection.Transaction.Active then FConnection.Transaction.StartTransaction;
+  FAddedCount := 0;
+  FSkippedCount := 0;
+  if Length(FDocumentID) = 0 then Exit;
+  SyncUpdateStatus('Fetching attribute metadata...');
+  Q := TSQLQuery.Create(nil);
   try
-    FQuery.Close;
-    FQuery.SQL.Text := 'INSERT INTO ' + TableName + ' (id) VALUES (:id)';
-    FQuery.Prepare;
-    for i := Low(IDArray) to High(IDArray) do
+    Q.Database := FConnection;
+    Q.Transaction := FTransaction;
+    Q.SQL.Text := 'SELECT attribute_key, attribute_type FROM attribute_registry WHERE id = :id';
+    Q.Params.ParamByName('id').AsString := FAttributeID;
+    Q.Open;
+    if not Q.EOF then
     begin
-      FQuery.Params[0].AsString := IDArray[i];
-      FQuery.ExecSQL;
+      ColumnName := Q.Fields[0].AsString;
+      AttributeType := Q.Fields[1].AsString;
+    end
+    else
+    begin
+      ColumnName := '';
+      AttributeType := '';
     end;
-    FConnection.Transaction.Commit;
-  except
-    FConnection.Transaction.Rollback;
-    raise;
+    Q.Close;
+    if ColumnName = '' then Exit;
+    SyncUpdateStatus('Preparing scope...');
+    FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_batch_attr_docs');
+    FConnection.ExecuteDirect('CREATE TEMP TABLE temp_batch_attr_docs (id TEXT PRIMARY KEY)');
+    if not FTransaction.Active then FTransaction.StartTransaction;
+    Q.SQL.Text := 'INSERT INTO temp_batch_attr_docs (id) VALUES (:id)';
+    Q.Prepare;
+    for i := Low(FDocumentID) to High(FDocumentID) do
+    begin
+      Q.Params[0].AsString := FDocumentID[i];
+      Q.ExecSQL;
+    end;
+    if AttributeType = 'Numeric' then
+      JsonExpr := 'CAST(:v AS REAL)'
+    else
+      JsonExpr := ':v';
+    case FAction of
+      baaAdd:
+        begin
+          SyncUpdateStatus('Applying attributes to documents...');
+          Q.SQL.Text := 'UPDATE document_attributes SET attributes = json_set(attributes, ''$.'' || :col, ' + JsonExpr + ') ' +
+                        'WHERE document_id IN (SELECT id FROM temp_batch_attr_docs) AND (json_extract(attributes, ''$.'' || :col) IS NULL OR CAST(json_extract(attributes, ''$.'' || :col) AS TEXT) = '''')';
+          Q.Params.ParamByName('col').AsString := ColumnName;
+          Q.Params.ParamByName('v').AsString := Trim(FValue);
+          Q.ExecSQL;
+          FAddedCount := Q.RowsAffected;
+          FSkippedCount := Length(FDocumentID) - FAddedCount;
+        end;
+      baaEdit:
+        begin
+          SyncUpdateStatus('Modifying attribute values...');
+          if FUpdateOnlyExisting then
+          begin
+            Q.SQL.Text := 'UPDATE document_attributes SET attributes = json_set(attributes, ''$.'' || :col, ' + JsonExpr + ') ' +
+                          'WHERE document_id IN (SELECT id FROM temp_batch_attr_docs) AND json_extract(attributes, ''$.'' || :col) IS NOT NULL AND CAST(json_extract(attributes, ''$.'' || :col) AS TEXT) <> ''''';
+          end
+          else
+          begin
+            Q.SQL.Text := 'UPDATE document_attributes SET attributes = json_set(attributes, ''$.'' || :col, ' + JsonExpr + ') ' +
+                          'WHERE document_id IN (SELECT id FROM temp_batch_attr_docs)';
+          end;
+          Q.Params.ParamByName('col').AsString := ColumnName;
+          Q.Params.ParamByName('v').AsString := Trim(FValue);
+          Q.ExecSQL;
+          FAddedCount := Q.RowsAffected;
+        end;
+      baaDelete:
+        begin
+          SyncUpdateStatus('Removing attributes from documents...');
+          Q.SQL.Text := 'UPDATE document_attributes SET attributes = json_remove(attributes, ''$.'' || :col) ' +
+                        'WHERE document_id IN (SELECT id FROM temp_batch_attr_docs) AND json_extract(attributes, ''$.'' || :col) IS NOT NULL AND CAST(json_extract(attributes, ''$.'' || :col) AS TEXT) <> ''''';
+          Q.Params.ParamByName('col').AsString := ColumnName;
+          Q.ExecSQL;
+          FAddedCount := Q.RowsAffected;
+        end;
+    end;
+    SyncUpdateStatus('Finalising transaction...');
+    FTransaction.Commit;
+  finally
+    Q.Free;
   end;
 end;
 
@@ -1946,6 +1909,7 @@ begin
   FAttributeKey := AAttributeKey;
   SetLength(FResultArray, 0);
 end;
+
 procedure TThreadCrosstab.DoHeavyLifting;
 var
   Q: TSQLQuery;
@@ -2409,6 +2373,23 @@ begin
   finally
     Worker.Free;
   end;
+end;
+
+function TServiceDatabase.GetUserPreference(const AKey, ADefault: String): String;
+begin
+  Result := ADefault;
+  FQuery.Close;
+  FQuery.SQL.Text := 'SELECT value FROM preferences WHERE key = :k';
+  FQuery.Params.ParamByName('k').AsString := AKey;
+  FQuery.Open;
+  if not FQuery.EOF then Result := FQuery.Fields[0].AsString;
+  FQuery.Close;
+end;
+
+procedure TServiceDatabase.SaveUserPreference(const AKey, AValue: String);
+begin
+  ExecuteSafe('INSERT OR REPLACE INTO preferences (key, value) VALUES (' +
+              QuotedStr(AKey) + ', ' + QuotedStr(AValue) + ')');
 end;
 
 end.
