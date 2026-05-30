@@ -150,7 +150,6 @@ end;
 
 procedure TCodeTreeController.LoadData(const AFlatCode: TCodeFlatArray; const FilterText: String);
 var
-  SavedFocusedNode, SavedTopNode: PVirtualNode;
   ChildMap: specialize TDictionary<String, specialize TList<Integer>>;
   RootCodeList: specialize TList<Integer>;
   i: Integer;
@@ -189,15 +188,13 @@ begin
   FRestoreTopNode := nil;
   if Assigned(FTree.FocusedNode) then
   begin
-    SavedFocusedNode := FTree.FocusedNode;
-    if Assigned(FTree.GetNodeData(SavedFocusedNode)) then
-      FRestoreFocusID := PCodeData(FTree.GetNodeData(SavedFocusedNode))^.ID;
+    if Assigned(FTree.GetNodeData(FTree.FocusedNode)) then
+      FRestoreFocusID := PCodeData(FTree.GetNodeData(FTree.FocusedNode))^.ID;
   end;
   if Assigned(FTree.TopNode) then
   begin
-    SavedTopNode := FTree.TopNode;
-    if Assigned(FTree.GetNodeData(SavedTopNode)) then
-      FRestoreTopID := PCodeData(FTree.GetNodeData(SavedTopNode))^.ID;
+    if Assigned(FTree.GetNodeData(FTree.TopNode)) then
+      FRestoreTopID := PCodeData(FTree.GetNodeData(FTree.TopNode))^.ID;
   end;
   FIsBatchOperation := True;
   FTree.BeginUpdate;
