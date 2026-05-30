@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -36,7 +36,7 @@ const
 
 type
   EDataExportException = class(Exception);
-  
+
   TPDFReportContext = record
     Surface: Pcairo_surface_t;
     Context: Pcairo_t;
@@ -57,7 +57,6 @@ type
 
   TGetPathEvent = function(const CodeID: String): String of object;
   TVisualisationRenderEvent = procedure(cr: Pcairo_t; AWidth, AHeight: Integer) of object;
-  
   T2DStringArray = array of TStringDynArray;
 
   TServiceExport = class
@@ -125,7 +124,7 @@ type
     procedure DoHeavyLifting; override;
   end;
 
-TThreadExportDocumentText = class(TBackgroundWorker)
+  TThreadExportDocumentText = class(TBackgroundWorker)
   public
     FDirectoryPath: String;
     FDocumentID: TStringDynArray;
@@ -158,39 +157,6 @@ TThreadExportDocumentText = class(TBackgroundWorker)
     procedure DoHeavyLifting; override;
   end;
 
-procedure TThreadExportMemo.DoHeavyLifting;
-var
-  Extension: String;
-begin
-  SyncUpdateStatus('Exporting memos...');
-  Extension := LowerCase(ExtractFileExt(FFileName));
-  if Extension = '.csv' then
-  begin
-    if not TServiceExport.SaveMemoAsCSV(FConnection, FFileName, FIDList) then
-      raise Exception.Create('Failed to export as CSV.');
-  end
-  else if Extension = '.json' then
-  begin
-    if not TServiceExport.SaveMemoAsJSON(FConnection, FFileName, FIDList) then
-      raise Exception.Create('Failed to export as JSON.');
-  end
-  else if Extension = '.xml' then
-  begin
-    if not TServiceExport.SaveMemoAsXML(FConnection, FFileName, FIDList) then
-      raise Exception.Create('Failed to export as XML.');
-  end
-  else if Extension = '.ods' then
-  begin
-    if not TServiceExport.SaveMemoAsSpreadsheet(FConnection, FFileName, FIDList, sfOpenDocument) then
-      raise Exception.Create('Failed to export as ODS.');
-  end
-  else
-  begin
-    if not TServiceExport.SaveMemoAsSpreadsheet(FConnection, FFileName, FIDList, sfOOXML) then
-      raise Exception.Create('Failed to export as XLSX.');
-  end;
-end;
-
 class procedure TServiceExport.WriteToStream(AStream: TStream; const AText: String);
 var
   UTF8Str: RawByteString;
@@ -199,88 +165,6 @@ begin
   UTF8Str := UTF8Encode(AText);
   if Length(UTF8Str) > 0 then
     AStream.WriteBuffer(UTF8Str[1], Length(UTF8Str));
-end;
-
-class function TServiceExport.CleanFieldName(const FieldName: String): String;
-begin
-  if Copy(FieldName, 1, 11) = 'Attribute: ' then
-    Result := Copy(FieldName, 12, MaxInt)
-  else
-    Result := FieldName;
-end;
-
-class function TServiceExport.FormatPascalCase(const AText: String): String;
-var
-  i: Integer;
-  C: Char;
-  NextCap: Boolean;
-  S: String;
-begin
-  S := StringReplace(AText, '%', 'Percentage', [rfReplaceAll]);
-  Result := '';
-  NextCap := True;
-  for i := 1 to Length(S) do
-  begin
-    C := S[i];
-    if (C in ['A'..'Z', 'a'..'z', '0'..'9']) then
-    begin
-      if NextCap then
-      begin
-        Result := Result + UpCase(C);
-        NextCap := False;
-      end
-      else
-        Result := Result + C;
-    end
-    else
-    begin
-      NextCap := True; 
-    end;
-  end;
-end;
-
-class function TServiceExport.ExportRetrievedSegment(AQuery: TSQLQuery; const AFileName: String; APathGetter: TGetPathEvent; AField: TStringDynArray; const ASortDescription: String): Boolean;
-var
-  Extension: String;
-begin
-  Result := False;
-  if not Assigned(AQuery) or (AFileName = '') or not Assigned(APathGetter) then Exit;
-  Extension := LowerCase(ExtractFileExt(AFileName));
-  if Extension = '.pdf' then
-    Result := SaveRetrievedSegmentAsPDF(AQuery, AFileName, APathGetter, AField, ASortDescription)
-  else if Extension = '.html' then
-    Result := SaveRetrievedSegmentAsHTML(AQuery, AFileName, APathGetter, AField, ASortDescription)
-  else if Extension = '.csv' then
-    Result := SaveRetrievedSegmentAsCSV(AQuery, AFileName, APathGetter, AField)
-  else if Extension = '.json' then
-    Result := SaveRetrievedSegmentAsJSON(AQuery, AFileName, APathGetter, AField)
-  else if Extension = '.xml' then
-    Result := SaveRetrievedSegmentAsXML(AQuery, AFileName, APathGetter, AField)
-  else if Extension = '.ods' then
-    Result := SaveRetrievedSegmentAsSpreadsheet(AQuery, AFileName, APathGetter, AField, sfOpenDocument)
-  else
-    Result := SaveRetrievedSegmentAsSpreadsheet(AQuery, AFileName, APathGetter, AField, sfOOXML);
-end;
-
-class function TServiceExport.EscapeXML(const AText: String): String;
-begin
-  Result := AText;
-  Result := StringReplace(Result, '&', '&amp;', [rfReplaceAll]);
-  Result := StringReplace(Result, '<', '&lt;', [rfReplaceAll]);
-  Result := StringReplace(Result, '>', '&gt;', [rfReplaceAll]);
-  Result := StringReplace(Result, '"', '&quot;', [rfReplaceAll]);
-  Result := StringReplace(Result, '''', '&apos;', [rfReplaceAll]);
-  Result := StringReplace(Result, '''', '&#39;', [rfReplaceAll]);
-end;
-
-class function TServiceExport.EscapeJSON(const AText: String): String;
-begin
-  Result := AText;
-  Result := StringReplace(Result, '\', '\\', [rfReplaceAll]);
-  Result := StringReplace(Result, '"', '\"', [rfReplaceAll]);
-  Result := StringReplace(Result, #13, '\r', [rfReplaceAll]);
-  Result := StringReplace(Result, #10, '\n', [rfReplaceAll]);
-  Result := StringReplace(Result, #9, '\t', [rfReplaceAll]);
 end;
 
 class function TServiceExport.ValidateAndFixUTF8(const AText: String): String;
@@ -321,6 +205,44 @@ begin
   SetString(Result, StartPointer, EndPointer - StartPointer);
 end;
 
+class function TServiceExport.CleanFieldName(const FieldName: String): String;
+begin
+  if Copy(FieldName, 1, 11) = 'Attribute: ' then
+    Result := Copy(FieldName, 12, MaxInt)
+  else
+    Result := FieldName;
+end;
+
+class function TServiceExport.FormatPascalCase(const AText: String): String;
+var
+  i: Integer;
+  C: Char;
+  NextCap: Boolean;
+  S: String;
+begin
+  S := StringReplace(AText, '%', 'Percentage', [rfReplaceAll]);
+  Result := '';
+  NextCap := True;
+  for i := 1 to Length(S) do
+  begin
+    C := S[i];
+    if (C in ['A'..'Z', 'a'..'z', '0'..'9']) then
+    begin
+      if NextCap then
+      begin
+        Result := Result + UpCase(C);
+        NextCap := False;
+      end
+      else
+        Result := Result + C;
+    end
+    else
+    begin
+      NextCap := True; 
+    end;
+  end;
+end;
+
 class function TServiceExport.SanitizeCSVField(const AText: String): String;
 var
   S: String;
@@ -331,6 +253,27 @@ begin
   S := StringReplace(S, #13, #10, [rfReplaceAll]);
   S := StringReplace(S, #10, #13#10, [rfReplaceAll]); 
   Result := '"' + S + '"';
+end;
+
+class function TServiceExport.EscapeXML(const AText: String): String;
+begin
+  Result := AText;
+  Result := StringReplace(Result, '&', '&amp;', [rfReplaceAll]);
+  Result := StringReplace(Result, '<', '&lt;', [rfReplaceAll]);
+  Result := StringReplace(Result, '>', '&gt;', [rfReplaceAll]);
+  Result := StringReplace(Result, '"', '&quot;', [rfReplaceAll]);
+  Result := StringReplace(Result, '''', '&apos;', [rfReplaceAll]);
+  Result := StringReplace(Result, '''', '&#39;', [rfReplaceAll]);
+end;
+
+class function TServiceExport.EscapeJSON(const AText: String): String;
+begin
+  Result := AText;
+  Result := StringReplace(Result, '\', '\\', [rfReplaceAll]);
+  Result := StringReplace(Result, '"', '\"', [rfReplaceAll]);
+  Result := StringReplace(Result, #13, '\r', [rfReplaceAll]);
+  Result := StringReplace(Result, #10, '\n', [rfReplaceAll]);
+  Result := StringReplace(Result, #9, '\t', [rfReplaceAll]);
 end;
 
 class function TServiceExport.InitPDFContext(const AFileName, ASortDescription: String; out AContext: TPDFReportContext): Boolean;
@@ -386,22 +329,6 @@ begin
   Result := True;
 end;
 
-class procedure TServiceExport.FinalizePDFContext(var AContext: TPDFReportContext);
-begin
-  DrawFooter(AContext);
-  cairo_pattern_destroy(AContext.CardBackground);
-  pango_font_description_free(AContext.FontH1);
-  pango_font_description_free(AContext.FontSub);
-  pango_font_description_free(AContext.FontFoot);
-  pango_font_description_free(AContext.FontBody);
-  pango_font_description_free(AContext.FontMeta);
-  pango_font_description_free(AContext.FontCont);
-  g_object_unref(AContext.Layout);
-  cairo_destroy(AContext.Context);
-  cairo_surface_finish(AContext.Surface);
-  cairo_surface_destroy(AContext.Surface);
-end;
-
 class procedure TServiceExport.NewPage(var AContext: TPDFReportContext; IsFirstPage: Boolean);
 var
   ScaledWidth, TitleY: Double;
@@ -453,6 +380,22 @@ begin
   cairo_set_source_rgb(AContext.Context, 0.6, 0.6, 0.6);
   cairo_move_to(AContext.Context, (A4_WIDTH / 2) - (TextWidth / 2), A4_HEIGHT - MARGIN + 10);
   pango_cairo_show_layout(AContext.Context, AContext.Layout);
+end;
+
+class procedure TServiceExport.FinalizePDFContext(var AContext: TPDFReportContext);
+begin
+  DrawFooter(AContext);
+  cairo_pattern_destroy(AContext.CardBackground);
+  pango_font_description_free(AContext.FontH1);
+  pango_font_description_free(AContext.FontSub);
+  pango_font_description_free(AContext.FontFoot);
+  pango_font_description_free(AContext.FontBody);
+  pango_font_description_free(AContext.FontMeta);
+  pango_font_description_free(AContext.FontCont);
+  g_object_unref(AContext.Layout);
+  cairo_destroy(AContext.Context);
+  cairo_surface_finish(AContext.Surface);
+  cairo_surface_destroy(AContext.Surface);
 end;
 
 class procedure TServiceExport.PathRoundedRect(cr: Pcairo_t; x, y, w, h, r: Double);
@@ -934,6 +877,29 @@ begin
   end;
 end;
 
+class function TServiceExport.ExportRetrievedSegment(AQuery: TSQLQuery; const AFileName: String; APathGetter: TGetPathEvent; AField: TStringDynArray; const ASortDescription: String): Boolean;
+var
+  Extension: String;
+begin
+  Result := False;
+  if not Assigned(AQuery) or (AFileName = '') or not Assigned(APathGetter) then Exit;
+  Extension := LowerCase(ExtractFileExt(AFileName));
+  if Extension = '.pdf' then
+    Result := SaveRetrievedSegmentAsPDF(AQuery, AFileName, APathGetter, AField, ASortDescription)
+  else if Extension = '.html' then
+    Result := SaveRetrievedSegmentAsHTML(AQuery, AFileName, APathGetter, AField, ASortDescription)
+  else if Extension = '.csv' then
+    Result := SaveRetrievedSegmentAsCSV(AQuery, AFileName, APathGetter, AField)
+  else if Extension = '.json' then
+    Result := SaveRetrievedSegmentAsJSON(AQuery, AFileName, APathGetter, AField)
+  else if Extension = '.xml' then
+    Result := SaveRetrievedSegmentAsXML(AQuery, AFileName, APathGetter, AField)
+  else if Extension = '.ods' then
+    Result := SaveRetrievedSegmentAsSpreadsheet(AQuery, AFileName, APathGetter, AField, sfOpenDocument)
+  else
+    Result := SaveRetrievedSegmentAsSpreadsheet(AQuery, AFileName, APathGetter, AField, sfOOXML);
+end;
+
 class function TServiceExport.ExportVisualisation(const AFileName, AProjectTitle, ASubject: String; AWidth, AHeight: Integer; ARenderEvent: TVisualisationRenderEvent): Boolean;
 var
   surface: Pcairo_surface_t;
@@ -1006,130 +972,6 @@ begin
     cairo_destroy(cr);
     cairo_surface_finish(surface);
     cairo_surface_destroy(surface);
-  end;
-end;
-
-class function TServiceExport.ExportMemo(AConnection: TSQLite3Connection; const AFileName, IDList: String): Boolean;
-var
-  Worker: TThreadExportMemo;
-  Q: TSQLQuery;
-  Extension: String;
-  PartArray: TStringArray;
-begin
-  Result := False;
-  if not Assigned(AConnection) or (AFileName = '') or (IDList = '') then Exit;
-  Extension := LowerCase(ExtractFileExt(AFileName));
-  if (Extension = '.xlsx') or (Extension = '.ods') then
-  begin
-    Q := TSQLQuery.Create(nil);
-    try
-      Q.Database := AConnection;
-      Q.SQL.Text := 'SELECT memo_type, content, reference FROM memos WHERE id IN (' + IDList + ')';
-      Q.Open;
-      while not Q.EOF do
-      begin
-        if Length(Q.FieldByName('content').AsString) > SPREADSHEET_PER_CELL_LIMIT then
-        begin
-          MessageDlg('Data Limit Exceeded', 'Some memos or segments exceed the 32,767 characters per cell limit for spreadsheets.' + sLineBreak + 'Please export as CSV, JSON, or XML instead.', mtWarning, [mbOK], 0);
-          Exit(False);
-        end;
-        if Q.FieldByName('memo_type').AsString = 'Segment' then
-        begin
-          PartArray := Q.FieldByName('reference').AsString.Split([':']);
-          if (Length(PartArray) = 3) and (StrToIntDef(PartArray[2], 0) > SPREADSHEET_PER_CELL_LIMIT) then
-          begin
-            MessageDlg('Data Limit Exceeded', 'Some memos or segments exceed the 32,767 characters per cell limit for spreadsheets.' + sLineBreak + 'Please export as CSV, JSON, or XML instead.', mtWarning, [mbOK], 0);
-            Exit(False);
-          end;
-        end;
-        Q.Next;
-      end;
-    finally
-      Q.Free;
-    end;
-  end;
-  if AConnection.Transaction.Active then AConnection.Transaction.Commit;
-  Worker := TThreadExportMemo.Create(AConnection.DatabaseName);
-  try
-    Worker.FFileName := AFileName;
-    Worker.FIDList := IDList;
-    Worker.Start;
-    TfrmDialogProgress.Prepare('Exporting Memo', 'Connecting to database...');
-    frmDialogProgress.ShowModal;
-    if Worker.Success then
-      Result := True
-    else
-      MessageDlg('Export Error', 'Failed to export memos: ' + Worker.ErrorMessage, mtError, [mbOK], 0);
-  finally
-    Worker.Free;
-  end;
-end;
-
-class function TServiceExport.SaveMemoAsSpreadsheet(AConnection: TSQLite3Connection; const AFileName, IDList: String; AFormat: TsSpreadsheetFormat): Boolean;
-var
-  MyWorkbook: TsWorkbook;
-  MyWorksheet: TsWorksheet;
-  RowIndex: Integer;
-  Query, QuerySegment: TSQLQuery;
-  PartArray: TStringArray;
-  SegmentText, MemoContent: String;
-begin
-  Result := False;
-  MyWorkbook := TsWorkbook.Create;
-  Query := TSQLQuery.Create(nil);
-  QuerySegment := TSQLQuery.Create(nil);
-  try
-    Query.Database := AConnection;
-    Query.SQL.Text := 'SELECT m.memo_type, m.title, REPLACE(m.created_at, '' '', ''T'') || ''Z'' as created_at, REPLACE(m.updated_at, '' '', ''T'') || ''Z'' as updated_at, m.content, m.reference as raw_ref, ' +
-                    'CASE WHEN m.memo_type = ''Document'' THEN (SELECT title FROM documents WHERE id = m.reference) ' +
-                    'WHEN m.memo_type = ''Code'' THEN (SELECT name FROM codes WHERE id = m.reference) ' +
-                    'WHEN m.memo_type = ''Segment'' THEN (SELECT title FROM documents WHERE id = SUBSTR(m.reference, 1, INSTR(m.reference, '':'') - 1)) ' +
-                    'ELSE ''N/A'' END as ref_name FROM memos m WHERE m.id IN (' + IDList + ') ORDER BY m.memo_type ASC, m.title ASC';
-    Query.Open;
-    QuerySegment.Database := AConnection;
-    QuerySegment.SQL.Text := 'SELECT SUBSTR(content, :sp + 1, :len) FROM documents WHERE id = :did';
-    MyWorksheet := MyWorkbook.AddWorksheet('Exported Memo');
-    MyWorksheet.WriteText(0, 0, 'Type');
-    MyWorksheet.WriteText(0, 1, 'Title');
-    MyWorksheet.WriteText(0, 2, 'Reference');
-    MyWorksheet.WriteText(0, 3, 'Content');
-    MyWorksheet.WriteText(0, 4, 'Segment');
-    MyWorksheet.WriteText(0, 5, 'Created At (UTC)');
-    MyWorksheet.WriteText(0, 6, 'Updated At (UTC)');
-    RowIndex := 1;
-    while not Query.EOF do
-    begin
-      SegmentText := 'N/A';
-      if Query.FieldByName('memo_type').AsString = 'Segment' then
-      begin
-        PartArray := Query.FieldByName('raw_ref').AsString.Split([':']);
-        if Length(PartArray) = 3 then
-        begin
-          QuerySegment.Close;
-          QuerySegment.Params.ParamByName('did').AsString := PartArray[0];
-          QuerySegment.Params.ParamByName('sp').AsInteger := StrToIntDef(PartArray[1], 0);
-          QuerySegment.Params.ParamByName('len').AsInteger := StrToIntDef(PartArray[2], 0);
-          QuerySegment.Open;
-          if not QuerySegment.EOF then SegmentText := QuerySegment.Fields[0].AsString;
-        end;
-      end;
-      MemoContent := Query.FieldByName('content').AsString;
-      MyWorksheet.WriteText(RowIndex, 0, Query.FieldByName('memo_type').AsString);
-      MyWorksheet.WriteText(RowIndex, 1, Query.FieldByName('title').AsString);
-      MyWorksheet.WriteText(RowIndex, 2, Query.FieldByName('ref_name').AsString);
-      MyWorksheet.WriteText(RowIndex, 3, MemoContent);
-      MyWorksheet.WriteText(RowIndex, 4, SegmentText);
-      MyWorksheet.WriteText(RowIndex, 5, Query.FieldByName('created_at').AsString);
-      MyWorksheet.WriteText(RowIndex, 6, Query.FieldByName('updated_at').AsString);
-      Inc(RowIndex);
-      Query.Next;
-    end;
-    MyWorkbook.WriteToFile(AFileName, AFormat, True);
-    Result := True;
-  finally
-    QuerySegment.Free;
-    Query.Free;
-    MyWorkbook.Free;
   end;
 end;
 
@@ -1313,6 +1155,163 @@ begin
     QuerySegment.Free;
     Query.Free;
     OutputList.Free;
+  end;
+end;
+
+class function TServiceExport.SaveMemoAsSpreadsheet(AConnection: TSQLite3Connection; const AFileName, IDList: String; AFormat: TsSpreadsheetFormat): Boolean;
+var
+  MyWorkbook: TsWorkbook;
+  MyWorksheet: TsWorksheet;
+  RowIndex: Integer;
+  Query, QuerySegment: TSQLQuery;
+  PartArray: TStringArray;
+  SegmentText, MemoContent: String;
+begin
+  Result := False;
+  MyWorkbook := TsWorkbook.Create;
+  Query := TSQLQuery.Create(nil);
+  QuerySegment := TSQLQuery.Create(nil);
+  try
+    Query.Database := AConnection;
+    Query.SQL.Text := 'SELECT m.memo_type, m.title, REPLACE(m.created_at, '' '', ''T'') || ''Z'' as created_at, REPLACE(m.updated_at, '' '', ''T'') || ''Z'' as updated_at, m.content, m.reference as raw_ref, ' +
+                    'CASE WHEN m.memo_type = ''Document'' THEN (SELECT title FROM documents WHERE id = m.reference) ' +
+                    'WHEN m.memo_type = ''Code'' THEN (SELECT name FROM codes WHERE id = m.reference) ' +
+                    'WHEN m.memo_type = ''Segment'' THEN (SELECT title FROM documents WHERE id = SUBSTR(m.reference, 1, INSTR(m.reference, '':'') - 1)) ' +
+                    'ELSE ''N/A'' END as ref_name FROM memos m WHERE m.id IN (' + IDList + ') ORDER BY m.memo_type ASC, m.title ASC';
+    Query.Open;
+    QuerySegment.Database := AConnection;
+    QuerySegment.SQL.Text := 'SELECT SUBSTR(content, :sp + 1, :len) FROM documents WHERE id = :did';
+    MyWorksheet := MyWorkbook.AddWorksheet('Exported Memo');
+    MyWorksheet.WriteText(0, 0, 'Type');
+    MyWorksheet.WriteText(0, 1, 'Title');
+    MyWorksheet.WriteText(0, 2, 'Reference');
+    MyWorksheet.WriteText(0, 3, 'Content');
+    MyWorksheet.WriteText(0, 4, 'Segment');
+    MyWorksheet.WriteText(0, 5, 'Created At (UTC)');
+    MyWorksheet.WriteText(0, 6, 'Updated At (UTC)');
+    RowIndex := 1;
+    while not Query.EOF do
+    begin
+      SegmentText := 'N/A';
+      if Query.FieldByName('memo_type').AsString = 'Segment' then
+      begin
+        PartArray := Query.FieldByName('raw_ref').AsString.Split([':']);
+        if Length(PartArray) = 3 then
+        begin
+          QuerySegment.Close;
+          QuerySegment.Params.ParamByName('did').AsString := PartArray[0];
+          QuerySegment.Params.ParamByName('sp').AsInteger := StrToIntDef(PartArray[1], 0);
+          QuerySegment.Params.ParamByName('len').AsInteger := StrToIntDef(PartArray[2], 0);
+          QuerySegment.Open;
+          if not QuerySegment.EOF then SegmentText := QuerySegment.Fields[0].AsString;
+        end;
+      end;
+      MemoContent := Query.FieldByName('content').AsString;
+      MyWorksheet.WriteText(RowIndex, 0, Query.FieldByName('memo_type').AsString);
+      MyWorksheet.WriteText(RowIndex, 1, Query.FieldByName('title').AsString);
+      MyWorksheet.WriteText(RowIndex, 2, Query.FieldByName('ref_name').AsString);
+      MyWorksheet.WriteText(RowIndex, 3, MemoContent);
+      MyWorksheet.WriteText(RowIndex, 4, SegmentText);
+      MyWorksheet.WriteText(RowIndex, 5, Query.FieldByName('created_at').AsString);
+      MyWorksheet.WriteText(RowIndex, 6, Query.FieldByName('updated_at').AsString);
+      Inc(RowIndex);
+      Query.Next;
+    end;
+    MyWorkbook.WriteToFile(AFileName, AFormat, True);
+    Result := True;
+  finally
+    QuerySegment.Free;
+    Query.Free;
+    MyWorkbook.Free;
+  end;
+end;
+
+procedure TThreadExportMemo.DoHeavyLifting;
+var
+  Extension: String;
+begin
+  SyncUpdateStatus('Exporting memos...');
+  Extension := LowerCase(ExtractFileExt(FFileName));
+  if Extension = '.csv' then
+  begin
+    if not TServiceExport.SaveMemoAsCSV(FConnection, FFileName, FIDList) then
+      raise Exception.Create('Failed to export as CSV.');
+  end
+  else if Extension = '.json' then
+  begin
+    if not TServiceExport.SaveMemoAsJSON(FConnection, FFileName, FIDList) then
+      raise Exception.Create('Failed to export as JSON.');
+  end
+  else if Extension = '.xml' then
+  begin
+    if not TServiceExport.SaveMemoAsXML(FConnection, FFileName, FIDList) then
+      raise Exception.Create('Failed to export as XML.');
+  end
+  else if Extension = '.ods' then
+  begin
+    if not TServiceExport.SaveMemoAsSpreadsheet(FConnection, FFileName, FIDList, sfOpenDocument) then
+      raise Exception.Create('Failed to export as ODS.');
+  end
+  else
+  begin
+    if not TServiceExport.SaveMemoAsSpreadsheet(FConnection, FFileName, FIDList, sfOOXML) then
+      raise Exception.Create('Failed to export as XLSX.');
+  end;
+end;
+
+class function TServiceExport.ExportMemo(AConnection: TSQLite3Connection; const AFileName, IDList: String): Boolean;
+var
+  Worker: TThreadExportMemo;
+  Q: TSQLQuery;
+  Extension: String;
+  PartArray: TStringArray;
+begin
+  Result := False;
+  if not Assigned(AConnection) or (AFileName = '') or (IDList = '') then Exit;
+  Extension := LowerCase(ExtractFileExt(AFileName));
+  if (Extension = '.xlsx') or (Extension = '.ods') then
+  begin
+    Q := TSQLQuery.Create(nil);
+    try
+      Q.Database := AConnection;
+      Q.SQL.Text := 'SELECT memo_type, content, reference FROM memos WHERE id IN (' + IDList + ')';
+      Q.Open;
+      while not Q.EOF do
+      begin
+        if Length(Q.FieldByName('content').AsString) > SPREADSHEET_PER_CELL_LIMIT then
+        begin
+          MessageDlg('Data Limit Exceeded', 'Some memos or segments exceed the 32,767 characters per cell limit for spreadsheets.' + sLineBreak + 'Please export as CSV, JSON, or XML instead.', mtWarning, [mbOK], 0);
+          Exit(False);
+        end;
+        if Q.FieldByName('memo_type').AsString = 'Segment' then
+        begin
+          PartArray := Q.FieldByName('reference').AsString.Split([':']);
+          if (Length(PartArray) = 3) and (StrToIntDef(PartArray[2], 0) > SPREADSHEET_PER_CELL_LIMIT) then
+          begin
+            MessageDlg('Data Limit Exceeded', 'Some memos or segments exceed the 32,767 characters per cell limit for spreadsheets.' + sLineBreak + 'Please export as CSV, JSON, or XML instead.', mtWarning, [mbOK], 0);
+            Exit(False);
+          end;
+        end;
+        Q.Next;
+      end;
+    finally
+      Q.Free;
+    end;
+  end;
+  if AConnection.Transaction.Active then AConnection.Transaction.Commit;
+  Worker := TThreadExportMemo.Create(AConnection.DatabaseName);
+  try
+    Worker.FFileName := AFileName;
+    Worker.FIDList := IDList;
+    Worker.Start;
+    TfrmDialogProgress.Prepare('Exporting Memo', 'Connecting to database...');
+    frmDialogProgress.ShowModal;
+    if Worker.Success then
+      Result := True
+    else
+      MessageDlg('Export Error', 'Failed to export memos: ' + Worker.ErrorMessage, mtError, [mbOK], 0);
+  finally
+    Worker.Free;
   end;
 end;
 
@@ -1710,6 +1709,26 @@ begin
   end;
 end;
 
+class function TServiceExport.ExportDocumentText(AConnection: TSQLite3Connection; const ADirectoryPath: String; const ADocumentID: TStringDynArray): Boolean;
+var
+  Worker: TThreadExportDocumentText;
+begin
+  Result := False;
+  if AConnection.Transaction.Active then AConnection.Transaction.Commit;
+  Worker := TThreadExportDocumentText.Create(AConnection.DatabaseName);
+  try
+    Worker.FDirectoryPath := ADirectoryPath;
+    Worker.FDocumentID := ADocumentID;
+    Worker.Start;
+    TfrmDialogProgress.Prepare('Exporting Documents', 'Initialising...');
+    frmDialogProgress.ShowModal;
+    if Worker.Success then Result := True
+    else MessageDlg('Export Error', 'Failed to export documents: ' + Worker.ErrorMessage, mtError, [mbOK], 0);
+  finally
+    Worker.Free;
+  end;
+end;
+
 procedure TThreadExportDocumentSheet.DoHeavyLifting;
 var
   i, c, RowIndex: Integer;
@@ -1793,6 +1812,27 @@ begin
     AttributeNameList.Free;
     AttributeKeyList.Free;
     Workbook.Free;
+  end;
+end;
+
+class function TServiceExport.ExportDocumentSheet(AConnection: TSQLite3Connection; const AFileName: String; const ADocumentID: TStringDynArray; AFormat: TsSpreadsheetFormat): Boolean;
+var
+  Worker: TThreadExportDocumentSheet;
+begin
+  Result := False;
+  if AConnection.Transaction.Active then AConnection.Transaction.Commit;
+  Worker := TThreadExportDocumentSheet.Create(AConnection.DatabaseName);
+  try
+    Worker.FFileName := AFileName;
+    Worker.FDocumentID := ADocumentID;
+    Worker.FFormat := AFormat;
+    Worker.Start;
+    TfrmDialogProgress.Prepare('Exporting Documents', 'Initialising...');
+    frmDialogProgress.ShowModal;
+    if Worker.Success then Result := True
+    else MessageDlg('Export Error', 'Failed to export documents: ' + Worker.ErrorMessage, mtError, [mbOK], 0);
+  finally
+    Worker.Free;
   end;
 end;
 
@@ -1882,6 +1922,26 @@ begin
   end;
 end;
 
+class function TServiceExport.ExportDocumentJSON(AConnection: TSQLite3Connection; const AFileName: String; const ADocumentID: TStringDynArray): Boolean;
+var
+  Worker: TThreadExportDocumentJSON;
+begin
+  Result := False;
+  if AConnection.Transaction.Active then AConnection.Transaction.Commit;
+  Worker := TThreadExportDocumentJSON.Create(AConnection.DatabaseName);
+  try
+    Worker.FFileName := AFileName;
+    Worker.FDocumentID := ADocumentID;
+    Worker.Start;
+    TfrmDialogProgress.Prepare('Exporting Documents', 'Initialising...');
+    frmDialogProgress.ShowModal;
+    if Worker.Success then Result := True
+    else MessageDlg('Export Error', 'Failed to export documents: ' + Worker.ErrorMessage, mtError, [mbOK], 0);
+  finally
+    Worker.Free;
+  end;
+end;
+
 procedure TThreadExportDocumentXML.DoHeavyLifting;
 var
   i, c, Counter: Integer;
@@ -1963,67 +2023,6 @@ begin
     AttributeNameList.Free;
     AttributeKeyList.Free;
     OutputList.Free;
-  end;
-end;
-
-class function TServiceExport.ExportDocumentText(AConnection: TSQLite3Connection; const ADirectoryPath: String; const ADocumentID: TStringDynArray): Boolean;
-var
-  Worker: TThreadExportDocumentText;
-begin
-  Result := False;
-  if AConnection.Transaction.Active then AConnection.Transaction.Commit;
-  Worker := TThreadExportDocumentText.Create(AConnection.DatabaseName);
-  try
-    Worker.FDirectoryPath := ADirectoryPath;
-    Worker.FDocumentID := ADocumentID;
-    Worker.Start;
-    TfrmDialogProgress.Prepare('Exporting Documents', 'Initialising...');
-    frmDialogProgress.ShowModal;
-    if Worker.Success then Result := True
-    else MessageDlg('Export Error', 'Failed to export documents: ' + Worker.ErrorMessage, mtError, [mbOK], 0);
-  finally
-    Worker.Free;
-  end;
-end;
-
-class function TServiceExport.ExportDocumentSheet(AConnection: TSQLite3Connection; const AFileName: String; const ADocumentID: TStringDynArray; AFormat: TsSpreadsheetFormat): Boolean;
-var
-  Worker: TThreadExportDocumentSheet;
-begin
-  Result := False;
-  if AConnection.Transaction.Active then AConnection.Transaction.Commit;
-  Worker := TThreadExportDocumentSheet.Create(AConnection.DatabaseName);
-  try
-    Worker.FFileName := AFileName;
-    Worker.FDocumentID := ADocumentID;
-    Worker.FFormat := AFormat;
-    Worker.Start;
-    TfrmDialogProgress.Prepare('Exporting Documents', 'Initialising...');
-    frmDialogProgress.ShowModal;
-    if Worker.Success then Result := True
-    else MessageDlg('Export Error', 'Failed to export documents: ' + Worker.ErrorMessage, mtError, [mbOK], 0);
-  finally
-    Worker.Free;
-  end;
-end;
-
-class function TServiceExport.ExportDocumentJSON(AConnection: TSQLite3Connection; const AFileName: String; const ADocumentID: TStringDynArray): Boolean;
-var
-  Worker: TThreadExportDocumentJSON;
-begin
-  Result := False;
-  if AConnection.Transaction.Active then AConnection.Transaction.Commit;
-  Worker := TThreadExportDocumentJSON.Create(AConnection.DatabaseName);
-  try
-    Worker.FFileName := AFileName;
-    Worker.FDocumentID := ADocumentID;
-    Worker.Start;
-    TfrmDialogProgress.Prepare('Exporting Documents', 'Initialising...');
-    frmDialogProgress.ShowModal;
-    if Worker.Success then Result := True
-    else MessageDlg('Export Error', 'Failed to export documents: ' + Worker.ErrorMessage, mtError, [mbOK], 0);
-  finally
-    Worker.Free;
   end;
 end;
 
