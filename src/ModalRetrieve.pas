@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -205,7 +205,6 @@ type
     procedure LoadAttribute(const Filter: String);
     procedure LoadAttributeDefinitionPane(NodeIndex: Integer);
     procedure LoadCategoricalValue;
-    procedure LoadCodeTree;
     procedure LoadDocument(const Filter: String);
     procedure UpdateAttributeOperator(const AttributeType: String);
     procedure UpdateSortDropdown;
@@ -261,6 +260,8 @@ type
     procedure DoHeavyLifting; override;
     function GetPathSafe(const CodeID: String): String;
   end;
+
+{$R *.lfm}
 
 procedure TThreadLoadRetrieveContext.DoHeavyLifting;
 var
@@ -506,7 +507,6 @@ begin
       Q.Free;
     end;
   end;
-
   if not FDocumentAll then
   begin
     FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_docs');
@@ -527,7 +527,6 @@ begin
       Q.Free;
     end;
   end;
-
   SyncUpdateStatus('Executing retrieval query for export...');
   Q := TSQLQuery.Create(nil);
   try
@@ -537,7 +536,6 @@ begin
     Q.UniDirectional := True;
     Q.SQL.Text := FSQL;
     Q.Open;
-
     SyncUpdateStatus('Writing file to disk...');
     if not TServiceExport.ExportRetrievedSegment(Q, FFileName, @GetPathSafe, FExportField, FSortDescription) then
       raise Exception.Create('Export failed or file is locked.');
@@ -545,8 +543,6 @@ begin
     Q.Free;
   end;
 end;
-
-{$R *.lfm}
 
 procedure TfrmModalRetrieve.FormCreate(Sender: TObject);
 begin
@@ -663,33 +659,23 @@ begin
   lblStatus.Caption := 'Ready';
 end;
 
-procedure TfrmModalRetrieve.btnResetClick(Sender: TObject);
+function TfrmModalRetrieve.GetFullCodePath(const CodeID: String): String;
+var
+  CurrentID: String;
+  NodeCache: TCodeNodeCache;
 begin
-  edtSearchCode.Text := '';
-  edtSearchDocument.Text := '';
-  edtSearchAttribute.Text := '';
-  ApplyCodeFilter('');
-  ApplyAttributeFilter('');
-  LoadDocument(''); 
-  btnCodeClearAllClick(nil);
-  btnDocumentClearAllClick(nil);
-  btnAttributeClearAllClick(nil);
-  vstFilterAttribute.ClearSelection;
-  FCurrentAttributeIndex := -1;
-  pnlAttributeDefinition.Visible := False;
-  SetLength(FResultCache, 0);
-  vstResult.BeginUpdate;
-  try
-    vstResult.Clear;
-    vstResult.RootNodeCount := 0;
-  finally
-    vstResult.EndUpdate;
+  Result := '';
+  if CodeID = '' then Exit;
+  CurrentID := CodeID;
+  while (CurrentID <> '') and FCodeCache.TryGetValue(CurrentID, NodeCache) do
+  begin
+    if NodeCache.Name = '' then Break;
+    if Result = '' then
+      Result := NodeCache.Name
+    else
+      Result := NodeCache.Name + ' ' + #$E2#$86#$92 + ' ' + Result;
+    CurrentID := NodeCache.ParentID;
   end;
-  FLastCheckedNode := nil;
-  FLastCheckedDocNode := nil;
-  btnExport.Enabled := False;
-  lblStatus.Caption := 'Ready';
-  pcFilter.ActivePageIndex := 0;
 end;
 
 procedure TfrmModalRetrieve.UpdateSortDropdown;
@@ -803,25 +789,6 @@ begin
   UpdateSortDropdown;
 end;
 
-function TfrmModalRetrieve.GetFullCodePath(const CodeID: String): String;
-var
-  CurrentID: String;
-  NodeCache: TCodeNodeCache;
-begin
-  Result := '';
-  if CodeID = '' then Exit;
-  CurrentID := CodeID;
-  while (CurrentID <> '') and FCodeCache.TryGetValue(CurrentID, NodeCache) do
-  begin
-    if NodeCache.Name = '' then Break;
-    if Result = '' then
-      Result := NodeCache.Name
-    else
-      Result := NodeCache.Name + ' ' + #$E2#$86#$92 + ' ' + Result;
-    CurrentID := NodeCache.ParentID;
-  end;
-end;
-
 procedure TfrmModalRetrieve.vstResultGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: String);
 var
   Index: Integer;
@@ -873,122 +840,6 @@ begin
       Exit;
     end;
     HintText := TAppFormat.FormatUIHint(RawHint);
-  end;
-end;
-
-procedure TfrmModalRetrieve.vstCodeGetHint(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle; var HintText: String);
-var
-  Data: PCodeTreeData;
-begin
-  Data := Sender.GetNodeData(Node);
-  if Assigned(Data) then
-    HintText := TAppFormat.FormatUIHint(Data^.Name);
-end;
-
-procedure TfrmModalRetrieve.vstFilterDocumentGetHint(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle; var HintText: String);
-begin
-  if (Node^.Index < Cardinal(Length(FDocumentCache))) then
-    HintText := TAppFormat.FormatUIHint(FDocumentCache[Node^.Index].Title);
-end;
-
-procedure TfrmModalRetrieve.vstFilterAttributeGetHint(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle; var HintText: String);
-var
-  Index: Integer;
-begin
-  Index := Node^.Index;
-  if (Index >= 0) and (Index < Length(FAttributeCache)) then
-  begin
-    case Column of
-      0: HintText := TAppFormat.FormatUIHint(FAttributeCache[Index].Name);
-      1: HintText := TAppFormat.FormatUIHint(FAttributeCache[Index].OperatorVal);
-      2: HintText := TAppFormat.FormatUIHint(StringReplace(FAttributeCache[Index].FilterValue, '|', ' to ', []));
-    end;
-  end;
-end;
-
-procedure TfrmModalRetrieve.ListBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
-var
-  ListBox: TListBox;
-  ItemIndex: Integer;
-  NewHint: String;
-begin
-  ListBox := Sender as TListBox;
-  ItemIndex := ListBox.ItemAtPos(Point(X, Y), True);
-  if (ItemIndex >= 0) and (ItemIndex < ListBox.Items.Count) then
-  begin
-    NewHint := TAppFormat.FormatUIHint(ListBox.Items[ItemIndex]);
-    if ListBox.Hint <> NewHint then
-    begin
-      ListBox.Hint := NewHint;
-      Application.CancelHint;
-    end;
-  end
-  else
-    ListBox.Hint := '';
-end;
-
-procedure TfrmModalRetrieve.LoadCodeTree;
-var
-  Q: TSQLQuery;
-  CodeRecordArray: array of TCodeRecord;
-  Count, Capacity: Integer;
-  fId, fName, fParent: TField;
-  procedure AddChildNode(ParentNode: PVirtualNode; const PID: String);
-  var
-    j: Integer;
-    Node: PVirtualNode;
-    Data: PCodeTreeData;
-  begin
-    for j := 0 to High(CodeRecordArray) do
-    begin
-      if CodeRecordArray[j].ParentID = PID then
-      begin
-        Node := vstCode.AddChild(ParentNode);
-        Data := vstCode.GetNodeData(Node);
-        Data^.ID := CodeRecordArray[j].ID;
-        Data^.Name := CodeRecordArray[j].Name;
-        vstCode.CheckState[Node] := csUncheckedNormal;
-        vstCode.CheckType[Node] := ctCheckBox;
-        AddChildNode(Node, CodeRecordArray[j].ID);
-      end;
-    end;
-  end;
-begin
-  Q := TSQLQuery.Create(nil);
-  try
-    Q.Database := frmAppBase.conMain;
-    Q.UniDirectional := True;
-    Q.SQL.Text := 'SELECT id, name, parent_id FROM codes ORDER BY name';
-    Q.Open;
-    Count := 0;
-    Capacity := 4096;
-    SetLength(CodeRecordArray, Capacity);
-    fId := Q.FieldByName('id');
-    fName := Q.FieldByName('name');
-    fParent := Q.FieldByName('parent_id');
-    while not Q.EOF do
-    begin
-      if Count >= Capacity then
-      begin
-        Capacity := Capacity * 2;
-        SetLength(CodeRecordArray, Capacity);
-      end;
-      CodeRecordArray[Count].ID := fId.AsString;
-      CodeRecordArray[Count].Name := fName.AsString;
-      CodeRecordArray[Count].ParentID := fParent.AsString;
-      Inc(Count);
-      Q.Next;
-    end;
-    SetLength(CodeRecordArray, Count);
-    vstCode.BeginUpdate;
-    try
-      vstCode.Clear;
-      AddChildNode(nil, '');
-    finally
-      vstCode.EndUpdate;
-    end;
-  finally
-    Q.Free;
   end;
 end;
 
@@ -1110,6 +961,15 @@ begin
   end;
 end;
 
+procedure TfrmModalRetrieve.vstCodeGetHint(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle; var HintText: String);
+var
+  Data: PCodeTreeData;
+begin
+  Data := Sender.GetNodeData(Node);
+  if Assigned(Data) then
+    HintText := TAppFormat.FormatUIHint(Data^.Name);
+end;
+
 procedure TfrmModalRetrieve.vstScopeNoFocusChanging(Sender: TBaseVirtualTree; OldNode, NewNode: PVirtualNode; OldColumn, NewColumn: TColumnIndex; var Allowed: Boolean);
 begin
   Allowed := False;
@@ -1184,6 +1044,28 @@ begin
   end;
 end;
 
+procedure TfrmModalRetrieve.edtSearchCodeChange(Sender: TObject);
+begin
+  tmrCodeSearch.Enabled := False;
+  tmrCodeSearch.Enabled := True;
+end;
+
+procedure TfrmModalRetrieve.tmrCodeSearchTimer(Sender: TObject);
+begin
+  tmrCodeSearch.Enabled := False;
+  if edtSearchCode.Text = '' then
+  begin
+    btnCodeSelectAll.Caption := 'Select All';
+    btnCodeClearAll.Caption := 'Clear All';
+  end
+  else
+  begin
+    btnCodeSelectAll.Caption := 'Select Filtered';
+    btnCodeClearAll.Caption := 'Clear Filtered';
+  end;
+  ApplyCodeFilter(edtSearchCode.Text);
+end;
+
 procedure TfrmModalRetrieve.LoadDocument(const Filter: String);
 var
   Q: TSQLQuery;
@@ -1253,6 +1135,12 @@ begin
     CellText := FDocumentCache[Node^.Index].Title;
 end;
 
+procedure TfrmModalRetrieve.vstFilterDocumentGetHint(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle; var HintText: String);
+begin
+  if (Node^.Index < Cardinal(Length(FDocumentCache))) then
+    HintText := TAppFormat.FormatUIHint(FDocumentCache[Node^.Index].Title);
+end;
+
 procedure TfrmModalRetrieve.vstFilterDocumentChecked(Sender: TBaseVirtualTree; Node: PVirtualNode);
 const
   IsProcessing: Boolean = False;
@@ -1312,6 +1200,23 @@ begin
   end;
 end;
 
+function TfrmModalRetrieve.GetSelectedDocumentList(out IsAllSelected: Boolean): TStringDynArray;
+var
+  Key: String;
+  Count: Integer;
+begin
+  Result := nil;
+  Count := 0;
+  IsAllSelected := (Length(FDocumentCache) > 0) and (FCheckedDocumentSet.Count = Length(FDocumentCache));
+  SetLength(Result, FCheckedDocumentSet.Count);
+  if IsAllSelected or (FCheckedDocumentSet.Count = 0) then Exit;
+  for Key in FCheckedDocumentSet.Keys do
+  begin
+    Result[Count] := Key;
+    Inc(Count);
+  end;
+end;
+
 procedure TfrmModalRetrieve.btnDocumentSelectAllClick(Sender: TObject);
 var
   i: Integer;
@@ -1338,6 +1243,28 @@ begin
   finally
     vstFilterDocument.EndUpdate;
   end;
+end;
+
+procedure TfrmModalRetrieve.edtSearchDocumentChange(Sender: TObject);
+begin
+  tmrDocumentSearch.Enabled := False;
+  tmrDocumentSearch.Enabled := True;
+end;
+
+procedure TfrmModalRetrieve.tmrDocumentSearchTimer(Sender: TObject);
+begin
+  tmrDocumentSearch.Enabled := False;
+  if edtSearchDocument.Text = '' then
+  begin
+    btnDocumentSelectAll.Caption := 'Select All';
+    btnDocumentClearAll.Caption := 'Clear All';
+  end
+  else
+  begin
+    btnDocumentSelectAll.Caption := 'Select Filtered';
+    btnDocumentClearAll.Caption := 'Clear Filtered';
+  end;
+  LoadDocument(edtSearchDocument.Text);
 end;
 
 procedure TfrmModalRetrieve.LoadAttribute(const Filter: String);
@@ -1409,6 +1336,21 @@ end;
 procedure TfrmModalRetrieve.vstFilterAttributePaintText(Sender: TBaseVirtualTree; const TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType);
 begin
   TargetCanvas.Font.Color := clWindowText;
+end;
+
+procedure TfrmModalRetrieve.vstFilterAttributeGetHint(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle; var HintText: String);
+var
+  Index: Integer;
+begin
+  Index := Node^.Index;
+  if (Index >= 0) and (Index < Length(FAttributeCache)) then
+  begin
+    case Column of
+      0: HintText := TAppFormat.FormatUIHint(FAttributeCache[Index].Name);
+      1: HintText := TAppFormat.FormatUIHint(FAttributeCache[Index].OperatorVal);
+      2: HintText := TAppFormat.FormatUIHint(StringReplace(FAttributeCache[Index].FilterValue, '|', ' to ', []));
+    end;
+  end;
 end;
 
 procedure TfrmModalRetrieve.vstFilterAttributeChange(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -1537,95 +1479,6 @@ begin
   end;
 end;
 
-procedure TfrmModalRetrieve.cmbAttributeOperatorChange(Sender: TObject);
-var
-  Op: String;
-begin
-  Op := cmbAttributeOperator.Text;
-  pnlValueInput.Visible := (Op <> 'Is Empty') and (Op <> 'Is Not Empty');
-  fseValueNumericEnd.Visible := (pnlValueNumeric.Visible) and (Op = 'Between');
-  deValueDateEnd.Visible := (pnlValueDate.Visible) and (Op = 'Between');
-end;
-
-procedure TfrmModalRetrieve.edtSearchAttributeChange(Sender: TObject);
-begin
-  tmrAttributeSearch.Enabled := False;
-  tmrAttributeSearch.Enabled := True;
-end;
-
-procedure TfrmModalRetrieve.edtSearchCodeChange(Sender: TObject);
-begin
-  tmrCodeSearch.Enabled := False;
-  tmrCodeSearch.Enabled := True;
-end;
-
-procedure TfrmModalRetrieve.edtSearchDocumentChange(Sender: TObject);
-begin
-  tmrDocumentSearch.Enabled := False;
-  tmrDocumentSearch.Enabled := True;
-end;
-
-procedure TfrmModalRetrieve.SearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-  if Key = VK_RETURN then
-  begin
-    if Sender = edtSearchDocument then
-    begin
-      tmrDocumentSearch.Enabled := False;
-      tmrDocumentSearchTimer(nil);
-    end
-    else if Sender = edtSearchCode then
-    begin
-      tmrCodeSearch.Enabled := False;
-      tmrCodeSearchTimer(nil);
-    end
-    else if Sender = edtSearchAttribute then
-    begin
-      tmrAttributeSearch.Enabled := False;
-      tmrAttributeSearchTimer(nil);
-    end;
-    Key := 0;
-  end;
-end;
-
-procedure TfrmModalRetrieve.tmrAttributeSearchTimer(Sender: TObject);
-begin
-  tmrAttributeSearch.Enabled := False;
-  ApplyAttributeFilter(edtSearchAttribute.Text);
-end;
-
-procedure TfrmModalRetrieve.tmrCodeSearchTimer(Sender: TObject);
-begin
-  tmrCodeSearch.Enabled := False;
-  if edtSearchCode.Text = '' then
-  begin
-    btnCodeSelectAll.Caption := 'Select All';
-    btnCodeClearAll.Caption := 'Clear All';
-  end
-  else
-  begin
-    btnCodeSelectAll.Caption := 'Select Filtered';
-    btnCodeClearAll.Caption := 'Clear Filtered';
-  end;
-  ApplyCodeFilter(edtSearchCode.Text);
-end;
-
-procedure TfrmModalRetrieve.tmrDocumentSearchTimer(Sender: TObject);
-begin
-  tmrDocumentSearch.Enabled := False;
-  if edtSearchDocument.Text = '' then
-  begin
-    btnDocumentSelectAll.Caption := 'Select All';
-    btnDocumentClearAll.Caption := 'Clear All';
-  end
-  else
-  begin
-    btnDocumentSelectAll.Caption := 'Select Filtered';
-    btnDocumentClearAll.Caption := 'Clear Filtered';
-  end;
-  LoadDocument(edtSearchDocument.Text);
-end;
-
 procedure TfrmModalRetrieve.UpdateAttributeOperator(const AttributeType: String);
 var
   TypeIndex: Integer;
@@ -1690,6 +1543,40 @@ begin
   end;
 end;
 
+procedure TfrmModalRetrieve.LoadCategoricalValue;
+var
+  Q: TSQLQuery;
+  ColumnName: String;
+begin
+  if FCurrentAttributeIndex = -1 then Exit;
+  cmbValueCategorical.Items.Clear;
+  ColumnName := FAttributeCache[FCurrentAttributeIndex].Key;
+  Q := TSQLQuery.Create(nil);
+  Q.Database := frmAppBase.conMain;
+  try
+    Q.SQL.Text := 'SELECT DISTINCT ' + ColumnName + ' FROM document_attributes WHERE ' + ColumnName + ' IS NOT NULL ORDER BY ' + ColumnName;
+    Q.Open;
+    while not Q.EOF do
+    begin
+      cmbValueCategorical.Items.Add(Q.Fields[0].AsString);
+      Q.Next;
+    end;
+    if cmbValueCategorical.Items.Count > 0 then cmbValueCategorical.ItemIndex := 0;
+  finally
+    Q.Free;
+  end;
+end;
+
+procedure TfrmModalRetrieve.cmbAttributeOperatorChange(Sender: TObject);
+var
+  Op: String;
+begin
+  Op := cmbAttributeOperator.Text;
+  pnlValueInput.Visible := (Op <> 'Is Empty') and (Op <> 'Is Not Empty');
+  fseValueNumericEnd.Visible := (pnlValueNumeric.Visible) and (Op = 'Between');
+  deValueDateEnd.Visible := (pnlValueDate.Visible) and (Op = 'Between');
+end;
+
 procedure TfrmModalRetrieve.btnApplyAttributeFilterClick(Sender: TObject);
 var
   CurrentValue, Op: String;
@@ -1723,30 +1610,6 @@ begin
   FAttributeCache[FCurrentAttributeIndex].FilterValue := CurrentValue;
   vstFilterAttribute.InvalidateNode(vstFilterAttribute.FocusedNode);
   lblStatus.Caption := 'Filter applied for ' + FAttributeCache[FCurrentAttributeIndex].Name;
-end;
-
-procedure TfrmModalRetrieve.LoadCategoricalValue;
-var
-  Q: TSQLQuery;
-  ColumnName: String;
-begin
-  if FCurrentAttributeIndex = -1 then Exit;
-  cmbValueCategorical.Items.Clear;
-  ColumnName := FAttributeCache[FCurrentAttributeIndex].Key;
-  Q := TSQLQuery.Create(nil);
-  Q.Database := frmAppBase.conMain;
-  try
-    Q.SQL.Text := 'SELECT DISTINCT ' + ColumnName + ' FROM document_attributes WHERE ' + ColumnName + ' IS NOT NULL ORDER BY ' + ColumnName;
-    Q.Open;
-    while not Q.EOF do
-    begin
-      cmbValueCategorical.Items.Add(Q.Fields[0].AsString);
-      Q.Next;
-    end;
-    if cmbValueCategorical.Items.Count > 0 then cmbValueCategorical.ItemIndex := 0;
-  finally
-    Q.Free;
-  end;
 end;
 
 procedure TfrmModalRetrieve.btnClearAttributeFilterClick(Sender: TObject);
@@ -1790,23 +1653,6 @@ begin
   if cmbAttributeOperator.Items.Count > 0 then
     cmbAttributeOperator.ItemIndex := 0;
   lblStatus.Caption := 'All attribute filters cleared.';
-end;
-
-function TfrmModalRetrieve.GetSelectedDocumentList(out IsAllSelected: Boolean): TStringDynArray;
-var
-  Key: String;
-  Count: Integer;
-begin
-  Result := nil;
-  Count := 0;
-  IsAllSelected := (Length(FDocumentCache) > 0) and (FCheckedDocumentSet.Count = Length(FDocumentCache));
-  SetLength(Result, FCheckedDocumentSet.Count);
-  if IsAllSelected or (FCheckedDocumentSet.Count = 0) then Exit;
-  for Key in FCheckedDocumentSet.Keys do
-  begin
-    Result[Count] := Key;
-    Inc(Count);
-  end;
 end;
 
 function TfrmModalRetrieve.GetAttributeSQL: String;
@@ -1888,6 +1734,18 @@ begin
   finally
     vstFilterAttribute.EndUpdate;
   end;
+end;
+
+procedure TfrmModalRetrieve.edtSearchAttributeChange(Sender: TObject);
+begin
+  tmrAttributeSearch.Enabled := False;
+  tmrAttributeSearch.Enabled := True;
+end;
+
+procedure TfrmModalRetrieve.tmrAttributeSearchTimer(Sender: TObject);
+begin
+  tmrAttributeSearch.Enabled := False;
+  ApplyAttributeFilter(edtSearchAttribute.Text);
 end;
 
 function TfrmModalRetrieve.BuildSQL(CodeAll, DocumentAll: Boolean): String;
@@ -1972,6 +1830,120 @@ begin
              ' ORDER BY ' + OrderClause;
 end;
 
+procedure TfrmModalRetrieve.GetSortConfig(out S1, O1, S2, O2, S3, O3: String);
+begin
+  S1 := ''; O1 := ''; S2 := ''; O2 := ''; S3 := ''; O3 := '';
+  if cmbSort1.ItemIndex > 0 then begin S1 := cmbSort1.Text; O1 := cmbOrder1.Text; end;
+  if cmbSort2.ItemIndex > 0 then begin S2 := cmbSort2.Text; O2 := cmbOrder2.Text; end;
+  if cmbSort3.ItemIndex > 0 then begin S3 := cmbSort3.Text; O3 := cmbOrder3.Text; end;
+end;
+
+function TfrmModalRetrieve.GetSortDescription: String;
+var
+  S1, O1, S2, O2, S3, O3: String;
+  function CleanFieldName(const FieldName: String): String;
+  begin
+    if Copy(FieldName, 1, 11) = 'Attribute: ' then
+      Result := Copy(FieldName, 12, MaxInt)
+    else
+      Result := FieldName;
+  end;
+begin
+  GetSortConfig(S1, O1, S2, O2, S3, O3);
+  Result := '';
+  if (S1 <> '') and (S1 <> '(None)') then 
+    Result := CleanFieldName(S1) + ' (' + O1 + ')';
+  if (S2 <> '') and (S2 <> '(None)') then 
+    Result := Result + ', then by ' + CleanFieldName(S2) + ' (' + O2 + ')';
+  if (S3 <> '') and (S3 <> '(None)') then 
+    Result := Result + ', then by ' + CleanFieldName(S3) + ' (' + O3 + ')';
+  if Result = '' then 
+    Result := 'Default (Document Name, then Segment Position)';
+end;
+
+function TfrmModalRetrieve.GetExportFieldList: TStringDynArray;
+var
+  i: Integer;
+begin
+  Result := nil;
+  SetLength(Result, lbxSelected.Items.Count);
+  for i := 0 to lbxSelected.Items.Count - 1 do
+    Result[i] := lbxSelected.Items[i];
+end;
+
+procedure TfrmModalRetrieve.btnResetClick(Sender: TObject);
+begin
+  edtSearchCode.Text := '';
+  edtSearchDocument.Text := '';
+  edtSearchAttribute.Text := '';
+  ApplyCodeFilter('');
+  ApplyAttributeFilter('');
+  LoadDocument(''); 
+  btnCodeClearAllClick(nil);
+  btnDocumentClearAllClick(nil);
+  btnAttributeClearAllClick(nil);
+  vstFilterAttribute.ClearSelection;
+  FCurrentAttributeIndex := -1;
+  pnlAttributeDefinition.Visible := False;
+  SetLength(FResultCache, 0);
+  vstResult.BeginUpdate;
+  try
+    vstResult.Clear;
+    vstResult.RootNodeCount := 0;
+  finally
+    vstResult.EndUpdate;
+  end;
+  FLastCheckedNode := nil;
+  FLastCheckedDocNode := nil;
+  btnExport.Enabled := False;
+  lblStatus.Caption := 'Ready';
+  pcFilter.ActivePageIndex := 0;
+end;
+
+procedure TfrmModalRetrieve.ListBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+var
+  ListBox: TListBox;
+  ItemIndex: Integer;
+  NewHint: String;
+begin
+  ListBox := Sender as TListBox;
+  ItemIndex := ListBox.ItemAtPos(Point(X, Y), True);
+  if (ItemIndex >= 0) and (ItemIndex < ListBox.Items.Count) then
+  begin
+    NewHint := TAppFormat.FormatUIHint(ListBox.Items[ItemIndex]);
+    if ListBox.Hint <> NewHint then
+    begin
+      ListBox.Hint := NewHint;
+      Application.CancelHint;
+    end;
+  end
+  else
+    ListBox.Hint := '';
+end;
+
+procedure TfrmModalRetrieve.SearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if Key = VK_RETURN then
+  begin
+    if Sender = edtSearchDocument then
+    begin
+      tmrDocumentSearch.Enabled := False;
+      tmrDocumentSearchTimer(nil);
+    end
+    else if Sender = edtSearchCode then
+    begin
+      tmrCodeSearch.Enabled := False;
+      tmrCodeSearchTimer(nil);
+    end
+    else if Sender = edtSearchAttribute then
+    begin
+      tmrAttributeSearch.Enabled := False;
+      tmrAttributeSearchTimer(nil);
+    end;
+    Key := 0;
+  end;
+end;
+
 procedure TfrmModalRetrieve.btnExecuteClick(Sender: TObject);
 var
   Worker: TThreadRetrieveExecution;
@@ -2015,47 +1987,6 @@ begin
   finally
     Worker.Free;
   end;
-end;
-
-function TfrmModalRetrieve.GetExportFieldList: TStringDynArray;
-var
-  i: Integer;
-begin
-  Result := nil;
-  SetLength(Result, lbxSelected.Items.Count);
-  for i := 0 to lbxSelected.Items.Count - 1 do
-    Result[i] := lbxSelected.Items[i];
-end;
-
-procedure TfrmModalRetrieve.GetSortConfig(out S1, O1, S2, O2, S3, O3: String);
-begin
-  S1 := ''; O1 := ''; S2 := ''; O2 := ''; S3 := ''; O3 := '';
-  if cmbSort1.ItemIndex > 0 then begin S1 := cmbSort1.Text; O1 := cmbOrder1.Text; end;
-  if cmbSort2.ItemIndex > 0 then begin S2 := cmbSort2.Text; O2 := cmbOrder2.Text; end;
-  if cmbSort3.ItemIndex > 0 then begin S3 := cmbSort3.Text; O3 := cmbOrder3.Text; end;
-end;
-
-function TfrmModalRetrieve.GetSortDescription: String;
-var
-  S1, O1, S2, O2, S3, O3: String;
-  function CleanFieldName(const FieldName: String): String;
-  begin
-    if Copy(FieldName, 1, 11) = 'Attribute: ' then
-      Result := Copy(FieldName, 12, MaxInt)
-    else
-      Result := FieldName;
-  end;
-begin
-  GetSortConfig(S1, O1, S2, O2, S3, O3);
-  Result := '';
-  if (S1 <> '') and (S1 <> '(None)') then 
-    Result := CleanFieldName(S1) + ' (' + O1 + ')';
-  if (S2 <> '') and (S2 <> '(None)') then 
-    Result := Result + ', then by ' + CleanFieldName(S2) + ' (' + O2 + ')';
-  if (S3 <> '') and (S3 <> '(None)') then 
-    Result := Result + ', then by ' + CleanFieldName(S3) + ' (' + O3 + ')';
-  if Result = '' then 
-    Result := 'Default (Document Name, then Segment Position)';
 end;
 
 procedure TfrmModalRetrieve.btnExportClick(Sender: TObject);
