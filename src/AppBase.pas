@@ -314,9 +314,9 @@ var
 implementation
 
 uses
-  fpjson, fpsTypes, jsonparser, AppFont, AppFormat, AppIdentity, DialogAbout, DialogEditor, DialogFilter,
-  DialogInput, DialogProgress, DialogSort, DialogStartup, ModalAnalyse, ModalAttribute,
-  ModalMemo, ModalRetrieve, MonoLexID, ServiceExport, ServiceImport, ServiceMemo;
+  fpjson, fpsTypes, jsonparser, AppFont, AppFormat, AppIdentity, DialogAbout, DialogEditor,
+  DialogFilter, DialogInput, DialogProgress, DialogSort, DialogStartup, ModalAnalyse,
+  ModalAttribute, ModalMemo, ModalRetrieve, ServiceExport, ServiceImport, ServiceMemo;
 
 {$R *.lfm}
 
