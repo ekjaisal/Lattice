@@ -225,7 +225,6 @@ type
     procedure mniProjectOptimizeClick(Sender: TObject);
     procedure mniProjectSnapshotClick(Sender: TObject);
     procedure mniRetrievalClick(Sender: TObject);
-    procedure mniSegmentMemoClick(Sender: TObject);
     procedure mniTreeCodeAddSubCodeClick(Sender: TObject);
     procedure mniTreeCodeCollapseAllClick(Sender: TObject);
     procedure mniTreeCodeColorChangeClick(Sender: TObject);
@@ -281,7 +280,6 @@ type
     procedure AttributeTypeChange(Sender: TObject);
     procedure ContextCutClick(Sender: TObject);
     procedure ContextPasteClick(Sender: TObject);
-    procedure FindInDocument(const SearchText: String; StartAt: Integer);
     procedure LoadMemoForCurrentDocument;
     procedure OnCodeTreeChanged(Sender: TObject);
     procedure OnDocumentSelect(const DocumentID: String);
@@ -2113,15 +2111,6 @@ begin
     Clipbrd.Clipboard.AsText := FRenderDocument.GetSelectedText;
 end;
 
-procedure TfrmAppBase.FindInDocument(const SearchText: String; StartAt: Integer);
-begin
-  if Assigned(edtReadSearch) and (FCurrentDocumentID <> '') then
-  begin
-    edtReadSearch.Text := SearchText;
-    edtReadSearch.SetFocus;
-  end;
-end;
-
 procedure TfrmAppBase.ApplyCoding(const CodeID: String; CodeColor: TColor);
 var
   StartCharacter, LengthCharacter: Integer;
@@ -2268,26 +2257,6 @@ begin
   else
     lblReadSearchCount.Caption := '';
   FRenderDocument.Invalidate;
-end;
-
-procedure TfrmAppBase.mniSegmentMemoClick(Sender: TObject);
-var
-  CodingID: String;
-begin
-  if FCurrentDocumentID = '' then Exit;
-  qryCheck.Close;
-  qryCheck.SQL.Text := 'SELECT id FROM codings WHERE document_id = :d AND :p >= start_position AND :p < (start_position + length) LIMIT 1';
-  qryCheck.Params.ParamByName('d').AsString := FCurrentDocumentID;
-  qryCheck.Open;
-  if not qryCheck.EOF then
-  begin
-    CodingID := qryCheck.Fields[0].AsString;
-    TServiceMemo.Execute(conMain, 'Coding', CodingID, '');
-    UpdateDashboardStatistic;
-  end
-  else
-    MessageDlg('Info', 'Please click inside a coded segment to create a segment memo.', mtInformation, [mbOK], 0);
-  qryCheck.Close;
 end;
 
 procedure TfrmAppBase.AddSegmentMemoClick(Sender: TObject);
