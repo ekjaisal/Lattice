@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -100,6 +100,23 @@ type
 
 implementation
 
+function GetNodeHeight(ANode: PVirtualNode): Integer;
+var
+  Child: PVirtualNode;
+  MaxChildHeight: Integer;
+begin
+  Result := 0;
+  if (ANode = nil) or (ANode^.ChildCount = 0) then Exit;
+  MaxChildHeight := 0;
+  Child := ANode^.FirstChild;
+  while Child <> nil do
+  begin
+    MaxChildHeight := Max(MaxChildHeight, 1 + GetNodeHeight(Child));
+    Child := Child^.NextSibling;
+  end;
+  Result := MaxChildHeight;
+end;
+
 constructor TCodeTreeController.Create(ATree: TLazVirtualStringTree; ADatabase: TServiceDatabase);
 begin
   inherited Create;
@@ -129,133 +146,6 @@ end;
 destructor TCodeTreeController.Destroy;
 begin
   inherited Destroy;
-end;
-
-function GetNodeHeight(ANode: PVirtualNode): Integer;
-var
-  Child: PVirtualNode;
-  MaxChildHeight: Integer;
-begin
-  Result := 0;
-  if (ANode = nil) or (ANode^.ChildCount = 0) then Exit;
-  MaxChildHeight := 0;
-  Child := ANode^.FirstChild;
-  while Child <> nil do
-  begin
-    MaxChildHeight := Max(MaxChildHeight, 1 + GetNodeHeight(Child));
-    Child := Child^.NextSibling;
-  end;
-  Result := MaxChildHeight;
-end;
-
-procedure TCodeTreeController.AsyncRefreshTree(Data: PtrInt);
-begin
-  if Assigned(FOnTreeChanged) then FOnTreeChanged(Self);
-end;
-
-procedure TCodeTreeController.RefreshTree(const FilterText: String);
-begin
-  LoadData(FDatabase.GetAllCodeFlat(FilterText, FSortField, FSortOrder), FilterText);
-end;
-
-function TCodeTreeController.VerifySortLock: Boolean;
-begin
-  Result := FSortField <> 'sort_order';
-  if Result then
-    MessageDlg('Action Locked', 'Structural changes to the code tree are not allowed when a custom sort is active.' + sLineBreak + sLineBreak + 'To release the lock, either reset the sort or make the current order permanent.', mtInformation, [mbOK], 0);
-end;
-
-function TCodeTreeController.IsBranchFullyCollapsed(Node: PVirtualNode): Boolean;
-var
-  Child: PVirtualNode;
-begin
-  Result := True;
-  if (vsExpanded in Node^.States) and (Node^.ChildCount > 0) then Exit(False);
-  Child := Node^.FirstChild;
-  while Assigned(Child) do
-  begin
-    if (Child^.ChildCount > 0) and not IsBranchFullyCollapsed(Child) then Exit(False);
-    Child := Child^.NextSibling;
-  end;
-end;
-
-procedure TCodeTreeController.NudgeSelected(NudgeType: Integer);
-var
-  NodeArray: TNodeArray;
-  FirstNode, LastNode, TargetNode: PVirtualNode;
-  SourceID: TStringDynArray;
-  i: Integer;
-  TargetID: String;
-  TargetData, SourceData: PCodeData;
-  DropModeInt: Integer;
-begin
-  if VerifySortLock then Exit;
-  NodeArray := FTree.GetSortedSelection(False);
-  if Length(NodeArray) = 0 then Exit;
-  FirstNode := NodeArray[0];
-  LastNode := NodeArray[High(NodeArray)];
-  TargetNode := nil;
-  DropModeInt := -1;
-  case NudgeType of
-    0:
-      begin
-        TargetNode := FirstNode^.PrevSibling;
-        while (TargetNode <> nil) and (vsSelected in TargetNode^.States) do
-          TargetNode := TargetNode^.PrevSibling;
-        if TargetNode = nil then Exit;
-        DropModeInt := 1;
-      end;
-    1:
-      begin
-        TargetNode := LastNode^.NextSibling;
-        while (TargetNode <> nil) and (vsSelected in TargetNode^.States) do
-          TargetNode := TargetNode^.NextSibling;
-        if TargetNode = nil then Exit;
-        DropModeInt := 2;
-      end;
-    2:
-      begin
-        TargetNode := FirstNode^.Parent;
-        if (TargetNode = nil) or (TargetNode = FTree.RootNode) then Exit;
-        DropModeInt := 2;
-      end;
-    3:
-      begin
-        TargetNode := FirstNode^.PrevSibling;
-        while (TargetNode <> nil) and (vsSelected in TargetNode^.States) do
-          TargetNode := TargetNode^.PrevSibling;
-        if TargetNode = nil then Exit;
-        DropModeInt := 0;
-      end;
-  end;
-  if TargetNode = nil then Exit;
-  TargetData := FTree.GetNodeData(TargetNode);
-  TargetID := TargetData^.ID;
-  SetLength(SourceID, Length(NodeArray));
-  for i := 0 to High(NodeArray) do
-  begin
-    SourceData := FTree.GetNodeData(NodeArray[i]);
-    SourceID[i] := SourceData^.ID;
-    if (NudgeType = 3) and (FTree.GetNodeLevel(NodeArray[i]) + 1 + GetNodeHeight(NodeArray[i]) > 5) then
-    begin
-      MessageDlg('Code Hierarchy Overshoot', 'The code tree hierarchy is limited to six levels. This action is not allowed as it would overshoot the limit.', mtInformation, [mbOK], 0);
-      Exit;
-    end;
-  end;
-  try
-    FDatabase.MoveCode(TargetID, SourceID, DropModeInt);
-    if DropModeInt = 0 then FDatabase.SetCodeExpandedState(TargetID, True, False);
-    if Assigned(FOnTreeChanged) then Application.QueueAsyncCall(@AsyncRefreshTree, 0);
-  except
-    on E: Exception do MessageDlg('Database Error', 'Move failed: ' + E.Message, mtError, [mbOK], 0);
-  end;
-end;
-
-procedure TCodeTreeController.ApplySort(const AField, AOrder: String);
-begin
-  FSortField := AField;
-  FSortOrder := AOrder;
-  RefreshTree(FLastFilterText);
 end;
 
 procedure TCodeTreeController.LoadData(const AFlatCode: TCodeFlatArray; const FilterText: String);
@@ -350,6 +240,40 @@ begin
     FTree.ScrollIntoView(FRestoreFocusNode, True);
 end;
 
+procedure TCodeTreeController.RefreshTree(const FilterText: String);
+begin
+  LoadData(FDatabase.GetAllCodeFlat(FilterText, FSortField, FSortOrder), FilterText);
+end;
+
+procedure TCodeTreeController.AsyncRefreshTree(Data: PtrInt);
+begin
+  if Assigned(FOnTreeChanged) then FOnTreeChanged(Self);
+end;
+
+function TCodeTreeController.VerifySortLock: Boolean;
+begin
+  Result := FSortField <> 'sort_order';
+  if Result then
+    MessageDlg('Action Locked', 'Structural changes to the code tree are not allowed when a custom sort is active.' + sLineBreak + sLineBreak + 'To release the lock, either reset the sort or make the current order permanent.', mtInformation, [mbOK], 0);
+end;
+
+procedure TCodeTreeController.ApplySort(const AField, AOrder: String);
+begin
+  FSortField := AField;
+  FSortOrder := AOrder;
+  RefreshTree(FLastFilterText);
+end;
+
+function TCodeTreeController.GetSortDescription: String;
+begin
+  if FSortField = 'sort_order' then Exit('Default Order');
+  if FSortField = 'usage_cnt' then Result := 'Coding Count'
+  else if FSortField = 'created_at' then Result := 'Creation Time'
+  else Result := 'Code Name';
+  if FSortOrder = 'ASC' then Result := Result + ' (Ascending)'
+  else Result := Result + ' (Descending)';
+end;
+
 procedure TCodeTreeController.SelectCodeNode(const CodeID: String);
 var
   Node: PVirtualNode;
@@ -371,14 +295,166 @@ begin
   end;
 end;
 
-function TCodeTreeController.GetSortDescription: String;
+function TCodeTreeController.GetFocusedNodeData(out CodeID: String; out CodeName: String): Boolean;
+var Data: PCodeData;
 begin
-  if FSortField = 'sort_order' then Exit('Default Order');
-  if FSortField = 'usage_cnt' then Result := 'Coding Count'
-  else if FSortField = 'created_at' then Result := 'Creation Time'
-  else Result := 'Code Name';
-  if FSortOrder = 'ASC' then Result := Result + ' (Ascending)'
-  else Result := Result + ' (Descending)';
+  Result := False;
+  if FTree.FocusedNode <> nil then
+  begin
+    Data := FTree.GetNodeData(FTree.FocusedNode);
+    if Assigned(Data) then
+    begin
+      CodeID := Data^.ID;
+      CodeName := Data^.Name;
+      Result := True;
+    end;
+  end;
+end;
+
+function TCodeTreeController.GetTargetNodeData(out CodeID: String; out CodeName: String): Boolean;
+var Data: PCodeData;
+begin
+  Result := False;
+  if FLastClickedNode <> nil then
+  begin
+    Data := FTree.GetNodeData(FLastClickedNode);
+    if Assigned(Data) then
+    begin
+      CodeID := Data^.ID;
+      CodeName := Data^.Name;
+      Result := True;
+    end;
+  end;
+end;
+
+function TCodeTreeController.GetFocusedNodeParentID: String;
+begin
+  Result := '';
+  if (FTree.FocusedNode <> nil) and (FTree.FocusedNode^.Parent <> nil) and (FTree.FocusedNode^.Parent <> FTree.RootNode) then
+    Result := PCodeData(FTree.GetNodeData(FTree.FocusedNode^.Parent))^.ID;
+end;
+
+function TCodeTreeController.GetSelectedID: TStringDynArray;
+var
+  i, Count: Integer;
+  Node: PVirtualNode;
+begin
+  Result := nil;
+  Count := FTree.SelectedCount;
+  if Count = 0 then Exit;
+  SetLength(Result, Count);
+  i := 0;
+  Node := FTree.GetFirstSelected;
+  while Assigned(Node) and (i < Count) do
+  begin
+    Result[i] := PCodeData(FTree.GetNodeData(Node))^.ID;
+    Inc(i);
+    Node := FTree.GetNextSelected(Node);
+  end;
+  SetLength(Result, i);
+end;
+
+function TCodeTreeController.GetMergeData(out TargetID: String; out TargetName: String; out SourceID: TStringDynArray): Boolean;
+var
+  TargetNode: PVirtualNode;
+  Data: PCodeData;
+  NodeArray: TNodeArray;
+  i: Integer;
+begin
+  Result := False;
+  if FLastClickedNode <> nil then TargetNode := FLastClickedNode else TargetNode := FTree.FocusedNode;
+  if TargetNode = nil then Exit;
+  Data := FTree.GetNodeData(TargetNode);
+  TargetID := Data^.ID;
+  TargetName := Data^.Name;
+  NodeArray := FTree.GetSortedSelection(False);
+  if Length(NodeArray) < 2 then Exit;
+  SetLength(SourceID, 0);
+  for i := 0 to High(NodeArray) do
+  begin
+    if (NodeArray[i] = nil) or (NodeArray[i] = TargetNode) then Continue;
+    if FTree.HasAsParent(TargetNode, NodeArray[i]) then
+    begin
+      MessageDlg('Invalid Action', 'Merging a parent code to its sub-code is not allowed.', mtInformation, [mbOK], 0);
+      SetLength(SourceID, 0);
+      Exit(False);
+    end;
+    SetLength(SourceID, Length(SourceID) + 1);
+    SourceID[High(SourceID)] := PCodeData(FTree.GetNodeData(NodeArray[i]))^.ID;
+  end;
+  Result := True;
+end;
+
+procedure TCodeTreeController.NudgeSelected(NudgeType: Integer);
+var
+  NodeArray: TNodeArray;
+  FirstNode, LastNode, TargetNode: PVirtualNode;
+  SourceID: TStringDynArray;
+  i: Integer;
+  TargetID: String;
+  TargetData, SourceData: PCodeData;
+  DropModeInt: Integer;
+begin
+  if VerifySortLock then Exit;
+  NodeArray := FTree.GetSortedSelection(False);
+  if Length(NodeArray) = 0 then Exit;
+  FirstNode := NodeArray[0];
+  LastNode := NodeArray[High(NodeArray)];
+  TargetNode := nil;
+  DropModeInt := -1;
+  case NudgeType of
+    0:
+      begin
+        TargetNode := FirstNode^.PrevSibling;
+        while (TargetNode <> nil) and (vsSelected in TargetNode^.States) do
+          TargetNode := TargetNode^.PrevSibling;
+        if TargetNode = nil then Exit;
+        DropModeInt := 1;
+      end;
+    1:
+      begin
+        TargetNode := LastNode^.NextSibling;
+        while (TargetNode <> nil) and (vsSelected in TargetNode^.States) do
+          TargetNode := TargetNode^.NextSibling;
+        if TargetNode = nil then Exit;
+        DropModeInt := 2;
+      end;
+    2:
+      begin
+        TargetNode := FirstNode^.Parent;
+        if (TargetNode = nil) or (TargetNode = FTree.RootNode) then Exit;
+        DropModeInt := 2;
+      end;
+    3:
+      begin
+        TargetNode := FirstNode^.PrevSibling;
+        while (TargetNode <> nil) and (vsSelected in TargetNode^.States) do
+          TargetNode := TargetNode^.PrevSibling;
+        if TargetNode = nil then Exit;
+        DropModeInt := 0;
+      end;
+  end;
+  if TargetNode = nil then Exit;
+  TargetData := FTree.GetNodeData(TargetNode);
+  TargetID := TargetData^.ID;
+  SetLength(SourceID, Length(NodeArray));
+  for i := 0 to High(NodeArray) do
+  begin
+    SourceData := FTree.GetNodeData(NodeArray[i]);
+    SourceID[i] := SourceData^.ID;
+    if (NudgeType = 3) and (FTree.GetNodeLevel(NodeArray[i]) + 1 + GetNodeHeight(NodeArray[i]) > 5) then
+    begin
+      MessageDlg('Code Hierarchy Overshoot', 'The code tree hierarchy is limited to six levels. This action is not allowed as it would overshoot the limit.', mtInformation, [mbOK], 0);
+      Exit;
+    end;
+  end;
+  try
+    FDatabase.MoveCode(TargetID, SourceID, DropModeInt);
+    if DropModeInt = 0 then FDatabase.SetCodeExpandedState(TargetID, True, False);
+    if Assigned(FOnTreeChanged) then Application.QueueAsyncCall(@AsyncRefreshTree, 0);
+  except
+    on E: Exception do MessageDlg('Database Error', 'Move failed: ' + E.Message, mtError, [mbOK], 0);
+  end;
 end;
 
 procedure TCodeTreeController.FullExpand(UseTarget: Boolean);
@@ -423,94 +499,31 @@ begin
   end;
 end;
 
-function TCodeTreeController.GetFocusedNodeData(out CodeID: String; out CodeName: String): Boolean;
-var Data: PCodeData;
+function TCodeTreeController.IsBranchFullyExpanded(Node: PVirtualNode): Boolean;
+var Child: PVirtualNode;
 begin
-  Result := False;
-  if FTree.FocusedNode <> nil then
-  begin
-    Data := FTree.GetNodeData(FTree.FocusedNode);
-    if Assigned(Data) then
-    begin
-      CodeID := Data^.ID;
-      CodeName := Data^.Name;
-      Result := True;
-    end;
-  end;
-end;
-
-function TCodeTreeController.GetTargetNodeData(out CodeID: String; out CodeName: String): Boolean;
-var Data: PCodeData;
-begin
-  Result := False;
-  if FLastClickedNode <> nil then
-  begin
-    Data := FTree.GetNodeData(FLastClickedNode);
-    if Assigned(Data) then
-    begin
-      CodeID := Data^.ID;
-      CodeName := Data^.Name;
-      Result := True;
-    end;
-  end;
-end;
-
-function TCodeTreeController.GetFocusedNodeParentID: String;
-begin
-  Result := '';
-  if (FTree.FocusedNode <> nil) and (FTree.FocusedNode^.Parent <> nil) and (FTree.FocusedNode^.Parent <> FTree.RootNode) then
-    Result := PCodeData(FTree.GetNodeData(FTree.FocusedNode^.Parent))^.ID;
-end;
-
-function TCodeTreeController.GetMergeData(out TargetID: String; out TargetName: String; out SourceID: TStringDynArray): Boolean;
-var
-  TargetNode: PVirtualNode;
-  Data: PCodeData;
-  NodeArray: TNodeArray;
-  i: Integer;
-begin
-  Result := False;
-  if FLastClickedNode <> nil then TargetNode := FLastClickedNode else TargetNode := FTree.FocusedNode;
-  if TargetNode = nil then Exit;
-  Data := FTree.GetNodeData(TargetNode);
-  TargetID := Data^.ID;
-  TargetName := Data^.Name;
-  NodeArray := FTree.GetSortedSelection(False);
-  if Length(NodeArray) < 2 then Exit;
-  SetLength(SourceID, 0);
-  for i := 0 to High(NodeArray) do
-  begin
-    if (NodeArray[i] = nil) or (NodeArray[i] = TargetNode) then Continue;
-    if FTree.HasAsParent(TargetNode, NodeArray[i]) then
-    begin
-      MessageDlg('Invalid Action', 'Merging a parent code to its sub-code is not allowed.', mtInformation, [mbOK], 0);
-      SetLength(SourceID, 0);
-      Exit(False);
-    end;
-    SetLength(SourceID, Length(SourceID) + 1);
-    SourceID[High(SourceID)] := PCodeData(FTree.GetNodeData(NodeArray[i]))^.ID;
-  end;
   Result := True;
+  if not (vsExpanded in Node^.States) then Exit(False);
+  Child := Node^.FirstChild;
+  while Assigned(Child) do
+  begin
+    if (Child^.ChildCount > 0) and not IsBranchFullyExpanded(Child) then Exit(False);
+    Child := Child^.NextSibling;
+  end;
 end;
 
-function TCodeTreeController.GetSelectedID: TStringDynArray;
+function TCodeTreeController.IsBranchFullyCollapsed(Node: PVirtualNode): Boolean;
 var
-  i, Count: Integer;
-  Node: PVirtualNode;
+  Child: PVirtualNode;
 begin
-  Result := nil;
-  Count := FTree.SelectedCount;
-  if Count = 0 then Exit;
-  SetLength(Result, Count);
-  i := 0;
-  Node := FTree.GetFirstSelected;
-  while Assigned(Node) and (i < Count) do
+  Result := True;
+  if (vsExpanded in Node^.States) and (Node^.ChildCount > 0) then Exit(False);
+  Child := Node^.FirstChild;
+  while Assigned(Child) do
   begin
-    Result[i] := PCodeData(FTree.GetNodeData(Node))^.ID;
-    Inc(i);
-    Node := FTree.GetNextSelected(Node);
+    if (Child^.ChildCount > 0) and not IsBranchFullyCollapsed(Child) then Exit(False);
+    Child := Child^.NextSibling;
   end;
-  SetLength(Result, i);
 end;
 
 procedure TCodeTreeController.DoGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: String);
@@ -527,13 +540,6 @@ begin
            CellText := IntToStr(Data^.CodingCount);
        end;
   end;
-end;
-
-procedure TCodeTreeController.DoFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
-var Data: PCodeData;
-begin
-  Data := Sender.GetNodeData(Node);
-  if Assigned(Data) then Finalize(Data^);
 end;
 
 procedure TCodeTreeController.DoGetImageIndex(Sender: TBaseVirtualTree; Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var ImageIndex: Integer);
@@ -556,6 +562,13 @@ begin
     else
       TargetCanvas.Font.Style := TargetCanvas.Font.Style - [fsUnderline];
   end;
+end;
+
+procedure TCodeTreeController.DoFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
+var Data: PCodeData;
+begin
+  Data := Sender.GetNodeData(Node);
+  if Assigned(Data) then Finalize(Data^);
 end;
 
 procedure TCodeTreeController.DoExpanded(Sender: TBaseVirtualTree; Node: PVirtualNode);
@@ -734,19 +747,6 @@ begin
   Data := FTree.GetNodeData(Node);
   if Assigned(Data) and Assigned(FOnCodeDoubleClick) then
     FOnCodeDoubleClick(Data^.ID, Data^.Color);
-end;
-
-function TCodeTreeController.IsBranchFullyExpanded(Node: PVirtualNode): Boolean;
-var Child: PVirtualNode;
-begin
-  Result := True;
-  if not (vsExpanded in Node^.States) then Exit(False);
-  Child := Node^.FirstChild;
-  while Assigned(Child) do
-  begin
-    if (Child^.ChildCount > 0) and not IsBranchFullyExpanded(Child) then Exit(False);
-    Child := Child^.NextSibling;
-  end;
 end;
 
 end.
