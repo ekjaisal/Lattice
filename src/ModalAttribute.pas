@@ -270,7 +270,7 @@ begin
       Q.Params.ParamByName('d').AsString := FNewDescription;
       Q.Params.ParamByName('id').AsString := FAttributeID;
       Q.ExecSQL;
-      SyncUpdateStatus('Injecting strictly typed document data...');
+      SyncUpdateStatus('Preparing document data...');
       if FNewType = 'Numeric' then
         QUpdate.SQL.Text := 'UPDATE document_attributes SET attributes = json_set(attributes, ''$.' + FColumnName + ''', json(:val)) WHERE document_id = :did'
       else

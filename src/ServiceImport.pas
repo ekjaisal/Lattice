@@ -880,7 +880,7 @@ begin
       QueryAttributeUpdate.SQL.Text := AttributeUpdateSQL;
       QueryAttributeUpdate.Prepare;
     end;
-    SyncUpdateStatus('Importing typed records...');
+    SyncUpdateStatus('Importing records...');
     for r := 1 to Worksheet.GetLastRowIndex do
     begin
       BaseTitle := Trim(Worksheet.ReadAsText(r, FMapping[FTitleIndex].ColumnIndex));
@@ -1123,7 +1123,7 @@ begin
       QueryAttributeUpdate.SQL.Text := AttributeUpdateSQL;
       QueryAttributeUpdate.Prepare;
     end;
-    SyncUpdateStatus('Importing strict typed JSON records...');
+    SyncUpdateStatus('Importing records...');
     for r := 0 to JSONArray.Count - 1 do
     begin
       if JSONArray.Items[r].JSONType <> jtObject then Continue;
@@ -1346,7 +1346,7 @@ begin
       QueryAttributeUpdate.SQL.Text := AttributeUpdateSQL;
       QueryAttributeUpdate.Prepare;
     end;
-    SyncUpdateStatus('Importing typed records...');
+    SyncUpdateStatus('Importing records...');
     QueryImport.SQL.Text := 'SELECT * FROM ' + FTableName;
     QueryImport.Open;
     while not QueryImport.EOF do
