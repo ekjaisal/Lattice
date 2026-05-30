@@ -134,7 +134,6 @@ type
     FParagraphs: array of TDocumentParagraph;
     FRedoStack: array of TUndoAction;
     FSearchMatch: array of TSearchMatch;
-    FSearchString: String;
     FSelecting: Boolean;
     FSelEndByte: Integer;
     FSelStartByte: Integer;
@@ -263,7 +262,6 @@ begin
   FViewWidth := 100;
   FTextAreaWidth := 50;
   FActiveMatchIndex := -1;
-  FSearchString := '';
   FHoveredAnchorIndex := -1;
   FMapClustersDirty := True;
   FMapClustersViewHeight := 0;
@@ -332,7 +330,6 @@ begin
   SetLength(FBracketHit, 0);
   SetLength(FMapClusters, 0);
   FActiveMatchIndex := -1;
-  FSearchString := '';
   for Count := 0 to High(FParagraphs) do
   begin
     if FParagraphs[Count].Layout <> nil then
@@ -1999,7 +1996,6 @@ var
 begin
   SetLength(FSearchMatch, 0);
   FActiveMatchIndex := -1;
-  FSearchString := AQuery;
   if Trim(AQuery) = '' then Exit;
   TextLower := UTF8LowerCase(FDocumentText);
   QueryLower := UTF8LowerCase(AQuery);
