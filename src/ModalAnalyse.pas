@@ -256,7 +256,6 @@ type
     function GetDictionaryForTree(Tree: TLazVirtualStringTree): specialize TDictionary<String, Boolean>;
     function GetFullCodePath(const CodeID: String): String;
     function GetTruncatedCodePath(const CodeID: String; MaxNodeLen: Integer): String;
-    function TruncateText(const S: String; MaxLen: Integer): String;
     procedure ApplyAttributeFilter(const Filter: String);
     procedure ExecuteCoOccurrence;
     procedure ExecuteCoverage;
@@ -269,7 +268,6 @@ type
     procedure LoadCategoricalValue;
     procedure LoadCodeTree(Tree: TLazVirtualStringTree);
     procedure LoadDocumentTree(const FilterText: String);
-    procedure RenderActiveVisualisation(cr: Pcairo_t; AWidth, AHeight: Integer);
     procedure ResetResults;
     procedure ResetViewContext;
     procedure SetupGrid(const ColumnArray: array of String; const ColumnWidthArray: array of Integer; RowCount: Integer);
@@ -565,14 +563,6 @@ begin
       Result := NodeName + ' ' + #$E2#$86#$92 + ' ' + Result;
     CurrentID := NodeCache.ParentID;
   end;
-end;
-
-function TfrmModalAnalyse.TruncateText(const S: String; MaxLen: Integer): String;
-begin
-  if UTF8Length(S) > MaxLen then
-    Result := UTF8Copy(S, 1, MaxLen) + '...'
-  else
-    Result := S;
 end;
 
 procedure TfrmModalAnalyse.ResetResults;
@@ -2245,17 +2235,6 @@ begin
   FZoom := FZoom * ZoomDelta;
   if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
   Handled := True;
-end;
-
-procedure TfrmModalAnalyse.RenderActiveVisualisation(cr: Pcairo_t; AWidth, AHeight: Integer);
-var
-  Margin: Double;
-begin
-  Margin := MulDiv(38, Font.PixelsPerInch, 96);
-  cairo_save(cr);
-  cairo_translate(cr, Margin, Margin);
-  FVisualizer.Render(cr, AWidth - Round(Margin * 2.0), AHeight - Round(Margin * 2.0), 0, 0, 1.0);
-  cairo_restore(cr);
 end;
 
 procedure TfrmModalAnalyse.ResetViewContext;
