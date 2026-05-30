@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -187,113 +187,6 @@ begin
   if Assigned(FOnUIStateChange) then FOnUIStateChange(Self);
 end;
 
-function TDocumentTreeController.GetFallbackSelectionID: String;
-var
-  Node, FallbackNode: PVirtualNode;
-begin
-  Result := '';
-  Node := FTree.GetFirstSelected;
-  if not Assigned(Node) then Exit;
-  FallbackNode := FTree.GetNextVisible(Node);
-  while Assigned(FallbackNode) and (vsSelected in FallbackNode^.States) do
-    FallbackNode := FTree.GetNextVisible(FallbackNode);
-  if not Assigned(FallbackNode) then
-  begin
-    FallbackNode := FTree.GetPreviousVisible(Node);
-    while Assigned(FallbackNode) and (vsSelected in FallbackNode^.States) do
-      FallbackNode := FTree.GetPreviousVisible(FallbackNode);
-  end;
-  if Assigned(FallbackNode) and (FallbackNode^.Index >= 0) and (FallbackNode^.Index < Length(FDocumentCache)) then
-    Result := FDocumentCache[FallbackNode^.Index].ID;
-end;
-
-procedure TDocumentTreeController.UpdateSelectedNodeTitle(const ANewTitle: String);
-var
-  Node: PVirtualNode;
-begin
-  Node := FTree.GetFirstSelected;
-  if Assigned(Node) and (Node^.Index < Cardinal(Length(FDocumentCache))) then
-  begin
-    FDocumentCache[Node^.Index].Title := ANewTitle;
-    FTree.InvalidateNode(Node);
-  end;
-end;
-
-procedure TDocumentTreeController.DoGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: String);
-begin
-  if (Node^.Index < Cardinal(Length(FDocumentCache))) then
-  begin
-    case Column of
-      0: CellText := FDocumentCache[Node^.Index].Title;
-      1: CellText := IntToStr(FDocumentCache[Node^.Index].CodingCount);
-    end;
-  end;
-end;
-
-procedure TDocumentTreeController.DoGetImageIndex(Sender: TBaseVirtualTree; Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var ImageIndex: Integer);
-begin
-  if (Kind = ikNormal) or (Kind = ikSelected) then
-  begin
-    if Column = 0 then ImageIndex := 0 else ImageIndex := -1;
-  end;
-end;
-
-procedure TDocumentTreeController.DoPaintText(Sender: TBaseVirtualTree; const TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType);
-begin
-  if (Node^.Index < Cardinal(Length(FDocumentCache))) then
-  begin
-    if (Column = 0) and FDocumentCache[Node^.Index].HasMemo then
-      TargetCanvas.Font.Style := TargetCanvas.Font.Style + [fsUnderline]
-    else
-      TargetCanvas.Font.Style := TargetCanvas.Font.Style - [fsUnderline];
-  end;
-end;
-
-procedure TDocumentTreeController.DoFocusChanged(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex);
-begin
-  if Assigned(Node) and Assigned(FOnDocumentSelect) then
-  begin
-    if (Node^.Index < Cardinal(Length(FDocumentCache))) then
-      FOnDocumentSelect(FDocumentCache[Node^.Index].ID);
-  end;
-end;
-
-procedure TDocumentTreeController.DoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-var
-  HitInfo: THitInfo;
-begin
-  FTree.GetHitTestInfoAt(X, Y, True, HitInfo);
-  if (HitInfo.HitNode <> nil) and (not ([hiOnItemLabel, hiOnNormalIcon, hiOnStateIcon] * HitInfo.HitPositions <> [])) then
-    HitInfo.HitNode := nil;
-  if (Button = mbLeft) and (HitInfo.HitNode = nil) then
-  begin
-    FTree.ClearSelection;
-    FTree.FocusedNode := nil;
-  end;
-end;
-
-function TDocumentTreeController.GetSelectedID: TStringDynArray;
-var
-  i, Count: Integer;
-  Node: PVirtualNode;
-begin
-  Count := FTree.SelectedCount;
-  SetLength(Result, Count);
-  if Count = 0 then Exit;
-  i := 0;
-  Node := FTree.GetFirstSelected;
-  while Assigned(Node) and (i < Count) do
-  begin
-    if (Node^.Index < Cardinal(Length(FDocumentCache))) then
-    begin
-      Result[i] := FDocumentCache[Node^.Index].ID;
-      Inc(i);
-    end;
-    Node := FTree.GetNextSelected(Node);
-  end;
-  SetLength(Result, i);
-end;
-
 procedure TDocumentTreeController.ClearSelection;
 begin
   FTree.ClearSelection;
@@ -357,6 +250,79 @@ begin
   end;
 end;
 
+function TDocumentTreeController.GetSelectedID: TStringDynArray;
+var
+  i, Count: Integer;
+  Node: PVirtualNode;
+begin
+  Count := FTree.SelectedCount;
+  SetLength(Result, Count);
+  if Count = 0 then Exit;
+  i := 0;
+  Node := FTree.GetFirstSelected;
+  while Assigned(Node) and (i < Count) do
+  begin
+    if (Node^.Index < Cardinal(Length(FDocumentCache))) then
+    begin
+      Result[i] := FDocumentCache[Node^.Index].ID;
+      Inc(i);
+    end;
+    Node := FTree.GetNextSelected(Node);
+  end;
+  SetLength(Result, i);
+end;
+
+function TDocumentTreeController.GetFallbackSelectionID: String;
+var
+  Node, FallbackNode: PVirtualNode;
+begin
+  Result := '';
+  Node := FTree.GetFirstSelected;
+  if not Assigned(Node) then Exit;
+  FallbackNode := FTree.GetNextVisible(Node);
+  while Assigned(FallbackNode) and (vsSelected in FallbackNode^.States) do
+    FallbackNode := FTree.GetNextVisible(FallbackNode);
+  if not Assigned(FallbackNode) then
+  begin
+    FallbackNode := FTree.GetPreviousVisible(Node);
+    while Assigned(FallbackNode) and (vsSelected in FallbackNode^.States) do
+      FallbackNode := FTree.GetPreviousVisible(FallbackNode);
+  end;
+  if Assigned(FallbackNode) and (FallbackNode^.Index >= 0) and (FallbackNode^.Index < Length(FDocumentCache)) then
+    Result := FDocumentCache[FallbackNode^.Index].ID;
+end;
+
+procedure TDocumentTreeController.UpdateSelectedNodeTitle(const ANewTitle: String);
+var
+  Node: PVirtualNode;
+begin
+  Node := FTree.GetFirstSelected;
+  if Assigned(Node) and (Node^.Index < Cardinal(Length(FDocumentCache))) then
+  begin
+    FDocumentCache[Node^.Index].Title := ANewTitle;
+    FTree.InvalidateNode(Node);
+  end;
+end;
+
+function TDocumentTreeController.HasNextDocument: Boolean;
+begin
+  Result := False;
+  if Assigned(FTree.FocusedNode) then
+    Result := Assigned(FTree.FocusedNode^.NextSibling);
+end;
+
+function TDocumentTreeController.HasPreviousDocument: Boolean;
+begin
+  Result := False;
+  if Assigned(FTree.FocusedNode) then
+    Result := Assigned(FTree.FocusedNode^.PrevSibling);
+end;
+
+function TDocumentTreeController.GetDocumentCount: Integer;
+begin
+  Result := Length(FDocumentCache);
+end;
+
 procedure TDocumentTreeController.ApplySearch(const AText: String);
 begin
   FFilterDefinition.QuickSearchText := Trim(AText);
@@ -418,23 +384,57 @@ begin
   Result := 'Sorted by ' + FSortCriteria + ' (' + DetailedOrder + ')';
 end;
 
-function TDocumentTreeController.GetDocumentCount: Integer;
+procedure TDocumentTreeController.DoGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: String);
 begin
-  Result := Length(FDocumentCache);
+  if (Node^.Index < Cardinal(Length(FDocumentCache))) then
+  begin
+    case Column of
+      0: CellText := FDocumentCache[Node^.Index].Title;
+      1: CellText := IntToStr(FDocumentCache[Node^.Index].CodingCount);
+    end;
+  end;
 end;
 
-function TDocumentTreeController.HasNextDocument: Boolean;
+procedure TDocumentTreeController.DoGetImageIndex(Sender: TBaseVirtualTree; Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var ImageIndex: Integer);
 begin
-  Result := False;
-  if Assigned(FTree.FocusedNode) then
-    Result := Assigned(FTree.FocusedNode^.NextSibling);
+  if (Kind = ikNormal) or (Kind = ikSelected) then
+  begin
+    if Column = 0 then ImageIndex := 0 else ImageIndex := -1;
+  end;
 end;
 
-function TDocumentTreeController.HasPreviousDocument: Boolean;
+procedure TDocumentTreeController.DoPaintText(Sender: TBaseVirtualTree; const TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType);
 begin
-  Result := False;
-  if Assigned(FTree.FocusedNode) then
-    Result := Assigned(FTree.FocusedNode^.PrevSibling);
+  if (Node^.Index < Cardinal(Length(FDocumentCache))) then
+  begin
+    if (Column = 0) and FDocumentCache[Node^.Index].HasMemo then
+      TargetCanvas.Font.Style := TargetCanvas.Font.Style + [fsUnderline]
+    else
+      TargetCanvas.Font.Style := TargetCanvas.Font.Style - [fsUnderline];
+  end;
+end;
+
+procedure TDocumentTreeController.DoFocusChanged(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex);
+begin
+  if Assigned(Node) and Assigned(FOnDocumentSelect) then
+  begin
+    if (Node^.Index < Cardinal(Length(FDocumentCache))) then
+      FOnDocumentSelect(FDocumentCache[Node^.Index].ID);
+  end;
+end;
+
+procedure TDocumentTreeController.DoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  HitInfo: THitInfo;
+begin
+  FTree.GetHitTestInfoAt(X, Y, True, HitInfo);
+  if (HitInfo.HitNode <> nil) and (not ([hiOnItemLabel, hiOnNormalIcon, hiOnStateIcon] * HitInfo.HitPositions <> [])) then
+    HitInfo.HitNode := nil;
+  if (Button = mbLeft) and (HitInfo.HitNode = nil) then
+  begin
+    FTree.ClearSelection;
+    FTree.FocusedNode := nil;
+  end;
 end;
 
 end.
