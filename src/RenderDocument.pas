@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -148,9 +148,28 @@ begin
   {$ENDIF}
 end;
 
-procedure TRenderDocument.WMEraseBkgnd(var Message: TLMEraseBkgnd);
+procedure TRenderDocument.SetText(const AText: string);
 begin
-  Message.Result := 1;
+  FEngineText.SetDPI(Font.PixelsPerInch);
+  FEngineText.SetText(AText);
+  FScrollY := 0;
+  FEngineText.Resize(ClientWidth);
+  UpdateScrollbar;
+  Invalidate;
+end;
+
+procedure TRenderDocument.Clear;
+begin
+  SetText('');
+end;
+
+procedure TRenderDocument.UpdateCoding(const ACoding: TCodingArray);
+begin
+  FEngineText.SetDPI(Font.PixelsPerInch);
+  FEngineText.SetCodings(ACoding);
+  FEngineText.Resize(ClientWidth);
+  UpdateScrollbar;
+  Invalidate;
 end;
 
 procedure TRenderDocument.UpdateScrollbar;
@@ -221,6 +240,16 @@ begin
   end;
 end;
 
+procedure TRenderDocument.ScrollToChar(AChar: Integer);
+var
+  TargetY: Integer;
+begin
+  TargetY := FEngineText.GetYForChar(AChar);
+  if (TargetY < FScrollY) or (TargetY > FScrollY + ClientHeight - 50) then
+    SetScrollY(Max(0, TargetY - (ClientHeight div 2)));
+  Invalidate;
+end;
+
 procedure TRenderDocument.ScrollToActiveSearchMatch;
 var
   TargetY: Integer;
@@ -247,16 +276,47 @@ begin
   Invalidate;
 end;
 
-procedure TRenderDocument.OnResizeTimer(Sender: TObject);
+procedure TRenderDocument.ResetZoom;
+var
+  TopByte: Integer;
 begin
-  FResizeTimer.Enabled := False;
-  if Assigned(FEngineText) then
+  if FEngineText.ZoomOffset <> 0 then
   begin
-    FEngineText.SetDPI(Font.PixelsPerInch);
-    FEngineText.Resize(ClientWidth);
+    TopByte := FEngineText.GetTopVisibleByte(FScrollY);
+    FEngineText.ZoomOffset := 0;
+    SetScrollY(FEngineText.GetYForByte(TopByte));
+    Invalidate;
+    FZoomSaveTimer.Enabled := False;
+    FZoomSaveTimer.Enabled := True;
   end;
-  UpdateScrollbar;
-  Invalidate;
+end;
+
+procedure TRenderDocument.ChangeZoom(Delta: Integer);
+var
+  TopByte, NewZoom: Integer;
+begin
+  NewZoom := FEngineText.ZoomOffset + Delta;
+  NewZoom := EnsureRange(NewZoom, -6, 24);
+  if NewZoom <> FEngineText.ZoomOffset then
+  begin
+    TopByte := FEngineText.GetTopVisibleByte(FScrollY);
+    FEngineText.ZoomOffset := NewZoom;
+    SetScrollY(FEngineText.GetYForByte(TopByte));
+    Invalidate;
+    FZoomSaveTimer.Enabled := False;
+    FZoomSaveTimer.Enabled := True;
+  end;
+end;
+
+procedure TRenderDocument.OnZoomSaveTimer(Sender: TObject);
+begin
+  FZoomSaveTimer.Enabled := False;
+  if Assigned(FOnZoomPersist) then FOnZoomPersist(Self, FEngineText.ZoomOffset);
+end;
+
+procedure TRenderDocument.WMEraseBkgnd(var Message: TLMEraseBkgnd);
+begin
+  Message.Result := 1;
 end;
 
 procedure TRenderDocument.Paint;
@@ -290,72 +350,52 @@ begin
   Invalidate;
 end;
 
-procedure TRenderDocument.SetText(const AText: string);
+procedure TRenderDocument.OnResizeTimer(Sender: TObject);
 begin
-  FEngineText.SetDPI(Font.PixelsPerInch);
-  FEngineText.SetText(AText);
-  FScrollY := 0;
-  FEngineText.Resize(ClientWidth);
+  FResizeTimer.Enabled := False;
+  if Assigned(FEngineText) then
+  begin
+    FEngineText.SetDPI(Font.PixelsPerInch);
+    FEngineText.Resize(ClientWidth);
+  end;
   UpdateScrollbar;
   Invalidate;
-end;
-
-procedure TRenderDocument.OnCaretTimer(Sender: TObject);
-begin
-  if FEngineText.IsEditing then
-  begin
-    FEngineText.ToggleCaret;
-    Invalidate;
-  end;
-end;
-
-procedure TRenderDocument.UTF8KeyPress(var UTF8Key: TUTF8Char);
-begin
-  inherited UTF8KeyPress(UTF8Key);
-  if FEngineText.IsEditing then
-  begin
-    if (Length(UTF8Key) > 1) or ((Length(UTF8Key) = 1) and (UTF8Key[1] >= #32)) then
-    begin
-      if HasSelection then
-        FEngineText.ReplaceRange(FEngineText.SelStartByte, FEngineText.SelEndByte, UTF8Key)
-      else
-        FEngineText.ReplaceRange(FEngineText.GetAbsoluteCaret, FEngineText.GetAbsoluteCaret, UTF8Key);
-      ScrollToChar(FEngineText.ByteToChar(FEngineText.GetAbsoluteCaret));
-      UpdateScrollbar;
-      Invalidate;
-      UTF8Key := '';
-    end;
-  end;
-end;
-
-procedure TRenderDocument.UpdateCoding(const ACoding: TCodingArray);
-begin
-  FEngineText.SetDPI(Font.PixelsPerInch);
-  FEngineText.SetCodings(ACoding);
-  FEngineText.Resize(ClientWidth);
-  UpdateScrollbar;
-  Invalidate;
-end;
-
-procedure TRenderDocument.ScrollToChar(AChar: Integer);
-var
-  TargetY: Integer;
-begin
-  TargetY := FEngineText.GetYForChar(AChar);
-  if (TargetY < FScrollY) or (TargetY > FScrollY + ClientHeight - 50) then
-    SetScrollY(Max(0, TargetY - (ClientHeight div 2)));
-  Invalidate;
-end;
-
-procedure TRenderDocument.Clear;
-begin
-  SetText('');
 end;
 
 procedure TRenderDocument.ClearSelection;
 begin
   FEngineText.ClearSelection;
   Invalidate;
+end;
+
+function TRenderDocument.HasSelection: Boolean;
+begin
+  Result := FEngineText.HasSelection;
+end;
+
+function TRenderDocument.IsBracketSelection: Boolean;
+begin
+  Result := FEngineText.IsBracketSelection;
+end;
+
+function TRenderDocument.SelectionStartCharacter: Integer;
+begin
+  Result := FEngineText.SelectionStartCharacter;
+end;
+
+function TRenderDocument.SelectionLength: Integer;
+begin
+  Result := FEngineText.SelectionLength;
+end;
+
+function TRenderDocument.GetSelectedText: String;
+begin
+  Result := FEngineText.GetSelectedText;
+end;
+
+function TRenderDocument.GetTextSlice(StartCharacter, LengthCharacter: Integer): String;
+begin
+  Result := FEngineText.GetTextSlice(StartCharacter, LengthCharacter);
 end;
 
 procedure TRenderDocument.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -525,6 +565,20 @@ begin
   end;
 end;
 
+procedure TRenderDocument.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  inherited MouseUp(Button, Shift, X, Y);
+  FAutoScrollTimer.Enabled := False;
+  FEngineText.MouseUp;
+  Invalidate;
+end;
+
+procedure TRenderDocument.MouseEnter;
+begin
+  inherited MouseEnter;
+  if CanFocus then SetFocus;
+end;
+
 procedure TRenderDocument.MouseLeave;
 begin
   inherited MouseLeave;
@@ -538,14 +592,6 @@ begin
     Invalidate;
     if Assigned(FOnAnchorHover) then FOnAnchorHover(Self, Default(TMapTickCluster));
   end;
-end;
-
-procedure TRenderDocument.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-  inherited MouseUp(Button, Shift, X, Y);
-  FAutoScrollTimer.Enabled := False;
-  FEngineText.MouseUp;
-  Invalidate;
 end;
 
 function TRenderDocument.DoMouseWheel(Shift: TShiftState; WheelDelta: Integer; MousePosition: TPoint): Boolean;
@@ -563,78 +609,32 @@ begin
   end;
 end;
 
-procedure TRenderDocument.OnZoomSaveTimer(Sender: TObject);
+procedure TRenderDocument.OnCaretTimer(Sender: TObject);
 begin
-  FZoomSaveTimer.Enabled := False;
-  if Assigned(FOnZoomPersist) then FOnZoomPersist(Self, FEngineText.ZoomOffset);
-end;
-
-procedure TRenderDocument.ResetZoom;
-var
-  TopByte: Integer;
-begin
-  if FEngineText.ZoomOffset <> 0 then
+  if FEngineText.IsEditing then
   begin
-    TopByte := FEngineText.GetTopVisibleByte(FScrollY);
-    FEngineText.ZoomOffset := 0;
-    SetScrollY(FEngineText.GetYForByte(TopByte));
+    FEngineText.ToggleCaret;
     Invalidate;
-    FZoomSaveTimer.Enabled := False;
-    FZoomSaveTimer.Enabled := True;
   end;
 end;
 
-procedure TRenderDocument.ChangeZoom(Delta: Integer);
-var
-  TopByte, NewZoom: Integer;
+procedure TRenderDocument.UTF8KeyPress(var UTF8Key: TUTF8Char);
 begin
-  NewZoom := FEngineText.ZoomOffset + Delta;
-  NewZoom := EnsureRange(NewZoom, -6, 24);
-  if NewZoom <> FEngineText.ZoomOffset then
+  inherited UTF8KeyPress(UTF8Key);
+  if FEngineText.IsEditing then
   begin
-    TopByte := FEngineText.GetTopVisibleByte(FScrollY);
-    FEngineText.ZoomOffset := NewZoom;
-    SetScrollY(FEngineText.GetYForByte(TopByte));
-    Invalidate;
-    FZoomSaveTimer.Enabled := False;
-    FZoomSaveTimer.Enabled := True;
+    if (Length(UTF8Key) > 1) or ((Length(UTF8Key) = 1) and (UTF8Key[1] >= #32)) then
+    begin
+      if HasSelection then
+        FEngineText.ReplaceRange(FEngineText.SelStartByte, FEngineText.SelEndByte, UTF8Key)
+      else
+        FEngineText.ReplaceRange(FEngineText.GetAbsoluteCaret, FEngineText.GetAbsoluteCaret, UTF8Key);
+      ScrollToChar(FEngineText.ByteToChar(FEngineText.GetAbsoluteCaret));
+      UpdateScrollbar;
+      Invalidate;
+      UTF8Key := '';
+    end;
   end;
-end;
-
-function TRenderDocument.HasSelection: Boolean;
-begin
-  Result := FEngineText.HasSelection;
-end;
-
-function TRenderDocument.IsBracketSelection: Boolean;
-begin
-  Result := FEngineText.IsBracketSelection;
-end;
-
-function TRenderDocument.SelectionStartCharacter: Integer;
-begin
-  Result := FEngineText.SelectionStartCharacter;
-end;
-
-function TRenderDocument.SelectionLength: Integer;
-begin
-  Result := FEngineText.SelectionLength;
-end;
-
-function TRenderDocument.GetTextSlice(StartCharacter, LengthCharacter: Integer): String;
-begin
-  Result := FEngineText.GetTextSlice(StartCharacter, LengthCharacter);
-end;
-
-procedure TRenderDocument.MouseEnter;
-begin
-  inherited MouseEnter;
-  if CanFocus then SetFocus;
-end;
-
-function TRenderDocument.GetSelectedText: String;
-begin
-  Result := FEngineText.GetSelectedText;
 end;
 
 procedure TRenderDocument.KeyDown(var Key: Word; Shift: TShiftState);
