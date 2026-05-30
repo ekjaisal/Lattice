@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -37,6 +37,7 @@ type
   end;
   TMemoArray = array of TMemoRecord;
 
+  { TfrmModalMemo }
   TfrmModalMemo = class(TForm)
     btnClearSelection: TButton;
     btnDelete: TButton;
@@ -112,6 +113,8 @@ type
     procedure DoHeavyLifting; override;
   end;
 
+{$R *.lfm}
+
 procedure TThreadLoadMemo.DoHeavyLifting;
   function CompareMemo(const A, B: TMemoRecord): Integer;
   begin
@@ -124,7 +127,6 @@ procedure TThreadLoadMemo.DoHeavyLifting;
     end;
     if not FSortAsc then Result := -Result;
   end;
-
   procedure QuickSort(L, R: Integer);
   var
     I, J: Integer;
@@ -175,7 +177,6 @@ begin
       FResult[Count].UpdatedAtRaw := Q.FieldByName('updated_at').AsString;
       FResult[Count].ReferenceName := Q.FieldByName('ref_name').AsString;
       FResult[Count].Reference := Q.FieldByName('reference').AsString;
-
       try
         if TryStrToDateTime(FResult[Count].UpdatedAtRaw, UTCDateTime, DefaultFormatSettings) then
         begin
@@ -187,12 +188,10 @@ begin
       except
         FResult[Count].UpdatedAtLocal := FResult[Count].UpdatedAtRaw;
       end;
-
       Inc(Count);
       Q.Next;
     end;
     SetLength(FResult, Count);
-
     if (FSortColumn >= 0) and (Count > 1) then
     begin
       SyncUpdateStatus('Sorting memos...');
@@ -202,8 +201,6 @@ begin
     Q.Free;
   end;
 end;
-
-{$R *.lfm}
 
 constructor TfrmModalMemo.Create(AOwner: TComponent);
 begin
@@ -295,7 +292,6 @@ procedure TfrmModalMemo.SortMemo;
     end;
     if not FSortAscending then Result := -Result;
   end;
-
   procedure QuickSort(L, R: Integer);
   var
     I, J: Integer;
@@ -354,9 +350,7 @@ var
   Worker: TThreadLoadMemo;
 begin
   if not frmAppBase.conMain.Connected then Exit;
-  
   if frmAppBase.trnMain.Active then frmAppBase.trnMain.Commit;
-
   TypeClause := '';
   case cmbTypeFilter.ItemIndex of
     1: TypeClause := ' AND m.memo_type = ''Project''';
@@ -368,7 +362,6 @@ begin
   Filter := Trim(edtMemoSearch.Text);
   if Filter <> '' then
     Filter := ' AND (m.title LIKE ' + QuotedStr('%'+Filter+'%') + ' OR m.content LIKE ' + QuotedStr('%'+Filter+'%') + ')';
-    
   SQL := 'SELECT m.id, m.memo_type, m.title, m.updated_at, m.reference, ' +
          'CASE ' +
          '  WHEN m.memo_type = ''Document'' THEN (SELECT title FROM documents WHERE id = m.reference) ' +
@@ -377,7 +370,6 @@ begin
          '  ELSE ''N/A'' ' +
          'END as ref_name ' +
          'FROM memos m WHERE 1=1' + TypeClause + Filter;
-
   Worker := TThreadLoadMemo.Create(frmAppBase.conMain.DatabaseName);
   try
     Worker.FSQL := SQL;
@@ -386,7 +378,6 @@ begin
     Worker.Start;
     TfrmDialogProgress.Prepare('Preparing Memo Manager', 'Loading records...');
     frmDialogProgress.ShowModal;
-    
     vstMemo.BeginUpdate;
     try
       vstMemo.Clear;
@@ -406,6 +397,69 @@ begin
   end;
   AutoSizeColumns;
   UpdateActionUI;
+end;
+
+procedure TfrmModalMemo.UpdatePreviewPane;
+var
+  LocalQuery: TSQLQuery;
+  PartArray: TStringArray;
+  DocumentID: String;
+  StartPos, LengthByte: Integer;
+begin
+  memPreview.Clear;
+  memSegment.Clear;
+  if FSelectedID = '' then
+  begin
+    pnlPreviewSegment.Visible := False;
+    splPreviewInternal.Visible := False;
+    lblPreviewTitle.Caption := 'Preview';
+    Exit;
+  end;
+  LocalQuery := TSQLQuery.Create(nil);
+  try
+    LocalQuery.Database := frmAppBase.conMain;
+    if SameText(FSelectedType, 'Segment') then
+    begin
+      PartArray := FSelectedTargetID.Split([':']);
+      if Length(PartArray) = 3 then
+      begin
+        DocumentID := PartArray[0];
+        StartPos := StrToIntDef(PartArray[1], 0);
+        LengthByte := StrToIntDef(PartArray[2], 0);
+        LocalQuery.SQL.Text := 'SELECT d.title, SUBSTR(d.content, :sp + 1, :len) as seg_text, m.content ' +
+                               'FROM memos m JOIN documents d ON d.id = :did WHERE m.id = :mid';
+        LocalQuery.Params.ParamByName('sp').AsInteger := StartPos;
+        LocalQuery.Params.ParamByName('len').AsInteger := LengthByte;
+        LocalQuery.Params.ParamByName('did').AsString := DocumentID;
+        LocalQuery.Params.ParamByName('mid').AsString := FSelectedID;
+        LocalQuery.Open;
+        if not LocalQuery.EOF then
+        begin
+          lblPreviewTitle.Caption := 'Memo Content';
+          lblSegmentTitle.Caption := 'Referenced Segment in: ' + LocalQuery.FieldByName('title').AsString;
+          memPreview.Text := LocalQuery.FieldByName('content').AsString;
+          memSegment.Text := LocalQuery.FieldByName('seg_text').AsString;
+          pnlPreviewSegment.Visible := True;
+          splPreviewInternal.Visible := True;
+        end;
+        LocalQuery.Close;
+      end;
+    end
+    else
+    begin
+      pnlPreviewSegment.Visible := False;
+      splPreviewInternal.Visible := False;
+      lblPreviewTitle.Caption := 'Memo Content';
+      LocalQuery.SQL.Text := 'SELECT content FROM memos WHERE id = :id';
+      LocalQuery.Params.ParamByName('id').AsString := FSelectedID;
+      LocalQuery.Open;
+      if not LocalQuery.EOF then
+        memPreview.Text := LocalQuery.FieldByName('content').AsString;
+      LocalQuery.Close;
+    end;
+  finally
+    LocalQuery.Free;
+  end;
 end;
 
 procedure TfrmModalMemo.vstMemoGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: String);
@@ -488,69 +542,6 @@ begin
       UpdateActionUI;
       UpdatePreviewPane;
     end;
-  end;
-end;
-
-procedure TfrmModalMemo.UpdatePreviewPane;
-var
-  LocalQuery: TSQLQuery;
-  PartArray: TStringArray;
-  DocumentID: String;
-  StartPos, LengthByte: Integer;
-begin
-  memPreview.Clear;
-  memSegment.Clear;
-  if FSelectedID = '' then
-  begin
-    pnlPreviewSegment.Visible := False;
-    splPreviewInternal.Visible := False;
-    lblPreviewTitle.Caption := 'Preview';
-    Exit;
-  end;
-  LocalQuery := TSQLQuery.Create(nil);
-  try
-    LocalQuery.Database := frmAppBase.conMain;
-    if SameText(FSelectedType, 'Segment') then
-    begin
-      PartArray := FSelectedTargetID.Split([':']);
-      if Length(PartArray) = 3 then
-      begin
-        DocumentID := PartArray[0];
-        StartPos := StrToIntDef(PartArray[1], 0);
-        LengthByte := StrToIntDef(PartArray[2], 0);
-        LocalQuery.SQL.Text := 'SELECT d.title, SUBSTR(d.content, :sp + 1, :len) as seg_text, m.content ' +
-                               'FROM memos m JOIN documents d ON d.id = :did WHERE m.id = :mid';
-        LocalQuery.Params.ParamByName('sp').AsInteger := StartPos;
-        LocalQuery.Params.ParamByName('len').AsInteger := LengthByte;
-        LocalQuery.Params.ParamByName('did').AsString := DocumentID;
-        LocalQuery.Params.ParamByName('mid').AsString := FSelectedID;
-        LocalQuery.Open;
-        if not LocalQuery.EOF then
-        begin
-          lblPreviewTitle.Caption := 'Memo Content';
-          lblSegmentTitle.Caption := 'Referenced Segment in: ' + LocalQuery.FieldByName('title').AsString;
-          memPreview.Text := LocalQuery.FieldByName('content').AsString;
-          memSegment.Text := LocalQuery.FieldByName('seg_text').AsString;
-          pnlPreviewSegment.Visible := True;
-          splPreviewInternal.Visible := True;
-        end;
-        LocalQuery.Close;
-      end;
-    end
-    else
-    begin
-      pnlPreviewSegment.Visible := False;
-      splPreviewInternal.Visible := False;
-      lblPreviewTitle.Caption := 'Memo Content';
-      LocalQuery.SQL.Text := 'SELECT content FROM memos WHERE id = :id';
-      LocalQuery.Params.ParamByName('id').AsString := FSelectedID;
-      LocalQuery.Open;
-      if not LocalQuery.EOF then
-        memPreview.Text := LocalQuery.FieldByName('content').AsString;
-      LocalQuery.Close;
-    end;
-  finally
-    LocalQuery.Free;
   end;
 end;
 
@@ -655,7 +646,6 @@ var
 begin
   if vstMemo.RootNodeCount = 0 then Exit;
   if not dlgExport.Execute then Exit;
-  
   IDList := '';
   if vstMemo.SelectedCount > 0 then
   begin
@@ -678,7 +668,6 @@ begin
       IDList := IDList + QuotedStr(FMemoData[i].ID);
     end;
   end;
-
   if IDList <> '' then
   begin
     if TServiceExport.ExportMemo(frmAppBase.conMain, dlgExport.FileName, IDList) then
