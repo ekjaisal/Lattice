@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -239,19 +239,6 @@ begin
   end;
 end;
 
-procedure TfrmDialogFilter.cmbAttributeChange(Sender: TObject);
-begin
-  if FIsLoading then Exit;
-  UpdateOperators;
-  UpdateContextUI;
-end;
-
-procedure TfrmDialogFilter.InputChange(Sender: TObject);
-begin
-  if FIsLoading then Exit;
-  UpdateContextUI;
-end;
-
 procedure TfrmDialogFilter.UpdateContextUI;
 var
   S, AttributeValue, Op: String;
@@ -364,6 +351,19 @@ begin
     Result := ' AND (json_extract(da.attributes, ''$.' + ColumnName + ''') ' + OpStr + ' OR json_extract(da.attributes, ''$.' + ColumnName + ''') IS NULL)'
   else
     Result := ' AND json_extract(da.attributes, ''$.' + ColumnName + ''') ' + OpStr;
+end;
+
+procedure TfrmDialogFilter.cmbAttributeChange(Sender: TObject);
+begin
+  if FIsLoading then Exit;
+  UpdateOperators;
+  UpdateContextUI;
+end;
+
+procedure TfrmDialogFilter.InputChange(Sender: TObject);
+begin
+  if FIsLoading then Exit;
+  UpdateContextUI;
 end;
 
 procedure TfrmDialogFilter.btnApplyClick(Sender: TObject);
