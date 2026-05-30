@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -244,139 +244,6 @@ begin
   ReleaseDC(0, DC);
 end;
 
-procedure TEngineText.UpdateFontDescription;
-var
-  FontStr: String;
-begin
-  if FBaseFontDescription <> nil then
-    pango_font_description_free(FBaseFontDescription);
-  FontStr := GetUniversalFontStack + ' ' + IntToStr(READ_SIZE_DEFAULT + FZoomOffset);
-  FBaseFontDescription := pango_font_description_from_string(PChar(FontStr));
-end;
-
-function TEngineText.CharToByte(AChar: Integer): Integer;
-var
-  P: PChar;
-  C: Integer;
-begin
-  if Length(FDocumentText) = 0 then Exit(0);
-  if AChar <= 0 then Exit(0);
-  P := PChar(FDocumentText);
-  C := 0;
-  while (P^ <> #0) and (C < AChar) do
-  begin
-    Inc(P, UTF8CodepointSize(P));
-    Inc(C);
-  end;
-  Result := P - PChar(FDocumentText);
-end;
-
-function TEngineText.ByteToChar(AByte: Integer): Integer;
-var
-  P, TargetP: PChar;
-begin
-  if Length(FDocumentText) = 0 then Exit(0);
-  if AByte <= 0 then Exit(0);
-  P := PChar(FDocumentText);
-  TargetP := P + Math.EnsureRange(AByte, 0, Length(FDocumentText));
-  Result := 0;
-  while (P < TargetP) and (P^ <> #0) do
-  begin
-    Inc(P, UTF8CodepointSize(P));
-    Inc(Result);
-  end;
-end;
-
-function TEngineText.DocumentHeight: Integer;
-begin
-  Result := FDocumentHeight;
-end;
-
-function TEngineText.GetParagraphAtByte(AByte: Integer): Integer;
-var
-  L, R, M, EndByte: Integer;
-begin
-  Result := 0;
-  if Length(FParagraphs) = 0 then Exit;
-  L := 0;
-  R := High(FParagraphs);
-  while L <= R do
-  begin
-    M := L + (R - L) div 2;
-    if M = High(FParagraphs) then EndByte := FParagraphs[M].StartByte + FParagraphs[M].LengthBytes
-    else EndByte := FParagraphs[M + 1].StartByte - 1;
-    if (AByte >= FParagraphs[M].StartByte) and (AByte <= EndByte) then
-      Exit(M)
-    else if AByte < FParagraphs[M].StartByte then
-      R := M - 1
-    else
-      L := M + 1;
-  end;
-  if AByte >= FParagraphs[High(FParagraphs)].StartByte then Result := High(FParagraphs);
-end;
-
-function TEngineText.GetParagraphAtY(AY: Integer): Integer;
-var
-  L, R, M: Integer;
-begin
-  Result := 0;
-  if Length(FParagraphs) = 0 then Exit;
-  L := 0;
-  R := High(FParagraphs);
-  while L <= R do
-  begin
-    M := L + (R - L) div 2;
-    if (AY >= FParagraphs[M].YOffset) and (AY < FParagraphs[M].YOffset + FParagraphs[M].PixelHeight) then
-      Exit(M)
-    else if AY < FParagraphs[M].YOffset then
-      R := M - 1
-    else
-      L := M + 1;
-  end;
-  if AY >= FParagraphs[High(FParagraphs)].YOffset then Result := High(FParagraphs);
-end;
-
-function TEngineText.ByteFromXY(X, Y: Integer): Integer;
-var
-  Index, Trailing, ParagraphIndex: Integer;
-  LX, LY: Integer;
-  ActualBytePos, MaxBytePos, i: Integer;
-  P: PChar;
-begin
-  Result := 0;
-  if Length(FParagraphs) = 0 then Exit;
-  ParagraphIndex := Math.EnsureRange(GetParagraphAtY(Y), 0, High(FParagraphs));
-  if FParagraphs[ParagraphIndex].Layout = nil then Exit(FParagraphs[ParagraphIndex].StartByte);
-  LX := Integer(Int64(X - FMarginLeft) * Int64(PANGO_SCALE));
-  LY := Integer(Int64(Y - FParagraphs[ParagraphIndex].YOffset) * Int64(PANGO_SCALE));
-  pango_layout_xy_to_index(FParagraphs[ParagraphIndex].Layout, LX, LY, @Index, @Trailing);
-  ActualBytePos := FParagraphs[ParagraphIndex].StartByte + Index;
-  MaxBytePos := FParagraphs[ParagraphIndex].StartByte + FParagraphs[ParagraphIndex].LengthBytes;
-  if Trailing > 0 then
-  begin
-    P := PChar(FDocumentText) + ActualBytePos;
-    for i := 1 to Trailing do
-    begin
-      if P^ = #0 then Break;
-      Inc(P, UTF8CodepointSize(P));
-    end;
-    ActualBytePos := P - PChar(FDocumentText);
-  end;
-  if (FParagraphs[ParagraphIndex].LengthBytes > 0) and 
-     (MaxBytePos <= Length(FDocumentText)) and 
-     (FDocumentText[MaxBytePos] = #10) then
-  begin
-    if ActualBytePos >= MaxBytePos then
-      ActualBytePos := MaxBytePos - 1;
-  end
-  else
-  begin
-    if ActualBytePos > MaxBytePos then
-      ActualBytePos := MaxBytePos;
-  end;
-  Result := ActualBytePos;
-end;
-
 constructor TEngineText.Create;
 begin
   inherited Create;
@@ -402,6 +269,20 @@ begin
   FMapClustersViewHeight := 0;
 end;
 
+destructor TEngineText.Destroy;
+var
+  i: Integer;
+begin
+  if FBaseFontDescription <> nil then
+    pango_font_description_free(FBaseFontDescription);
+  for i := 0 to High(FParagraphs) do
+    if Assigned(FParagraphs[i].Layout) then g_object_unref(FParagraphs[i].Layout);
+  SetLength(FParagraphs, 0);
+  SetLength(FSearchMatch, 0);
+  SetLength(FMemoMatch, 0);
+  inherited Destroy;
+end;
+
 procedure TEngineText.SetDPI(ADPI: Integer);
 begin
   if (ADPI > 0) and (FDPI <> ADPI) then
@@ -415,18 +296,24 @@ begin
   end;
 end;
 
-destructor TEngineText.Destroy;
+procedure TEngineText.SetZoomOffset(Value: Integer);
+begin
+  if FZoomOffset <> Value then
+  begin
+    FZoomOffset := Value;
+    UpdateFontDescription;
+    RecalculateLane(True);
+  end;
+end;
+
+procedure TEngineText.UpdateFontDescription;
 var
-  i: Integer;
+  FontStr: String;
 begin
   if FBaseFontDescription <> nil then
     pango_font_description_free(FBaseFontDescription);
-  for i := 0 to High(FParagraphs) do
-    if Assigned(FParagraphs[i].Layout) then g_object_unref(FParagraphs[i].Layout);
-  SetLength(FParagraphs, 0);
-  SetLength(FSearchMatch, 0);
-  SetLength(FMemoMatch, 0);
-  inherited Destroy;
+  FontStr := GetUniversalFontStack + ' ' + IntToStr(READ_SIZE_DEFAULT + FZoomOffset);
+  FBaseFontDescription := pango_font_description_from_string(PChar(FontStr));
 end;
 
 procedure TEngineText.SetText(const AText: string);
@@ -515,26 +402,19 @@ begin
   Result := Length(FDocumentText);
 end;
 
-function TEngineText.GetAbsoluteCaret: Integer;
+function TEngineText.GetTextSlice(StartCharacter, LengthCharacter: Integer): String;
+var
+  S, E: Integer;
 begin
-  if Length(FParagraphs) = 0 then Exit(0);
-  if FCaretParagraph > High(FParagraphs) then Exit(GetDocumentLengthBytes);
-  Result := FParagraphs[FCaretParagraph].StartByte + FCaretByte;
+  S := CharToByte(StartCharacter);
+  E := CharToByte(StartCharacter + LengthCharacter);
+  Result := Copy(FDocumentText, S + 1, E - S);
 end;
 
-procedure TEngineText.SetCaretToByte(AByte: Integer);
-var
-  TargetByte: Integer;
+procedure TEngineText.SetEditing(Value: Boolean);
 begin
-  if Length(FParagraphs) = 0 then Exit;
-  TargetByte := Math.EnsureRange(AByte, 0, GetDocumentLengthBytes);
-  FCaretParagraph := GetParagraphAtByte(TargetByte);
-  if FCaretParagraph < 0 then FCaretParagraph := 0;
-  if FCaretParagraph > High(FParagraphs) then FCaretParagraph := High(FParagraphs);
-  FCaretByte := TargetByte - FParagraphs[FCaretParagraph].StartByte;
-  FCaretByte := Math.EnsureRange(FCaretByte, 0, FParagraphs[FCaretParagraph].LengthBytes);
-  FIsEditing := True;
-  FCaretVisible := True;
+  FIsEditing := Value;
+  FCaretVisible := Value;
 end;
 
 procedure TEngineText.InternalReplaceRange(StartB, EndB: Integer; const CleanReplacement: String);
@@ -916,69 +796,6 @@ begin
   FMapClustersDirty := True;
 end;
 
-procedure TEngineText.Resize(AViewWidth: Integer);
-begin
-  if (FViewWidth <> AViewWidth) and (AViewWidth > 0) then
-  begin
-    FViewWidth := AViewWidth;
-    RecalculateLane(True);
-  end;
-end;
-
-procedure TEngineText.ClearSelection;
-begin
-  FSelStartByte := -1;
-  FSelEndByte := -1;
-  FIsBracketSelection := False;
-  FFocusedCodingID := '';
-  FFocusedMemoID := '';
-end;
-
-procedure TEngineText.SetEditing(Value: Boolean);
-begin
-  FIsEditing := Value;
-  FCaretVisible := Value;
-end;
-
-procedure TEngineText.ToggleCaret;
-begin
-  FCaretVisible := not FCaretVisible;
-end;
-
-procedure TEngineText.SetCaretFromXY(X, Y, ScrollY: Integer);
-var
-  AbsoluteByte: Integer;
-begin
-  if not FIsEditing then Exit;
-  FCaretParagraph := GetParagraphAtY(Y + ScrollY);
-  if FCaretParagraph > High(FParagraphs) then Exit;
-  AbsoluteByte := ByteFromXY(X, Y + ScrollY);
-  FCaretByte := AbsoluteByte - FParagraphs[FCaretParagraph].StartByte;
-  if FCaretByte < 0 then FCaretByte := 0;
-  if FCaretByte > FParagraphs[FCaretParagraph].LengthBytes then 
-    FCaretByte := FParagraphs[FCaretParagraph].LengthBytes;
-  FIsEditing := True;
-  FCaretVisible := True;
-end;
-
-procedure TEngineText.MoveCaretVertical(DeltaLines, ScrollY: Integer);
-var
-  Extents: TPangoRectangle;
-  TargetX, TargetY, AbsY, LineHeight: Integer;
-begin
-  if not FIsEditing or (FCaretParagraph < 0) or (FCaretParagraph > High(FParagraphs)) then Exit;
-  if FParagraphs[FCaretParagraph].Layout <> nil then
-  begin
-    pango_layout_get_cursor_pos(FParagraphs[FCaretParagraph].Layout, FCaretByte, @Extents, nil);
-    TargetX := FMarginLeft + (Extents.X div PANGO_SCALE);
-    LineHeight := Extents.Height div PANGO_SCALE;
-    if LineHeight = 0 then LineHeight := MulDiv(24, FDPI, 96);
-    AbsY := FParagraphs[FCaretParagraph].YOffset + (Extents.Y div PANGO_SCALE);
-    TargetY := AbsY + (DeltaLines * LineHeight) + (LineHeight div 2);
-    SetCaretFromXY(TargetX, TargetY - ScrollY, ScrollY);
-  end;
-end;
-
 procedure TEngineText.SetFocusedCoding(const ID: String);
 begin
   FFocusedCodingID := ID;
@@ -1008,6 +825,182 @@ begin
       Break;
     end;
   end;
+end;
+
+procedure TEngineText.SetMemoHighlights(const AMemoArray: array of TMemoMatch);
+var
+  i, j, Overlaps: Integer;
+begin
+  SetLength(FMemoMatch, Length(AMemoArray));
+  for i := 0 to High(AMemoArray) do
+  begin
+    FMemoMatch[i] := AMemoArray[i];
+    Overlaps := 0;
+    for j := 0 to i - 1 do
+    begin
+      if (FMemoMatch[j].StartByte < FMemoMatch[i].StartByte + FMemoMatch[i].LengthBytes) and
+         (FMemoMatch[j].StartByte + FMemoMatch[j].LengthBytes > FMemoMatch[i].StartByte) then
+        Inc(Overlaps);
+    end;
+    FMemoMatch[i].Lane := Overlaps mod 3;
+  end;
+  RecalculateLane(False);
+  FMapClustersDirty := True;
+end;
+
+function TEngineText.GetCodingInfo(Index: Integer; out ID: String; out Color: TColor): Boolean;
+begin
+  Result := False;
+  if (Index >= 0) and (Index <= High(FCoding)) then
+  begin
+    ID := FCoding[Index].ID;
+    Color := FCoding[Index].Color;
+    Result := True;
+  end;
+end;
+
+function TEngineText.CharToByte(AChar: Integer): Integer;
+var
+  P: PChar;
+  C: Integer;
+begin
+  if Length(FDocumentText) = 0 then Exit(0);
+  if AChar <= 0 then Exit(0);
+  P := PChar(FDocumentText);
+  C := 0;
+  while (P^ <> #0) and (C < AChar) do
+  begin
+    Inc(P, UTF8CodepointSize(P));
+    Inc(C);
+  end;
+  Result := P - PChar(FDocumentText);
+end;
+
+function TEngineText.ByteToChar(AByte: Integer): Integer;
+var
+  P, TargetP: PChar;
+begin
+  if Length(FDocumentText) = 0 then Exit(0);
+  if AByte <= 0 then Exit(0);
+  P := PChar(FDocumentText);
+  TargetP := P + Math.EnsureRange(AByte, 0, Length(FDocumentText));
+  Result := 0;
+  while (P < TargetP) and (P^ <> #0) do
+  begin
+    Inc(P, UTF8CodepointSize(P));
+    Inc(Result);
+  end;
+end;
+
+function TEngineText.GetParagraphAtByte(AByte: Integer): Integer;
+var
+  L, R, M, EndByte: Integer;
+begin
+  Result := 0;
+  if Length(FParagraphs) = 0 then Exit;
+  L := 0;
+  R := High(FParagraphs);
+  while L <= R do
+  begin
+    M := L + (R - L) div 2;
+    if M = High(FParagraphs) then EndByte := FParagraphs[M].StartByte + FParagraphs[M].LengthBytes
+    else EndByte := FParagraphs[M + 1].StartByte - 1;
+    if (AByte >= FParagraphs[M].StartByte) and (AByte <= EndByte) then
+      Exit(M)
+    else if AByte < FParagraphs[M].StartByte then
+      R := M - 1
+    else
+      L := M + 1;
+  end;
+  if AByte >= FParagraphs[High(FParagraphs)].StartByte then Result := High(FParagraphs);
+end;
+
+function TEngineText.GetParagraphAtY(AY: Integer): Integer;
+var
+  L, R, M: Integer;
+begin
+  Result := 0;
+  if Length(FParagraphs) = 0 then Exit;
+  L := 0;
+  R := High(FParagraphs);
+  while L <= R do
+  begin
+    M := L + (R - L) div 2;
+    if (AY >= FParagraphs[M].YOffset) and (AY < FParagraphs[M].YOffset + FParagraphs[M].PixelHeight) then
+      Exit(M)
+    else if AY < FParagraphs[M].YOffset then
+      R := M - 1
+    else
+      L := M + 1;
+  end;
+  if AY >= FParagraphs[High(FParagraphs)].YOffset then Result := High(FParagraphs);
+end;
+
+function TEngineText.ByteFromXY(X, Y: Integer): Integer;
+var
+  Index, Trailing, ParagraphIndex: Integer;
+  LX, LY: Integer;
+  ActualBytePos, MaxBytePos, i: Integer;
+  P: PChar;
+begin
+  Result := 0;
+  if Length(FParagraphs) = 0 then Exit;
+  ParagraphIndex := Math.EnsureRange(GetParagraphAtY(Y), 0, High(FParagraphs));
+  if FParagraphs[ParagraphIndex].Layout = nil then Exit(FParagraphs[ParagraphIndex].StartByte);
+  LX := Integer(Int64(X - FMarginLeft) * Int64(PANGO_SCALE));
+  LY := Integer(Int64(Y - FParagraphs[ParagraphIndex].YOffset) * Int64(PANGO_SCALE));
+  pango_layout_xy_to_index(FParagraphs[ParagraphIndex].Layout, LX, LY, @Index, @Trailing);
+  ActualBytePos := FParagraphs[ParagraphIndex].StartByte + Index;
+  MaxBytePos := FParagraphs[ParagraphIndex].StartByte + FParagraphs[ParagraphIndex].LengthBytes;
+  if Trailing > 0 then
+  begin
+    P := PChar(FDocumentText) + ActualBytePos;
+    for i := 1 to Trailing do
+    begin
+      if P^ = #0 then Break;
+      Inc(P, UTF8CodepointSize(P));
+    end;
+    ActualBytePos := P - PChar(FDocumentText);
+  end;
+  if (FParagraphs[ParagraphIndex].LengthBytes > 0) and 
+     (MaxBytePos <= Length(FDocumentText)) and 
+     (FDocumentText[MaxBytePos] = #10) then
+  begin
+    if ActualBytePos >= MaxBytePos then
+      ActualBytePos := MaxBytePos - 1;
+  end
+  else
+  begin
+    if ActualBytePos > MaxBytePos then
+      ActualBytePos := MaxBytePos;
+  end;
+  Result := ActualBytePos;
+end;
+
+function TEngineText.GetYForByte(AByte: Integer): Integer;
+var
+  ParagraphIndex: Integer;
+begin
+  ParagraphIndex := GetParagraphAtByte(AByte);
+  if (ParagraphIndex >= 0) and (ParagraphIndex <= High(FParagraphs)) then
+    Result := FParagraphs[ParagraphIndex].YOffset
+  else
+    Result := 0;
+end;
+
+function TEngineText.GetYForChar(AChar: Integer): Integer;
+begin
+  Result := GetYForByte(CharToByte(AChar));
+end;
+
+function TEngineText.GetTopVisibleByte(ScrollY: Integer): Integer;
+begin
+  Result := ByteFromXY(FMarginLeft + 10, ScrollY);
+end;
+
+function TEngineText.DocumentHeight: Integer;
+begin
+  Result := FDocumentHeight;
 end;
 
 procedure TEngineText.EstimateParagraphs;
@@ -1169,218 +1162,74 @@ begin
   end;
 end;
 
-procedure TEngineText.DrawActionAnchors(cr: Pcairo_t; ViewHeight: Integer);
-type
-  TSortTick = record
-    ID: String;
-    TickType: TMapTickType;
-    StartByte: Integer;
-    LengthBytes: Integer;
-    Color: TColor;
-    Name: String;
-  end;
-var
-  i, j, MapH, MapTop: Integer;
-  MapW, MapX, SegW, StartX: Double;
-  R, G, B: Byte;
-  TotalBytes: Double;
-  MinGap: Double;
-  SortArr: array of TSortTick;
-  ClusterIdx, ItemIdx: Integer;
-  procedure QuickSortTicks(L, R: Integer);
-  var
-    I_, J_: Integer;
-    Pivot, Temp: TSortTick;
-    function CompareTicks(const A, B: TSortTick): Integer;
-    begin
-      if A.StartByte < B.StartByte then Exit(-1);
-      if A.StartByte > B.StartByte then Exit(1);
-      if A.LengthBytes > B.LengthBytes then Exit(-1);
-      if A.LengthBytes < B.LengthBytes then Exit(1);
-      if (A.TickType = mttCode) and (B.TickType = mttMemo) then Exit(-1);
-      if (A.TickType = mttMemo) and (B.TickType = mttCode) then Exit(1);
-      Result := CompareStr(A.ID, B.ID);
-    end;
-  begin
-    if L >= R then Exit;
-    I_ := L; J_ := R;
-    Pivot := SortArr[L + (R - L) div 2];
-    repeat
-      while CompareTicks(SortArr[I_], Pivot) < 0 do Inc(I_);
-      while CompareTicks(SortArr[J_], Pivot) > 0 do Dec(J_);
-      if I_ <= J_ then
-      begin
-        Temp := SortArr[I_]; SortArr[I_] := SortArr[J_]; SortArr[J_] := Temp;
-        Inc(I_); Dec(J_);
-      end;
-    until I_ > J_;
-    if L < J_ then QuickSortTicks(L, J_);
-    if I_ < R then QuickSortTicks(I_, R);
-  end;
+procedure TEngineText.Resize(AViewWidth: Integer);
 begin
-  if (Length(FCoding) = 0) and (Length(FMemoMatch) = 0) then Exit;
+  if (FViewWidth <> AViewWidth) and (AViewWidth > 0) then
+  begin
+    FViewWidth := AViewWidth;
+    RecalculateLane(True);
+  end;
+end;
+
+function TEngineText.GetAbsoluteCaret: Integer;
+begin
+  if Length(FParagraphs) = 0 then Exit(0);
+  if FCaretParagraph > High(FParagraphs) then Exit(GetDocumentLengthBytes);
+  Result := FParagraphs[FCaretParagraph].StartByte + FCaretByte;
+end;
+
+procedure TEngineText.SetCaretToByte(AByte: Integer);
+var
+  TargetByte: Integer;
+begin
   if Length(FParagraphs) = 0 then Exit;
-  
-  MapH := ViewHeight div 2;
-  MapTop := (ViewHeight - MapH) div 2;
-  MapW := 14.0;
-  MapX := FBenchmarkM;
-  
-  if FMapClustersDirty or (ViewHeight <> FMapClustersViewHeight) then
-  begin
-    TotalBytes := FParagraphs[High(FParagraphs)].StartByte + FParagraphs[High(FParagraphs)].LengthBytes;
-    MinGap := 5.0;
-    
-    SetLength(SortArr, Length(FMemoMatch) + Length(FCoding));
-    for i := 0 to High(FMemoMatch) do
-    begin
-      SortArr[i].ID := FMemoMatch[i].ID;
-      SortArr[i].TickType := mttMemo;
-      SortArr[i].StartByte := FMemoMatch[i].StartByte;
-      SortArr[i].LengthBytes := FMemoMatch[i].LengthBytes;
-      SortArr[i].Color := clBlack;
-      SortArr[i].Name := 'Segment Memo';
-    end;
-    for i := 0 to High(FCoding) do
-    begin
-      SortArr[Length(FMemoMatch) + i].ID := FCoding[i].ID;
-      SortArr[Length(FMemoMatch) + i].TickType := mttCode;
-      SortArr[Length(FMemoMatch) + i].StartByte := FBracketLayout[i].StartByte;
-      SortArr[Length(FMemoMatch) + i].LengthBytes := FBracketLayout[i].EndByte - FBracketLayout[i].StartByte;
-      SortArr[Length(FMemoMatch) + i].Color := FCoding[i].Color;
-      SortArr[Length(FMemoMatch) + i].Name := FCoding[i].Name;
-    end;
-    
-    if Length(SortArr) > 1 then QuickSortTicks(0, High(SortArr));
-    
-    SetLength(FMapClusters, 0);
-    for i := 0 to High(SortArr) do
-    begin
-      if (i > 0) and (SortArr[i].StartByte = SortArr[i-1].StartByte) and (SortArr[i].LengthBytes = SortArr[i-1].LengthBytes) then
-      begin
-        ClusterIdx := High(FMapClusters);
-        ItemIdx := Length(FMapClusters[ClusterIdx].Items);
-        SetLength(FMapClusters[ClusterIdx].Items, ItemIdx + 1);
-        FMapClusters[ClusterIdx].Items[ItemIdx].ID := SortArr[i].ID;
-        FMapClusters[ClusterIdx].Items[ItemIdx].TickType := SortArr[i].TickType;
-        FMapClusters[ClusterIdx].Items[ItemIdx].Color := SortArr[i].Color;
-        FMapClusters[ClusterIdx].Items[ItemIdx].Name := SortArr[i].Name;
-      end
-      else
-      begin
-        SetLength(FMapClusters, Length(FMapClusters) + 1);
-        ClusterIdx := High(FMapClusters);
-        FMapClusters[ClusterIdx].StartByte := SortArr[i].StartByte;
-        FMapClusters[ClusterIdx].LengthBytes := SortArr[i].LengthBytes;
-        FMapClusters[ClusterIdx].MapY := MapTop + (SortArr[i].StartByte / Max(1.0, TotalBytes)) * MapH;
-        SetLength(FMapClusters[ClusterIdx].Items, 1);
-        FMapClusters[ClusterIdx].Items[0].ID := SortArr[i].ID;
-        FMapClusters[ClusterIdx].Items[0].TickType := SortArr[i].TickType;
-        FMapClusters[ClusterIdx].Items[0].Color := SortArr[i].Color;
-        FMapClusters[ClusterIdx].Items[0].Name := SortArr[i].Name;
-      end;
-    end;
-    
-    for i := 1 to High(FMapClusters) do
-    begin
-      if FMapClusters[i].MapY < FMapClusters[i-1].MapY + MinGap then
-        FMapClusters[i].MapY := FMapClusters[i-1].MapY + MinGap;
-    end;
-    
-    if (Length(FMapClusters) > 0) and (FMapClusters[High(FMapClusters)].MapY > MapTop + MapH) then
-    begin
-      FMapClusters[High(FMapClusters)].MapY := MapTop + MapH;
-      for i := High(FMapClusters) - 1 downto 0 do
-      begin
-        if FMapClusters[i].MapY > FMapClusters[i+1].MapY - MinGap then
-          FMapClusters[i].MapY := FMapClusters[i+1].MapY - MinGap;
-      end;
-    end;
-    
-    FMapClustersDirty := False;
-    FMapClustersViewHeight := ViewHeight;
-  end;
-  
-  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-  cairo_set_line_width(cr, 0.5);
-  cairo_move_to(cr, MapX + 0.5, MapTop);
-  cairo_line_to(cr, MapX + 0.5, MapTop + MapH);
-  cairo_stroke(cr);
-  
-  for i := 0 to High(FMapClusters) do
-  begin
-    SegW := MapW / Length(FMapClusters[i].Items);
-    StartX := (MapX + 0.5) - (MapW / 2.0);
-    for j := 0 to High(FMapClusters[i].Items) do
-    begin
-      RedGreenBlue(ColorToRGB(FMapClusters[i].Items[j].Color), R, G, B);
-      if i = FHoveredAnchorIndex then
-      begin
-        cairo_set_line_width(cr, 3.5);
-        cairo_set_source_rgba(cr, R/255.0, G/255.0, B/255.0, 1.0);
-      end
-      else
-      begin
-        cairo_set_line_width(cr, 2.0);
-        cairo_set_source_rgba(cr, R/255.0, G/255.0, B/255.0, 0.85);
-      end;
-      cairo_move_to(cr, StartX + (j * SegW), FMapClusters[i].MapY);
-      cairo_line_to(cr, StartX + ((j + 1) * SegW), FMapClusters[i].MapY);
-      cairo_stroke(cr);
-    end;
-  end;
+  TargetByte := Math.EnsureRange(AByte, 0, GetDocumentLengthBytes);
+  FCaretParagraph := GetParagraphAtByte(TargetByte);
+  if FCaretParagraph < 0 then FCaretParagraph := 0;
+  if FCaretParagraph > High(FParagraphs) then FCaretParagraph := High(FParagraphs);
+  FCaretByte := TargetByte - FParagraphs[FCaretParagraph].StartByte;
+  FCaretByte := Math.EnsureRange(FCaretByte, 0, FParagraphs[FCaretParagraph].LengthBytes);
+  FIsEditing := True;
+  FCaretVisible := True;
 end;
 
-function TEngineText.IsOverActionAnchors(X, Y, ViewHeight: Integer): Boolean;
+procedure TEngineText.SetCaretFromXY(X, Y, ScrollY: Integer);
 var
-  MapH, MapTop: Integer;
+  AbsoluteByte: Integer;
 begin
-  Result := False;
-  if (Length(FCoding) = 0) and (Length(FMemoMatch) = 0) then Exit;
-  MapH := ViewHeight div 2;
-  MapTop := (ViewHeight - MapH) div 2;
-  Result := (X >= FBenchmarkM - 4) and (X <= FBenchmarkM + 4) and (Y >= MapTop) and (Y <= MapTop + MapH);
+  if not FIsEditing then Exit;
+  FCaretParagraph := GetParagraphAtY(Y + ScrollY);
+  if FCaretParagraph > High(FParagraphs) then Exit;
+  AbsoluteByte := ByteFromXY(X, Y + ScrollY);
+  FCaretByte := AbsoluteByte - FParagraphs[FCaretParagraph].StartByte;
+  if FCaretByte < 0 then FCaretByte := 0;
+  if FCaretByte > FParagraphs[FCaretParagraph].LengthBytes then 
+    FCaretByte := FParagraphs[FCaretParagraph].LengthBytes;
+  FIsEditing := True;
+  FCaretVisible := True;
 end;
 
-function TEngineText.UpdateAnchorHover(X, Y, ViewHeight: Integer): Boolean;
+procedure TEngineText.MoveCaretVertical(DeltaLines, ScrollY: Integer);
 var
-  i, BestIndex: Integer;
-  Dist, MinDist: Double;
+  Extents: TPangoRectangle;
+  TargetX, TargetY, AbsY, LineHeight: Integer;
 begin
-  Result := False;
-  BestIndex := -1;
-  if IsOverActionAnchors(X, Y, ViewHeight) then
+  if not FIsEditing or (FCaretParagraph < 0) or (FCaretParagraph > High(FParagraphs)) then Exit;
+  if FParagraphs[FCaretParagraph].Layout <> nil then
   begin
-    MinDist := 9999.0;
-    for i := 0 to High(FMapClusters) do
-    begin
-      Dist := Abs(Y - FMapClusters[i].MapY);
-      if Dist < MinDist then
-      begin
-        MinDist := Dist;
-        BestIndex := i;
-      end;
-    end;
-    if MinDist > 4.0 then BestIndex := -1;
-  end;
-  if FHoveredAnchorIndex <> BestIndex then
-  begin
-    FHoveredAnchorIndex := BestIndex;
-    Result := True;
+    pango_layout_get_cursor_pos(FParagraphs[FCaretParagraph].Layout, FCaretByte, @Extents, nil);
+    TargetX := FMarginLeft + (Extents.X div PANGO_SCALE);
+    LineHeight := Extents.Height div PANGO_SCALE;
+    if LineHeight = 0 then LineHeight := MulDiv(24, FDPI, 96);
+    AbsY := FParagraphs[FCaretParagraph].YOffset + (Extents.Y div PANGO_SCALE);
+    TargetY := AbsY + (DeltaLines * LineHeight) + (LineHeight div 2);
+    SetCaretFromXY(TargetX, TargetY - ScrollY, ScrollY);
   end;
 end;
 
-function TEngineText.ActionAnchorHitTest(X, Y, ViewHeight: Integer; out TargetCluster: TMapTickCluster; out TargetStartByte: Integer): Boolean;
+procedure TEngineText.ToggleCaret;
 begin
-  Result := False;
-  TargetStartByte := 0;
-  TargetCluster := Default(TMapTickCluster);
-  if (FHoveredAnchorIndex >= 0) and (FHoveredAnchorIndex <= High(FMapClusters)) then
-  begin
-    TargetCluster := FMapClusters[FHoveredAnchorIndex];
-    TargetStartByte := FMapClusters[FHoveredAnchorIndex].StartByte;
-    Result := True;
-  end;
+  FCaretVisible := not FCaretVisible;
 end;
 
 function TEngineText.GetNextCoding(CurrentScrollY, Direction: Integer): String;
@@ -1440,19 +1289,44 @@ begin
   Result := BestID;
 end;
 
-procedure TEngineText.SetZoomOffset(Value: Integer);
+procedure TEngineText.ClearSelection;
 begin
-  if FZoomOffset <> Value then
-  begin
-    FZoomOffset := Value;
-    UpdateFontDescription;
-    RecalculateLane(True);
-  end;
+  FSelStartByte := -1;
+  FSelEndByte := -1;
+  FIsBracketSelection := False;
+  FFocusedCodingID := '';
+  FFocusedMemoID := '';
 end;
 
-function TEngineText.GetTopVisibleByte(ScrollY: Integer): Integer;
+function TEngineText.HasSelection: Boolean;
 begin
-  Result := ByteFromXY(FMarginLeft + 10, ScrollY);
+  Result := (FSelStartByte >= 0) and (FSelEndByte >= 0) and (FSelStartByte <> FSelEndByte);
+end;
+
+function TEngineText.IsBracketSelection: Boolean;
+begin
+  Result := FIsBracketSelection;
+end;
+
+function TEngineText.SelectionStartCharacter: Integer;
+begin
+  Result := ByteToChar(Min(FSelStartByte, FSelEndByte));
+end;
+
+function TEngineText.SelectionLength: Integer;
+begin
+  Result := Abs(ByteToChar(FSelEndByte) - ByteToChar(FSelStartByte));
+end;
+
+function TEngineText.GetSelectedText: String;
+var
+  S, E: Integer;
+begin
+  Result := '';
+  if not HasSelection then Exit;
+  S := Min(FSelStartByte, FSelEndByte);
+  E := Max(FSelStartByte, FSelEndByte);
+  Result := Copy(FDocumentText, S + 1, E - S);
 end;
 
 procedure TEngineText.Paint(DC: HDC; ViewWidth, ViewHeight: Integer; var ScrollY: Integer);
@@ -1871,36 +1745,156 @@ begin
   cairo_restore(cr);
 end;
 
-procedure TEngineText.SetMemoHighlights(const AMemoArray: array of TMemoMatch);
-var
-  i, j, Overlaps: Integer;
-begin
-  SetLength(FMemoMatch, Length(AMemoArray));
-  for i := 0 to High(AMemoArray) do
-  begin
-    FMemoMatch[i] := AMemoArray[i];
-    Overlaps := 0;
-    for j := 0 to i - 1 do
-    begin
-      if (FMemoMatch[j].StartByte < FMemoMatch[i].StartByte + FMemoMatch[i].LengthBytes) and
-         (FMemoMatch[j].StartByte + FMemoMatch[j].LengthBytes > FMemoMatch[i].StartByte) then
-        Inc(Overlaps);
-    end;
-    FMemoMatch[i].Lane := Overlaps mod 3;
+procedure TEngineText.DrawActionAnchors(cr: Pcairo_t; ViewHeight: Integer);
+type
+  TSortTick = record
+    ID: String;
+    TickType: TMapTickType;
+    StartByte: Integer;
+    LengthBytes: Integer;
+    Color: TColor;
+    Name: String;
   end;
-  RecalculateLane(False);
-  FMapClustersDirty := True;
-end;
-
-function TEngineText.GetSelectedText: String;
 var
-  S, E: Integer;
+  i, j, MapH, MapTop: Integer;
+  MapW, MapX, SegW, StartX: Double;
+  R, G, B: Byte;
+  TotalBytes: Double;
+  MinGap: Double;
+  SortArr: array of TSortTick;
+  ClusterIdx, ItemIdx: Integer;
+  procedure QuickSortTicks(L, R: Integer);
+  var
+    I_, J_: Integer;
+    Pivot, Temp: TSortTick;
+    function CompareTicks(const A, B: TSortTick): Integer;
+    begin
+      if A.StartByte < B.StartByte then Exit(-1);
+      if A.StartByte > B.StartByte then Exit(1);
+      if A.LengthBytes > B.LengthBytes then Exit(-1);
+      if A.LengthBytes < B.LengthBytes then Exit(1);
+      if (A.TickType = mttCode) and (B.TickType = mttMemo) then Exit(-1);
+      if (A.TickType = mttMemo) and (B.TickType = mttCode) then Exit(1);
+      Result := CompareStr(A.ID, B.ID);
+    end;
+  begin
+    if L >= R then Exit;
+    I_ := L; J_ := R;
+    Pivot := SortArr[L + (R - L) div 2];
+    repeat
+      while CompareTicks(SortArr[I_], Pivot) < 0 do Inc(I_);
+      while CompareTicks(SortArr[J_], Pivot) > 0 do Dec(J_);
+      if I_ <= J_ then
+      begin
+        Temp := SortArr[I_]; SortArr[I_] := SortArr[J_]; SortArr[J_] := Temp;
+        Inc(I_); Dec(J_);
+      end;
+    until I_ > J_;
+    if L < J_ then QuickSortTicks(L, J_);
+    if I_ < R then QuickSortTicks(I_, R);
+  end;
 begin
-  Result := '';
-  if not HasSelection then Exit;
-  S := Min(FSelStartByte, FSelEndByte);
-  E := Max(FSelStartByte, FSelEndByte);
-  Result := Copy(FDocumentText, S + 1, E - S);
+  if (Length(FCoding) = 0) and (Length(FMemoMatch) = 0) then Exit;
+  if Length(FParagraphs) = 0 then Exit;
+  MapH := ViewHeight div 2;
+  MapTop := (ViewHeight - MapH) div 2;
+  MapW := 14.0;
+  MapX := FBenchmarkM;
+  if FMapClustersDirty or (ViewHeight <> FMapClustersViewHeight) then
+  begin
+    TotalBytes := FParagraphs[High(FParagraphs)].StartByte + FParagraphs[High(FParagraphs)].LengthBytes;
+    MinGap := 5.0;
+    SetLength(SortArr, Length(FMemoMatch) + Length(FCoding));
+    for i := 0 to High(FMemoMatch) do
+    begin
+      SortArr[i].ID := FMemoMatch[i].ID;
+      SortArr[i].TickType := mttMemo;
+      SortArr[i].StartByte := FMemoMatch[i].StartByte;
+      SortArr[i].LengthBytes := FMemoMatch[i].LengthBytes;
+      SortArr[i].Color := clBlack;
+      SortArr[i].Name := 'Segment Memo';
+    end;
+    for i := 0 to High(FCoding) do
+    begin
+      SortArr[Length(FMemoMatch) + i].ID := FCoding[i].ID;
+      SortArr[Length(FMemoMatch) + i].TickType := mttCode;
+      SortArr[Length(FMemoMatch) + i].StartByte := FBracketLayout[i].StartByte;
+      SortArr[Length(FMemoMatch) + i].LengthBytes := FBracketLayout[i].EndByte - FBracketLayout[i].StartByte;
+      SortArr[Length(FMemoMatch) + i].Color := FCoding[i].Color;
+      SortArr[Length(FMemoMatch) + i].Name := FCoding[i].Name;
+    end;
+    if Length(SortArr) > 1 then QuickSortTicks(0, High(SortArr));
+    SetLength(FMapClusters, 0);
+    for i := 0 to High(SortArr) do
+    begin
+      if (i > 0) and (SortArr[i].StartByte = SortArr[i-1].StartByte) and (SortArr[i].LengthBytes = SortArr[i-1].LengthBytes) then
+      begin
+        ClusterIdx := High(FMapClusters);
+        ItemIdx := Length(FMapClusters[ClusterIdx].Items);
+        SetLength(FMapClusters[ClusterIdx].Items, ItemIdx + 1);
+        FMapClusters[ClusterIdx].Items[ItemIdx].ID := SortArr[i].ID;
+        FMapClusters[ClusterIdx].Items[ItemIdx].TickType := SortArr[i].TickType;
+        FMapClusters[ClusterIdx].Items[ItemIdx].Color := SortArr[i].Color;
+        FMapClusters[ClusterIdx].Items[ItemIdx].Name := SortArr[i].Name;
+      end
+      else
+      begin
+        SetLength(FMapClusters, Length(FMapClusters) + 1);
+        ClusterIdx := High(FMapClusters);
+        FMapClusters[ClusterIdx].StartByte := SortArr[i].StartByte;
+        FMapClusters[ClusterIdx].LengthBytes := SortArr[i].LengthBytes;
+        FMapClusters[ClusterIdx].MapY := MapTop + (SortArr[i].StartByte / Max(1.0, TotalBytes)) * MapH;
+        SetLength(FMapClusters[ClusterIdx].Items, 1);
+        FMapClusters[ClusterIdx].Items[0].ID := SortArr[i].ID;
+        FMapClusters[ClusterIdx].Items[0].TickType := SortArr[i].TickType;
+        FMapClusters[ClusterIdx].Items[0].Color := SortArr[i].Color;
+        FMapClusters[ClusterIdx].Items[0].Name := SortArr[i].Name;
+      end;
+    end;
+    for i := 1 to High(FMapClusters) do
+    begin
+      if FMapClusters[i].MapY < FMapClusters[i-1].MapY + MinGap then
+        FMapClusters[i].MapY := FMapClusters[i-1].MapY + MinGap;
+    end;
+    if (Length(FMapClusters) > 0) and (FMapClusters[High(FMapClusters)].MapY > MapTop + MapH) then
+    begin
+      FMapClusters[High(FMapClusters)].MapY := MapTop + MapH;
+      for i := High(FMapClusters) - 1 downto 0 do
+      begin
+        if FMapClusters[i].MapY > FMapClusters[i+1].MapY - MinGap then
+          FMapClusters[i].MapY := FMapClusters[i+1].MapY - MinGap;
+      end;
+    end;
+    FMapClustersDirty := False;
+    FMapClustersViewHeight := ViewHeight;
+  end;
+  cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+  cairo_set_line_width(cr, 0.5);
+  cairo_move_to(cr, MapX + 0.5, MapTop);
+  cairo_line_to(cr, MapX + 0.5, MapTop + MapH);
+  cairo_stroke(cr);
+  for i := 0 to High(FMapClusters) do
+  begin
+    SegW := MapW / Length(FMapClusters[i].Items);
+    StartX := (MapX + 0.5) - (MapW / 2.0);
+    for j := 0 to High(FMapClusters[i].Items) do
+    begin
+      RedGreenBlue(ColorToRGB(FMapClusters[i].Items[j].Color), R, G, B);
+      if i = FHoveredAnchorIndex then
+      begin
+        cairo_set_line_width(cr, 3.5);
+        cairo_set_source_rgba(cr, R/255.0, G/255.0, B/255.0, 1.0);
+      end
+      else
+      begin
+        cairo_set_line_width(cr, 2.0);
+        cairo_set_source_rgba(cr, R/255.0, G/255.0, B/255.0, 0.85);
+      end;
+      cairo_move_to(cr, StartX + (j * SegW), FMapClusters[i].MapY);
+      cairo_line_to(cr, StartX + ((j + 1) * SegW), FMapClusters[i].MapY);
+      cairo_stroke(cr);
+    end;
+  end;
 end;
 
 function TEngineText.GetBracketAt(X, Y, ScrollY: Integer): String;
@@ -1927,38 +1921,54 @@ begin
   Result := ByteToChar(ByteFromXY(X, Y + ScrollY));
 end;
 
-function TEngineText.GetYForByte(AByte: Integer): Integer;
+function TEngineText.IsOverActionAnchors(X, Y, ViewHeight: Integer): Boolean;
 var
-  ParagraphIndex: Integer;
-begin
-  ParagraphIndex := GetParagraphAtByte(AByte);
-  if (ParagraphIndex >= 0) and (ParagraphIndex <= High(FParagraphs)) then
-    Result := FParagraphs[ParagraphIndex].YOffset
-  else
-    Result := 0;
-end;
-
-function TEngineText.GetYForChar(AChar: Integer): Integer;
-begin
-  Result := GetYForByte(CharToByte(AChar));
-end;
-
-function TEngineText.GetTextSlice(StartCharacter, LengthCharacter: Integer): String;
-var
-  S, E: Integer;
-begin
-  S := CharToByte(StartCharacter);
-  E := CharToByte(StartCharacter + LengthCharacter);
-  Result := Copy(FDocumentText, S + 1, E - S);
-end;
-
-function TEngineText.GetCodingInfo(Index: Integer; out ID: String; out Color: TColor): Boolean;
+  MapH, MapTop: Integer;
 begin
   Result := False;
-  if (Index >= 0) and (Index <= High(FCoding)) then
+  if (Length(FCoding) = 0) and (Length(FMemoMatch) = 0) then Exit;
+  MapH := ViewHeight div 2;
+  MapTop := (ViewHeight - MapH) div 2;
+  Result := (X >= FBenchmarkM - 4) and (X <= FBenchmarkM + 4) and (Y >= MapTop) and (Y <= MapTop + MapH);
+end;
+
+function TEngineText.UpdateAnchorHover(X, Y, ViewHeight: Integer): Boolean;
+var
+  i, BestIndex: Integer;
+  Dist, MinDist: Double;
+begin
+  Result := False;
+  BestIndex := -1;
+  if IsOverActionAnchors(X, Y, ViewHeight) then
   begin
-    ID := FCoding[Index].ID;
-    Color := FCoding[Index].Color;
+    MinDist := 9999.0;
+    for i := 0 to High(FMapClusters) do
+    begin
+      Dist := Abs(Y - FMapClusters[i].MapY);
+      if Dist < MinDist then
+      begin
+        MinDist := Dist;
+        BestIndex := i;
+      end;
+    end;
+    if MinDist > 4.0 then BestIndex := -1;
+  end;
+  if FHoveredAnchorIndex <> BestIndex then
+  begin
+    FHoveredAnchorIndex := BestIndex;
+    Result := True;
+  end;
+end;
+
+function TEngineText.ActionAnchorHitTest(X, Y, ViewHeight: Integer; out TargetCluster: TMapTickCluster; out TargetStartByte: Integer): Boolean;
+begin
+  Result := False;
+  TargetStartByte := 0;
+  TargetCluster := Default(TMapTickCluster);
+  if (FHoveredAnchorIndex >= 0) and (FHoveredAnchorIndex <= High(FMapClusters)) then
+  begin
+    TargetCluster := FMapClusters[FHoveredAnchorIndex];
+    TargetStartByte := FMapClusters[FHoveredAnchorIndex].StartByte;
     Result := True;
   end;
 end;
@@ -1980,26 +1990,6 @@ end;
 procedure TEngineText.MouseUp;
 begin
   FSelecting := False;
-end;
-
-function TEngineText.HasSelection: Boolean;
-begin
-  Result := (FSelStartByte >= 0) and (FSelEndByte >= 0) and (FSelStartByte <> FSelEndByte);
-end;
-
-function TEngineText.IsBracketSelection: Boolean;
-begin
-  Result := FIsBracketSelection;
-end;
-
-function TEngineText.SelectionStartCharacter: Integer;
-begin
-  Result := ByteToChar(Min(FSelStartByte, FSelEndByte));
-end;
-
-function TEngineText.SelectionLength: Integer;
-begin
-  Result := Abs(ByteToChar(FSelEndByte) - ByteToChar(FSelStartByte));
 end;
 
 procedure TEngineText.ExecuteSearch(const AQuery: String);
