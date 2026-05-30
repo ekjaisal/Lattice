@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -35,7 +35,6 @@ type
   end;
   TImportColumnMapArray = array of TImportColumnMap;
 
-type
   TServiceImport = class
   private
     class function CleanExtractedText(const RawText: String): String;
@@ -121,145 +120,6 @@ type
   protected
     procedure DoHeavyLifting; override;
   end;
-
-class function TServiceImport.CleanExtractedText(const RawText: String): String;
-var
-  Src, Dest: PChar;
-  Len, DestLen: Integer;
-  C1, C2, C3: Char;
-  ConsecutiveLineBreaks: Integer;
-begin
-  Len := Length(RawText);
-  if Len = 0 then Exit('');
-  SetLength(Result, Len);
-  Src := PChar(RawText);
-  Dest := PChar(Result);
-  DestLen := 0;
-  ConsecutiveLineBreaks := 0;
-  while Src^ <> #0 do
-  begin
-    C1 := Src^;
-    if C1 = #13 then
-    begin
-      Inc(Src);
-      Continue;
-    end;
-    C2 := (Src + 1)^;
-    if C2 <> #0 then
-    begin
-      C3 := (Src + 2)^;
-      if (C1 = #$EF) and (C2 = #$BF) and (C3 = #$BD) then
-      begin
-        Inc(Src, 3);
-        Continue;
-      end;
-      if (C1 = #$EF) and (C2 = #$BF) and (C3 = #$BE) then
-      begin
-        Inc(Src, 3);
-        Continue;
-      end;
-      if (C1 = #$C2) and (C2 = #$AD) then
-      begin
-        Inc(Src, 2);
-        Continue;
-      end;
-    end;
-    if C1 = #10 then
-    begin
-      Inc(ConsecutiveLineBreaks);
-      if ConsecutiveLineBreaks > 2 then
-      begin
-        Inc(Src);
-        Continue;
-      end;
-    end
-    else
-    begin
-      ConsecutiveLineBreaks := 0;
-    end;
-    Dest^ := C1;
-    Inc(Dest);
-    Inc(DestLen);
-    Inc(Src);
-  end;
-  SetLength(Result, DestLen);
-  Result := Trim(Result);
-end;
-
-class function TServiceImport.ExtractTextFromPDF(const FilePath: String): String;
-var
-  MemStream: TMemoryStream;
-  DocumentPointer: FPDF_DOCUMENT;
-  PagePointer: FPDF_PAGE;
-  TextPagePointer: FPDF_TEXTPAGE;
-  PageCount, PageIndex, CharacterCount, BufferSize: Integer;
-  WideBuffer: array of WideChar;
-  TempWide: WideString;
-  ExtractedText: String;
-  Builder: TStringBuilder;
-begin
-  Result := '';
-  if Trim(FilePath) = '' then Exit;
-  MemStream := TMemoryStream.Create;
-  Builder := TStringBuilder.Create;
-  try
-    try
-      MemStream.LoadFromFile(FilePath);
-    except
-      Exit;
-    end;
-    if MemStream.Size = 0 then Exit;
-    DocumentPointer := FPDF_LoadMemDocument(MemStream.Memory, MemStream.Size, nil);
-    if not Assigned(DocumentPointer) then Exit;
-    try
-      PageCount := FPDF_GetPageCount(DocumentPointer);
-      Builder.Capacity := PageCount * 2048;
-      for PageIndex := 0 to PageCount - 1 do
-      begin
-        PagePointer := FPDF_LoadPage(DocumentPointer, PageIndex);
-        if not Assigned(PagePointer) then Continue;
-        try
-          TextPagePointer := FPDFText_LoadPage(PagePointer);
-          if not Assigned(TextPagePointer) then Continue;
-          try
-            CharacterCount := FPDFText_CountChars(TextPagePointer);
-            if CharacterCount > 0 then
-            begin
-              if Length(WideBuffer) < CharacterCount + 2 then
-                SetLength(WideBuffer, CharacterCount + 1024);
-              BufferSize := FPDFText_GetText(TextPagePointer, 0, CharacterCount, @WideBuffer[0]);
-              if BufferSize > 1 then
-              begin
-                SetString(TempWide, PWideChar(@WideBuffer[0]), BufferSize - 1);
-                ExtractedText := CleanExtractedText(UTF8Encode(TempWide));
-                if ExtractedText <> '' then
-                begin
-                  Builder.Append(ExtractedText);
-                  Builder.Append(#10#10);
-                end;
-              end;
-            end;
-          finally
-            FPDFText_ClosePage(TextPagePointer);
-          end;
-        finally
-          FPDF_ClosePage(PagePointer);
-        end;
-      end;
-    finally
-      FPDF_CloseDocument(DocumentPointer);
-    end;
-    Result := Trim(Builder.ToString);
-  finally
-    Builder.Free;
-    MemStream.Free;
-  end;
-end;
-
-class function TServiceImport.GetSafeColumnName(const AttributeID: String): String;
-begin
-  Result := 'attribute_' + Copy(StringReplace(AttributeID, '-', '', [rfReplaceAll]), 1, 16);
-end;
 
 class function TServiceImport.SanitizeText(const AText: String): String;
 var
@@ -710,6 +570,140 @@ begin
   end;
 end;
 
+class function TServiceImport.CleanExtractedText(const RawText: String): String;
+var
+  Src, Dest: PChar;
+  Len, DestLen: Integer;
+  C1, C2, C3: Char;
+  ConsecutiveLineBreaks: Integer;
+begin
+  Len := Length(RawText);
+  if Len = 0 then Exit('');
+  SetLength(Result, Len);
+  Src := PChar(RawText);
+  Dest := PChar(Result);
+  DestLen := 0;
+  ConsecutiveLineBreaks := 0;
+  while Src^ <> #0 do
+  begin
+    C1 := Src^;
+    if C1 = #13 then
+    begin
+      Inc(Src);
+      Continue;
+    end;
+    C2 := (Src + 1)^;
+    if C2 <> #0 then
+    begin
+      C3 := (Src + 2)^;
+      if (C1 = #$EF) and (C2 = #$BF) and (C3 = #$BD) then
+      begin
+        Inc(Src, 3);
+        Continue;
+      end;
+      if (C1 = #$EF) and (C2 = #$BF) and (C3 = #$BE) then
+      begin
+        Inc(Src, 3);
+        Continue;
+      end;
+      if (C1 = #$C2) and (C2 = #$AD) then
+      begin
+        Inc(Src, 2);
+        Continue;
+      end;
+    end;
+    if C1 = #10 then
+    begin
+      Inc(ConsecutiveLineBreaks);
+      if ConsecutiveLineBreaks > 2 then
+      begin
+        Inc(Src);
+        Continue;
+      end;
+    end
+    else
+    begin
+      ConsecutiveLineBreaks := 0;
+    end;
+    Dest^ := C1;
+    Inc(Dest);
+    Inc(DestLen);
+    Inc(Src);
+  end;
+  SetLength(Result, DestLen);
+  Result := Trim(Result);
+end;
+
+class function TServiceImport.ExtractTextFromPDF(const FilePath: String): String;
+var
+  MemStream: TMemoryStream;
+  DocumentPointer: FPDF_DOCUMENT;
+  PagePointer: FPDF_PAGE;
+  TextPagePointer: FPDF_TEXTPAGE;
+  PageCount, PageIndex, CharacterCount, BufferSize: Integer;
+  WideBuffer: array of WideChar;
+  TempWide: WideString;
+  ExtractedText: String;
+  Builder: TStringBuilder;
+begin
+  Result := '';
+  if Trim(FilePath) = '' then Exit;
+  MemStream := TMemoryStream.Create;
+  Builder := TStringBuilder.Create;
+  try
+    try
+      MemStream.LoadFromFile(FilePath);
+    except
+      Exit;
+    end;
+    if MemStream.Size = 0 then Exit;
+    DocumentPointer := FPDF_LoadMemDocument(MemStream.Memory, MemStream.Size, nil);
+    if not Assigned(DocumentPointer) then Exit;
+    try
+      PageCount := FPDF_GetPageCount(DocumentPointer);
+      Builder.Capacity := PageCount * 2048;
+      for PageIndex := 0 to PageCount - 1 do
+      begin
+        PagePointer := FPDF_LoadPage(DocumentPointer, PageIndex);
+        if not Assigned(PagePointer) then Continue;
+        try
+          TextPagePointer := FPDFText_LoadPage(PagePointer);
+          if not Assigned(TextPagePointer) then Continue;
+          try
+            CharacterCount := FPDFText_CountChars(TextPagePointer);
+            if CharacterCount > 0 then
+            begin
+              if Length(WideBuffer) < CharacterCount + 2 then
+                SetLength(WideBuffer, CharacterCount + 1024);
+              BufferSize := FPDFText_GetText(TextPagePointer, 0, CharacterCount, @WideBuffer[0]);
+              if BufferSize > 1 then
+              begin
+                SetString(TempWide, PWideChar(@WideBuffer[0]), BufferSize - 1);
+                ExtractedText := CleanExtractedText(UTF8Encode(TempWide));
+                if ExtractedText <> '' then
+                begin
+                  Builder.Append(ExtractedText);
+                  Builder.Append(#10#10);
+                end;
+              end;
+            end;
+          finally
+            FPDFText_ClosePage(TextPagePointer);
+          end;
+        finally
+          FPDF_ClosePage(PagePointer);
+        end;
+      end;
+    finally
+      FPDF_CloseDocument(DocumentPointer);
+    end;
+    Result := Trim(Builder.ToString);
+  finally
+    Builder.Free;
+    MemStream.Free;
+  end;
+end;
+
 procedure TThreadImportPDF.DoHeavyLifting;
 var
   i, SkipCount: Integer;
@@ -798,6 +792,11 @@ begin
   finally
     Worker.Free;
   end;
+end;
+
+class function TServiceImport.GetSafeColumnName(const AttributeID: String): String;
+begin
+  Result := 'attribute_' + Copy(StringReplace(AttributeID, '-', '', [rfReplaceAll]), 1, 16);
 end;
 
 procedure TThreadImportSpreadsheet.DoHeavyLifting;
