@@ -22,10 +22,10 @@ unit AppBase;
 interface
 
 uses
-  Buttons, Classes, Clipbrd, ComCtrls, Controls, DB, Dialogs, ExtCtrls, Forms,
-  Generics.Collections, Graphics, LazFileUtils, LazUTF8, LCLIntf, LCLType, Menus,
-  StdCtrls, SysUtils, Types {$IFDEF WINDOWS}, Windows{$ENDIF}, SQLDB, SQLite3Conn, laz.VirtualTrees,
-  ControllerTreeCode, ControllerTreeDocument, EngineText, RenderDocument, ServiceDatabase;
+  Buttons, Classes, ComCtrls, Controls, Dialogs, ExtCtrls, Forms, Generics.Collections,
+  Graphics, LCLIntf, LCLType, Menus, StdCtrls, SysUtils, Types {$IFDEF WINDOWS}, Windows{$ENDIF},
+  SQLDB, SQLite3Conn, laz.VirtualTrees, ControllerTreeCode, ControllerTreeDocument, EngineText,
+  RenderDocument, ServiceDatabase;
 
 type
   TDocumentAttributeItem = record
@@ -314,9 +314,10 @@ var
 implementation
 
 uses
-  fpjson, fpsTypes, jsonparser, AppFont, AppFormat, AppIdentity, DialogAbout, DialogEditor,
-  DialogFilter, DialogInput, DialogProgress, DialogSort, DialogStartup, ModalAnalyse,
-  ModalAttribute, ModalMemo, ModalRetrieve, ServiceExport, ServiceImport, ServiceMemo;
+  Clipbrd, fpjson, fpsTypes, jsonparser, LazFileUtils, LazUTF8, AppFont, AppFormat,
+  AppIdentity, DialogAbout, DialogEditor, DialogFilter, DialogInput, DialogProgress,
+  DialogSort, DialogStartup, ModalAnalyse, ModalAttribute, ModalMemo, ModalRetrieve,
+  ServiceExport, ServiceImport, ServiceMemo;
 
 {$R *.lfm}
 
