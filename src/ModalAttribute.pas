@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -106,6 +106,13 @@ type
   protected
     procedure DoHeavyLifting; override;
   end;
+
+{$R *.lfm}
+
+function GetSafeColumnName(const AttributeID: String): String;
+begin
+  Result := 'attribute_' + Copy(StringReplace(AttributeID, '-', '', [rfReplaceAll]), 1, 16);
+end;
 
 procedure TThreadLoadAttributes.DoHeavyLifting;
   function CompareAttribute(const A, B: TAttributeRecord): Integer;
@@ -296,13 +303,6 @@ begin
   end;
 end;
 
-{$R *.lfm}
-
-function GetSafeColumnName(const AttributeID: String): String;
-begin
-  Result := 'attribute_' + Copy(StringReplace(AttributeID, '-', '', [rfReplaceAll]), 1, 16);
-end;
-
 procedure TfrmModalAttribute.FormCreate(Sender: TObject);
 begin
   FAttributeID := TStringList.Create;
@@ -322,6 +322,11 @@ begin
   ApplyAppFont(Self);
   ClearEditControls;
   RefreshAttributeList;
+end;
+
+procedure TfrmModalAttribute.FormResize(Sender: TObject);
+begin
+  AutoSizeColumns;
 end;
 
 procedure TfrmModalAttribute.UpdateActionUI;
@@ -363,7 +368,6 @@ begin
 end;
 
 procedure TfrmModalAttribute.SortAttribute;
-
   function CompareAttribute(const A, B: TAttributeRecord): Integer;
   begin
     case FSortColumn of
@@ -374,7 +378,6 @@ procedure TfrmModalAttribute.SortAttribute;
     end;
     if not FSortAscending then Result := -Result;
   end;
-
   procedure QuickSort(L, R: Integer);
   var
     I, J: Integer;
@@ -399,7 +402,6 @@ procedure TfrmModalAttribute.SortAttribute;
     if L < J then QuickSort(L, J);
     if I < R then QuickSort(I, R);
   end;
-
 begin
   if (FSortColumn < 0) or (Length(FAttributeData) < 2) then Exit;
   QuickSort(0, High(FAttributeData));
@@ -529,11 +531,6 @@ end;
 procedure TfrmModalAttribute.vstAttributePaintText(Sender: TBaseVirtualTree; const TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType);
 begin
   TargetCanvas.Font.Color := clWindowText;
-end;
-
-procedure TfrmModalAttribute.FormResize(Sender: TObject);
-begin
-  AutoSizeColumns;
 end;
 
 procedure TfrmModalAttribute.btnAddClick(Sender: TObject);
