@@ -548,7 +548,7 @@ object frmModalAnalyse: TfrmModalAnalyse
               TabOrder = 1
               OnClick = btnCrosstabSelectAllClick
             end
-            object btnCrossClearAll: TButton
+            object btnCrosstabClearAll: TButton
               AnchorSideLeft.Control = btnCrosstabSelectAll
               AnchorSideLeft.Side = asrBottom
               AnchorSideTop.Control = edtSearchCrosstab
@@ -560,7 +560,7 @@ object frmModalAnalyse: TfrmModalAnalyse
               BorderSpacing.Left = 6
               Caption = 'Clear All'
               TabOrder = 2
-              OnClick = btnCrossClearAllClick
+              OnClick = btnCrosstabClearAllClick
             end
           end
           object vstCrosstabCode: TLazVirtualStringTree
