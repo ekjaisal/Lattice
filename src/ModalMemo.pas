@@ -22,8 +22,7 @@ unit ModalMemo;
 interface
 
 uses
-  Classes, ComCtrls, Controls, Dialogs, ExtCtrls, Forms, Graphics, StdCtrls, SysUtils,
-  SQLDB, laz.VirtualTrees;
+  Classes, Controls, Dialogs, ExtCtrls, Forms, Graphics, StdCtrls, laz.VirtualTrees;
 
 type
   TMemoRecord = record
@@ -99,8 +98,8 @@ var
 implementation
 
 uses
-  DateUtils, LCLIntf, LCLType, Math, AppBase, AppFont, AppFormat, DialogProgress,
-  ServiceExport, ServiceMemo, ServiceThread;
+  DateUtils, LCLIntf, LCLType, Math, SysUtils, SQLDB, AppBase, AppFont, AppFormat,
+  DialogProgress, ServiceExport, ServiceMemo, ServiceThread;
 
 type
   TThreadLoadMemo = class(TBackgroundWorker)
