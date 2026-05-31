@@ -58,7 +58,7 @@ type
 implementation
 
 uses
-  Controls, Dialogs, fpsopendocument, fpspreadsheet, jsonparser, laz2_DOM, laz2_XMLRead,
+  Dialogs, fpsopendocument, fpspreadsheet, jsonparser, laz2_DOM, laz2_XMLRead,
   LazFileUtils, LazUTF8, SysUtils, zipper, xlsxOOXML, AppFormat, BridgeLibrary,
   DialogEditor, DialogInput, DialogProgress, ModalImport, MonoLexID, ServiceParser,
   ServiceThread;
