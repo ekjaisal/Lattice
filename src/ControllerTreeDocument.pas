@@ -22,8 +22,7 @@ unit ControllerTreeDocument;
 interface
 
 uses
-  Classes, Controls, Graphics, LCLType, StrUtils, SysUtils, Types,
-  laz.VirtualTrees, ServiceDatabase;
+  Classes, Controls, Graphics, LCLType, Types, laz.VirtualTrees, ServiceDatabase;
 
 type
   TDocumentSelectEvent = procedure(const DocumentID: String) of object;
@@ -78,6 +77,9 @@ type
   end;
 
 implementation
+
+uses
+  StrUtils, SysUtils;
 
 constructor TDocumentTreeController.Create(ATree: TLazVirtualStringTree; ADatabase: TServiceDatabase);
 begin
