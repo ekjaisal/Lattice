@@ -22,7 +22,7 @@ unit ControllerTreeCode;
 interface
 
 uses
-  ActiveX, Classes, Controls, Dialogs, ExtCtrls, Forms, Generics.Collections, Graphics, LCLType, Math, SysUtils,
+  ActiveX, Classes, Controls, Generics.Collections, Graphics, LCLType, SysUtils,
   Types, laz.VirtualTrees, ServiceDatabase;
 
 type
@@ -99,6 +99,9 @@ type
   end;
 
 implementation
+
+uses
+  Dialogs, Forms, Math;
 
 function GetNodeHeight(ANode: PVirtualNode): Integer;
 var
