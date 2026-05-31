@@ -22,8 +22,7 @@ unit ModalAttribute;
 interface
 
 uses
-  Classes, ComCtrls, Controls, Dialogs, ExtCtrls, Forms, Graphics, LCLIntf, LCLType, 
-  StdCtrls, SysUtils, laz.VirtualTrees;
+  Classes, ComCtrls, Controls, ExtCtrls, Forms, Graphics, StdCtrls, laz.VirtualTrees;
 
 type
   TAttributeRecord = record
@@ -80,7 +79,8 @@ var
 implementation
 
 uses
-  Math, SQLDB, AppBase, AppFont, DialogProgress, MonoLexID, ServiceParser, ServiceThread;
+  Dialogs, Math, SysUtils, SQLDB, {$IFDEF WINDOWS} Windows, {$ENDIF} AppBase,
+  AppFont, DialogProgress, MonoLexID, ServiceParser, ServiceThread;
 
 type
   TThreadLoadAttributes = class(TBackgroundWorker)

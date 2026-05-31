@@ -28,7 +28,7 @@
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
       <RevisionNr Value="1"/>
-      <BuildNr Value="8"/>
+      <BuildNr Value="9"/>
       <Language Value="0809"/>
       <StringTable Comments="Structure Meaning. Foreground Mechanisms." CompanyName="Jaisal E. K." FileDescription="Lattice" InternalName="Lattice" LegalCopyright="© 2026 Jaisal E. K." OriginalFilename="Lattice.exe" ProductName="Lattice" ProductVersion="1.0.1"/>
     </VersionInfo>
