@@ -22,8 +22,7 @@ unit DialogStartup;
 interface
 
 uses
-  Classes, Controls, Dialogs, ExtCtrls, Forms, Graphics, LCLType, StdCtrls, SysUtils,
-  AppFont, AppIdentity, BridgeLibrary;
+  Controls, ExtCtrls, Forms, Graphics, StdCtrls, AppFont, AppIdentity, BridgeLibrary;
 
 type
 
