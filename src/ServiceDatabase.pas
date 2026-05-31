@@ -22,8 +22,8 @@ unit ServiceDatabase;
 interface
 
 uses
-  Classes, DB, Generics.Collections, Graphics, SysUtils, Types, SQLDB,
-  SQLite3Conn, EngineText, ServiceThread;
+  Classes, Generics.Collections, Graphics, SysUtils, Types, SQLDB, SQLite3Conn,
+  EngineText, ServiceThread;
 
 type
   { Important: Database Configuration Interceptor }
@@ -204,7 +204,7 @@ type
 implementation
 
 uses
-  Character, Dialogs, LazUTF8, Math, AppIdentity, DialogProgress, MonoLexID;
+  Character, DB, Dialogs, LazUTF8, Math, AppIdentity, DialogProgress, MonoLexID;
 
 type
   TThreadOptimize = class(TBackgroundWorker)
