@@ -22,7 +22,7 @@ unit AppFont;
 interface
 
 uses
-  Classes, Forms, Graphics, SysUtils;
+  Forms;
 
 const
   UI_SIZE_DEFAULT = 9;
@@ -35,7 +35,7 @@ procedure ApplyAppFont(AForm: TForm);
 implementation
 
 uses
-  {$IFDEF WINDOWS} Windows {$ENDIF};
+  Classes, Graphics, SysUtils, {$IFDEF WINDOWS} Windows {$ENDIF};
 
 function GetSystemSansFont: string;
 begin
