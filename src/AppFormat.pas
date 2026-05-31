@@ -22,7 +22,7 @@ unit AppFormat;
 interface
 
 uses
-  Classes, SysUtils;
+  SysUtils;
 
 type
   TAppFormat = class
