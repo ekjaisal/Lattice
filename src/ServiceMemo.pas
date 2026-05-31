@@ -22,7 +22,7 @@ unit ServiceMemo;
 interface
 
 uses
-  Classes, SysUtils, SQLDB, SQLite3Conn;
+  SQLite3Conn;
 
 type
   TServiceMemo = class
@@ -33,7 +33,7 @@ type
 implementation
 
 uses
-  Controls, Dialogs, Forms, StrUtils, DialogEditor, MonoLexID;
+  Controls, Dialogs, Forms, StrUtils, SysUtils, SQLDB, DialogEditor, MonoLexID;
 
 class function TServiceMemo.Execute(AConnection: TSQLite3Connection; const ATargetType: String; const ATargetID: String; const AReferenceName: String): Boolean;
 var
