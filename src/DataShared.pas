@@ -25,6 +25,7 @@ uses
   Classes, Controls;
 
 type
+  { TdmShared }
   TdmShared = class(TDataModule)
     imlMain: TImageList;
   private

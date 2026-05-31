@@ -25,6 +25,7 @@ uses
   Classes, Controls, ExtCtrls, Forms, Spin, StdCtrls, EditBtn, SQLite3Conn;
 
 type
+  { TfrmDialogFilter }
   TfrmDialogFilter = class(TForm)
     btnApply: TButton;
     btnCancel: TButton;

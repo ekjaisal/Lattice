@@ -26,6 +26,7 @@ uses
   SysUtils {$IFDEF WINDOWS}, Windows{$ENDIF}, BridgeLibrary;
 
 type
+  { TfrmDialogAbout }
   TfrmDialogAbout = class(TForm)
     btnClose: TButton;
     btnCopyright: TSpeedButton;

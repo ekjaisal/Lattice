@@ -27,6 +27,7 @@ uses
 type
   TDialogMode = (dmText, dmSelector, dmAttribute);
 
+  { TfrmDialogInput }
   TfrmDialogInput = class(TForm)
     btnCancel: TButton;
     btnOK: TButton;

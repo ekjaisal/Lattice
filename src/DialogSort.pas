@@ -25,6 +25,7 @@ uses
   Classes, Controls, ExtCtrls, Forms, StdCtrls;
 
 type
+  { TfrmDialogSort }
   TfrmDialogSort = class(TForm)
     btnCancel: TButton;
     btnPersist: TButton;

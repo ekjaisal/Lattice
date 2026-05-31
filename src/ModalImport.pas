@@ -35,6 +35,7 @@ type
     MapType: TMapTarget;
   end;
 
+  { TfrmModalImport }
   TfrmModalImport = class(TForm)
     btnApply: TButton;
     btnCancel: TButton;
