@@ -22,8 +22,7 @@ unit ModalImport;
 interface
 
 uses
-  Classes, ComCtrls, Controls, Dialogs, ExtCtrls, Forms, Graphics, StdCtrls, SysUtils, SQLDB, SQLite3Conn,
-  laz.VirtualTrees;
+  Classes, Controls, ExtCtrls, Forms, Graphics, StdCtrls, SQLite3Conn, laz.VirtualTrees;
 
 type
   TMapTarget = (mtSkip, mtDocumentName, mtDocumentText, mtAttribute);
@@ -86,7 +85,7 @@ var
 implementation
 
 uses
-  AppFont;
+  Dialogs, SysUtils, SQLDB, AppFont;
 
 {$R *.lfm}
 
