@@ -112,8 +112,8 @@ type
 implementation
 
 uses
-  Controls, Dialogs, fpjson, jsonparser, LazUTF8, LCLIntf, LCLType, Math, laz.VirtualTrees, AppBase,
-  AppFont, AppIdentity, DialogProgress, ServiceThread, {%H-}xlsxOOXML, {%H-}fpsopendocument;
+  Dialogs, fpjson, jsonparser, LazUTF8, Math, AppBase, AppFont, AppIdentity,
+  DialogProgress, ServiceThread, {%H-}xlsxOOXML, {%H-}fpsopendocument;
 
 type
   TThreadExportMemo = class(TBackgroundWorker)
