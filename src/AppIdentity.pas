@@ -22,7 +22,7 @@ unit AppIdentity;
 interface
 
 uses
-  Classes, elfreader, fileinfo, machoreader, SysUtils, winpeimagereader, Cairo, BridgeLibrary;
+  Cairo, BridgeLibrary;
 
 var
   APP_ATTRIBUTION: String;
@@ -156,6 +156,9 @@ const
 procedure RenderAppLogo(cr: Pcairo_t; const AX, AY, ARequestedHeight: Double);
 
 implementation
+
+uses
+  elfreader, fileinfo, machoreader, SysUtils, winpeimagereader;
 
 procedure RenderAppLogo(cr: Pcairo_t; const AX, AY, ARequestedHeight: Double);
 const
