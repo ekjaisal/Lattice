@@ -22,7 +22,7 @@ unit DialogEditor;
 interface
 
 uses
-  Classes, Controls, Dialogs, ExtCtrls, Forms, Graphics, StdCtrls, SysUtils;
+  Classes, Controls, ExtCtrls, Forms, Graphics, StdCtrls, SysUtils;
 
 type
   TEditorMode = (emReport, emText, emTree);
@@ -61,7 +61,7 @@ var
 implementation
 
 uses
-  LazUTF8, AppFont;
+  Dialogs, LazUTF8, AppFont;
 
 {$R *.lfm}
 
