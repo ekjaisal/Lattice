@@ -22,7 +22,7 @@ unit DataShared;
 interface
 
 uses
-  Classes, Controls, SysUtils;
+  Classes, Controls;
 
 type
   TdmShared = class(TDataModule)
