@@ -47,8 +47,8 @@ type
   TfrmModalAnalyse = class(TForm)
     btnAnalyse: TButton;
     btnClose: TButton;
-    btnCloudClearAll: TButton;
-    btnCloudSelectAll: TButton;
+    btnWordCloudClearAll: TButton;
+    btnWordCloudSelectAll: TButton;
     btnCoOccurrenceXClearAll: TButton;
     btnCoOccurrenceXSelectAll: TButton;
     btnCoOccurrenceYClearAll: TButton;
@@ -154,8 +154,8 @@ type
     procedure FormShow(Sender: TObject);
     procedure SearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnAnalyseClick(Sender: TObject);
-    procedure btnCloudClearAllClick(Sender: TObject);
-    procedure btnCloudSelectAllClick(Sender: TObject);
+    procedure btnWordCloudClearAllClick(Sender: TObject);
+    procedure btnWordCloudSelectAllClick(Sender: TObject);
     procedure btnCoOccurrenceXClearAllClick(Sender: TObject);
     procedure btnCoOccurrenceXSelectAllClick(Sender: TObject);
     procedure btnCoOccurrenceYClearAllClick(Sender: TObject);
@@ -221,13 +221,13 @@ type
     FAttributeKey: TStringList;
     FAttributeSortAscending: Boolean;
     FAttributeSortColumn: Integer;
-    FCheckedCloudCode: specialize TDictionary<String, Boolean>;
+    FCheckedWordCloudCode: specialize TDictionary<String, Boolean>;
     FCheckedCoOccurrenceXCode: specialize TDictionary<String, Boolean>;
     FCheckedCoOccurrenceYCode: specialize TDictionary<String, Boolean>;
     FCheckedCrosstabCode: specialize TDictionary<String, Boolean>;
     FCheckedDocumentSet: specialize TDictionary<String, Boolean>;
     FCheckedFrequencyCode: specialize TDictionary<String, Boolean>;
-    FCloudResult: TWordCloudArray;
+    FWordCloudResult: TWordCloudArray;
     FCodeCacheArray: TCodeFlatArray;
     FCodeMap: specialize TDictionary<String, TCodeNodeCache>;
     FCoOccurrenceResult: TCoOccurrenceArray;
@@ -242,7 +242,7 @@ type
     FLastCheckedDocNode: PVirtualNode;
     FLastCheckedNode: PVirtualNode;
     FLastCheckedTree: TBaseVirtualTree;
-    FLastCloudLimit: Integer;
+    FLastWordCloudLimit: Integer;
     FLastMouse: TPoint;
     FPanX, FPanY: Double;
     FServiceDatabase: TServiceDatabase;
@@ -323,7 +323,7 @@ type
     FCoOccurrenceResult: TCoOccurrenceArray;
     FCrossResult: TCrosstabArray;
     FCoverageResult: TCoverageArray;
-    FCloudResult: TWordCloudArray;
+    FWordCloudResult: TWordCloudArray;
     FLimit: Integer;
   private
     FSuccess: Boolean;
@@ -345,7 +345,7 @@ type
     FCoOccurrenceResult: TCoOccurrenceArray;
     FCrossResult: TCrosstabArray;
     FCoverageResult: TCoverageArray;
-    FCloudResult: TWordCloudArray;
+    FWordCloudResult: TWordCloudArray;
     FLimit: Integer;
     PreparedVisualization: TServiceVisualize;
     VWidth, VHeight: Integer;
@@ -419,7 +419,7 @@ begin
   ApplyAppFont(Self);
   FServiceDatabase := TServiceDatabase.Create(ServiceDatabase.TSQLite3Connection(frmAppBase.conMain));
   FVisualizer := TServiceVisualize.Create;
-  FLastCloudLimit := 50;
+  FLastWordCloudLimit := 50;
   FLastBarLimit := 10;
   FAnalysisState := asReady;
   FIsBatchOperation := False;
@@ -429,7 +429,7 @@ begin
   FCheckedCoOccurrenceXCode := specialize TDictionary<String, Boolean>.Create;
   FCheckedCoOccurrenceYCode := specialize TDictionary<String, Boolean>.Create;
   FCheckedCrosstabCode := specialize TDictionary<String, Boolean>.Create;
-  FCheckedCloudCode := specialize TDictionary<String, Boolean>.Create;
+  FCheckedWordCloudCode := specialize TDictionary<String, Boolean>.Create;
   FCodeMap := specialize TDictionary<String, TCodeNodeCache>.Create;
   FCurrentAttributeIndex := -1;
   FAttributeSortColumn := 0;
@@ -456,7 +456,7 @@ begin
   FCheckedCoOccurrenceXCode.Free;
   FCheckedCoOccurrenceYCode.Free;
   FCheckedCrosstabCode.Free;
-  FCheckedCloudCode.Free;
+  FCheckedWordCloudCode.Free;
   FCodeMap.Free;
   SetLength(FCodeCacheArray, 0);
   SetLength(FDocumentCacheArray, 0);
@@ -465,7 +465,7 @@ begin
   SetLength(FCoOccurrenceResult, 0);
   SetLength(FCrossResult, 0);
   SetLength(FCoverageResult, 0);
-  SetLength(FCloudResult, 0);
+  SetLength(FWordCloudResult, 0);
 end;
 
 procedure TfrmModalAnalyse.FormShow(Sender: TObject);
@@ -578,7 +578,7 @@ begin
   SetLength(FCoOccurrenceResult, 0);
   SetLength(FCrossResult, 0);
   SetLength(FCoverageResult, 0);
-  SetLength(FCloudResult, 0);
+  SetLength(FWordCloudResult, 0);
   if Assigned(pnlGrid) then pnlGrid.Visible := False;
   if Assigned(splResults) then splResults.Visible := False;
   if Assigned(vstResultGrid) then vstResultGrid.RootNodeCount := 0;
@@ -613,7 +613,7 @@ begin
         chkEnableLimit.Visible := False;
         lblVisualizationLimit.Caption := 'Limit Words in Cloud to (Max. 100):';
         edtVisualizationLimit.MaxValue := 100;
-        edtVisualizationLimit.Value := FLastCloudLimit;
+        edtVisualizationLimit.Value := FLastWordCloudLimit;
         edtVisualizationLimit.Enabled := True;
       end;
   end;
@@ -730,7 +730,7 @@ begin
   else if Tree = vstCoOccurrenceX then Result := FCheckedCoOccurrenceXCode
   else if Tree = vstCoOccurrenceY then Result := FCheckedCoOccurrenceYCode
   else if Tree = vstCrosstabCode then Result := FCheckedCrosstabCode
-  else if Tree = vstWordCloudCode then Result := FCheckedCloudCode
+  else if Tree = vstWordCloudCode then Result := FCheckedWordCloudCode
   else Result := nil;
 end;
 
@@ -938,12 +938,12 @@ begin
   ToggleTreeNodes(vstCrosstabCode, False);
 end;
 
-procedure TfrmModalAnalyse.btnCloudSelectAllClick(Sender: TObject);
+procedure TfrmModalAnalyse.btnWordCloudSelectAllClick(Sender: TObject);
 begin
   ToggleTreeNodes(vstWordCloudCode, True);
 end;
 
-procedure TfrmModalAnalyse.btnCloudClearAllClick(Sender: TObject);
+procedure TfrmModalAnalyse.btnWordCloudClearAllClick(Sender: TObject);
 begin
   ToggleTreeNodes(vstWordCloudCode, False);
 end;
@@ -1042,13 +1042,13 @@ begin
   tmrCloudSearch.Enabled := False;
   if edtSearchCloud.Text = '' then
   begin
-    btnCloudSelectAll.Caption := 'Select All';
-    btnCloudClearAll.Caption := 'Clear All';
+    btnWordCloudSelectAll.Caption := 'Select All';
+    btnWordCloudClearAll.Caption := 'Clear All';
   end
   else
   begin
-    btnCloudSelectAll.Caption := 'Select Filtered';
-    btnCloudClearAll.Caption := 'Clear Filtered';
+    btnWordCloudSelectAll.Caption := 'Select Filtered';
+    btnWordCloudClearAll.Caption := 'Clear Filtered';
   end;
   InternalApplyCodeFilter(vstWordCloudCode, edtSearchCloud.Text);
 end;
@@ -1800,11 +1800,11 @@ begin
               else CellText := '0.00%';
          end;
        end;
-    4: if (Index >= 0) and (Index < Length(FCloudResult)) then
+    4: if (Index >= 0) and (Index < Length(FWordCloudResult)) then
        begin
          case Column of
-           0: CellText := FCloudResult[Index].Word;
-           1: CellText := IntToStr(FCloudResult[Index].Frequency);
+           0: CellText := FWordCloudResult[Index].Word;
+           1: CellText := IntToStr(FWordCloudResult[Index].Frequency);
          end;
        end;
   end;
@@ -1894,9 +1894,9 @@ begin
   StopStr := FServiceDatabase.GetUserPreference('StopWord', 'a,about,above,after,again,against,ain,all,am,an,and,any,are,aren,aren''t,as,at,be,because,been,before,being,below,between,both,but,by,can,couldn,couldn''t,d,did,didn,didn''t,do,does,doesn,doesn''t,doing,don,don''t,down,during,each,few,for,from,further,had,hadn,hadn''t,has,hasn,hasn''t,have,haven,haven''t,having,he,he''d,he''ll,her,here,hers,herself,he''s,him,himself,his,how,i,i''d,if,i''ll,i''m,in,into,is,isn,isn''t,it,it''d,it''ll,it''s,its,itself,i''ve,just,ll,m,ma,me,mightn,mightn''t,more,most,mustn,mustn''t,my,myself,needn,needn''t,no,nor,not,now,o,of,off,on,once,only,or,other,our,ours,ourselves,out,over,own,re,s,same,shan,shan''t,she,she''d,she''ll,she''s,should,shouldn,shouldn''t,should''ve,so,some,such,t,than,that,that''ll,the,their,theirs,them,themselves,then,there,these,they,they''d,they''ll,they''re,they''ve,this,those,through,to,too,under,until,up,ve,very,was,wasn,wasn''t,we,we''d,we''ll,we''re,were,weren,weren''t,we''ve,what,when,where,which,while,who,whom,why,will,with,won,won''t,wouldn,wouldn''t,y,you,you''d,you''ll,your,you''re,yours,yourself,yourselves,you''ve');
   if Assigned(edtVisualizationLimit) then Limit := edtVisualizationLimit.Value else Limit := 50;
   if Limit > 100 then Limit := 100;
-  FCloudResult := FServiceDatabase.RunWordCloudAnalysis(IDArray, DocumentID, GetAttributeSQL, StopStr, Limit);
-  SetupGrid(['Word', 'Frequency'], [500, 200], Length(FCloudResult));
-  if Length(FCloudResult) = 0 then FAnalysisState := asNoResults;
+  FWordCloudResult := FServiceDatabase.RunWordCloudAnalysis(IDArray, DocumentID, GetAttributeSQL, StopStr, Limit);
+  SetupGrid(['Word', 'Frequency'], [500, 200], Length(FWordCloudResult));
+  if Length(FWordCloudResult) = 0 then FAnalysisState := asNoResults;
 end;
 
 procedure TThreadPrepareVisualization.SyncStatus(const Message: String);
@@ -2031,13 +2031,13 @@ begin
            PreparedVisualization.PrepareStackedBarChart(LabelArray, TotalVal, SubVal, LabelStr, VW, VH);
          end;
       4: begin
-           Limit := Length(FCloudResult);
+           Limit := Length(FWordCloudResult);
            SetLength(Word, Limit);
            SetLength(Frequency, Limit);
            for i := 0 to Limit - 1 do
            begin
-             Word[i] := FCloudResult[i].Word;
-             Frequency[i] := FCloudResult[i].Frequency;
+             Word[i] := FWordCloudResult[i].Word;
+             Frequency[i] := FWordCloudResult[i].Frequency;
            end;
            PreparedVisualization.PrepareWordCloud(Word, Frequency, VW, VH);
          end;
@@ -2078,7 +2078,7 @@ begin
     1: HasCodeSelection := (FCheckedCoOccurrenceXCode.Count > 0) or (FCheckedCoOccurrenceYCode.Count > 0);
     2: HasCodeSelection := FCheckedCrosstabCode.Count > 0;
     3: HasCodeSelection := True;
-    4: HasCodeSelection := FCheckedCloudCode.Count > 0;
+    4: HasCodeSelection := FCheckedWordCloudCode.Count > 0;
   end;
   if not HasDocSelection or not HasCodeSelection then
   begin
@@ -2106,7 +2106,7 @@ begin
     end;
     if (Length(FFrequencyResult) > 0) or (Length(FCoOccurrenceResult) > 0) or
        (Length(FCrossResult) > 0)  or (Length(FCoverageResult) > 0) or
-       (Length(FCloudResult) > 0) then
+       (Length(FWordCloudResult) > 0) then
     begin
       CurrentLimit := 1000000;
       if Assigned(chkEnableLimit) and Assigned(edtVisualizationLimit) then
@@ -2121,7 +2121,7 @@ begin
       VisWorker.FCoOccurrenceResult := FCoOccurrenceResult;
       VisWorker.FCrossResult := FCrossResult;
       VisWorker.FCoverageResult := FCoverageResult;
-      VisWorker.FCloudResult := FCloudResult;
+      VisWorker.FWordCloudResult := FWordCloudResult;
       VisWorker.FLimit := CurrentLimit;
       VisWorker.Start;
       TfrmDialogProgress.Prepare('Composing Visualisation', 'Measuring layout dimensions...');
@@ -2283,7 +2283,7 @@ begin
   if pcAnalysisType.ActivePageIndex = 4 then
   begin
     if edtVisualizationLimit.Value > 100 then edtVisualizationLimit.Value := 100;
-    FLastCloudLimit := edtVisualizationLimit.Value;
+    FLastWordCloudLimit := edtVisualizationLimit.Value;
   end
   else
     FLastBarLimit := edtVisualizationLimit.Value;
@@ -2334,7 +2334,7 @@ begin
   btnCoOccurrenceXClearAllClick(nil);
   btnCoOccurrenceYClearAllClick(nil);
   btnCrosstabClearAllClick(nil);
-  btnCloudClearAllClick(nil);
+  btnWordCloudClearAllClick(nil);
   btnScopeDocumentClearAllClick(nil);
   btnScopeAttributeClearAllClick(nil);
   vstFrequencyCode.FullCollapse(nil);
@@ -2347,7 +2347,7 @@ begin
   vstScopeAttribute.ClearSelection;
   FCurrentAttributeIndex := -1;
   pnlAttributeFilterDef.Visible := False;
-  FLastCloudLimit := 50;
+  FLastWordCloudLimit := 50;
   FLastBarLimit := 10;
   if Assigned(chkEnableLimit) then chkEnableLimit.Checked := True;
   pcAnalysisType.ActivePageIndex := 0;
@@ -2549,13 +2549,13 @@ begin
              FLocalVisualization.PrepareStackedBarChart(LabelArray, TotalVal, SubVal, LabelStr, VW, VH);
            end;
         4: begin
-             Limit := Length(FCloudResult);
+             Limit := Length(FWordCloudResult);
              SetLength(Word, Limit);
              SetLength(Frequency, Limit);
              for i := 0 to Limit - 1 do
              begin
-               Word[i] := FCloudResult[i].Word;
-               Frequency[i] := FCloudResult[i].Frequency;
+               Word[i] := FWordCloudResult[i].Word;
+               Frequency[i] := FWordCloudResult[i].Frequency;
              end;
              FLocalVisualization.PrepareWordCloud(Word, Frequency, VW, VH);
            end;
@@ -2629,7 +2629,7 @@ begin
   Worker.FCoOccurrenceResult := FCoOccurrenceResult;
   Worker.FCrossResult := FCrossResult;
   Worker.FCoverageResult := FCoverageResult;
-  Worker.FCloudResult := FCloudResult;
+  Worker.FWordCloudResult := FWordCloudResult;
   CurrentLimit := 1000000;
   if Assigned(chkEnableLimit) and Assigned(edtVisualizationLimit) then
   begin

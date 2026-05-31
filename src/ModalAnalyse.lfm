@@ -707,7 +707,7 @@ object frmModalAnalyse: TfrmModalAnalyse
             OnChange = edtSearchCloudChange
             OnKeyDown = SearchKeyDown
           end
-          object btnCloudSelectAll: TButton
+          object btnWordCloudSelectAll: TButton
             AnchorSideLeft.Control = pnlCloudTools
             AnchorSideTop.Control = edtSearchCloud
             AnchorSideTop.Side = asrBottom
@@ -717,10 +717,10 @@ object frmModalAnalyse: TfrmModalAnalyse
             Width = 150
             Caption = 'Select All'
             TabOrder = 1
-            OnClick = btnCloudSelectAllClick
+            OnClick = btnWordCloudSelectAllClick
           end
-          object btnCloudClearAll: TButton
-            AnchorSideLeft.Control = btnCloudSelectAll
+          object btnWordCloudClearAll: TButton
+            AnchorSideLeft.Control = btnWordCloudSelectAll
             AnchorSideLeft.Side = asrBottom
             AnchorSideTop.Control = edtSearchCloud
             AnchorSideTop.Side = asrBottom
@@ -731,7 +731,7 @@ object frmModalAnalyse: TfrmModalAnalyse
             BorderSpacing.Left = 6
             Caption = 'Clear All'
             TabOrder = 2
-            OnClick = btnCloudClearAllClick
+            OnClick = btnWordCloudClearAllClick
           end
         end
         object vstWordCloudCode: TLazVirtualStringTree

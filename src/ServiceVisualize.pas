@@ -34,19 +34,19 @@ type
 
   TMatrixData = array of array of Integer;
 
-  TCloudItem = record
+  TWordCloudItem = record
     WordText: String;
     PosX, PosY: Double;
     FontSize: Integer;
     BoundWidth, BoundHeight: Integer;
   end;
-  TCloudItemArray = array of TCloudItem;
+  TWordCloudItemArray = array of TWordCloudItem;
 
   TServiceVisualize = class
   private
     FActiveChart: Integer;
     FBarData: TChartElementArray;
-    FCloudItem: TCloudItemArray;
+    FWordCloudItem: TWordCloudItemArray;
     FColumnLabel: array of String;
     FColumnWidth: Double;
     FLayout: Ppango_layout_t;
@@ -103,7 +103,7 @@ begin
   SetLength(FMatrix, 0);
   SetLength(FStackedTotal, 0);
   SetLength(FStackedSub, 0);
-  SetLength(FCloudItem, 0);
+  SetLength(FWordCloudItem, 0);
   inherited Destroy;
 end;
 
@@ -266,7 +266,7 @@ var
 begin
   FActiveChart := 4;
   Limit := Length(AWord);
-  SetLength(FCloudItem, 0);
+  SetLength(FWordCloudItem, 0);
   VWidth := 40; VHeight := 40; 
   if Limit = 0 then Exit;
   MaxFrequency := 1;
@@ -295,9 +295,9 @@ begin
         TemporaryRectangle.Right := TemporaryRectangle.Left + TextWidth + 4;
         TemporaryRectangle.Bottom := TemporaryRectangle.Top + TextHeight + 4;
         Intersects := False;
-        for j := 0 to High(FCloudItem) do
+        for j := 0 to High(FWordCloudItem) do
         begin
-          if (TemporaryRectangle.Left <= FCloudItem[j].PosX + FCloudItem[j].BoundWidth) and (TemporaryRectangle.Right >= FCloudItem[j].PosX) and (TemporaryRectangle.Top <= FCloudItem[j].PosY + FCloudItem[j].BoundHeight) and (TemporaryRectangle.Bottom >= FCloudItem[j].PosY) then
+          if (TemporaryRectangle.Left <= FWordCloudItem[j].PosX + FWordCloudItem[j].BoundWidth) and (TemporaryRectangle.Right >= FWordCloudItem[j].PosX) and (TemporaryRectangle.Top <= FWordCloudItem[j].PosY + FWordCloudItem[j].BoundHeight) and (TemporaryRectangle.Bottom >= FWordCloudItem[j].PosY) then
           begin
             Intersects := True;
             Break;
@@ -305,13 +305,13 @@ begin
         end;
         if not Intersects then
         begin
-          SetLength(FCloudItem, Length(FCloudItem) + 1);
-          FCloudItem[High(FCloudItem)].WordText := AWord[i];
-          FCloudItem[High(FCloudItem)].PosX := TemporaryRectangle.Left + 2;
-          FCloudItem[High(FCloudItem)].PosY := TemporaryRectangle.Top + 2;
-          FCloudItem[High(FCloudItem)].FontSize := Round(FontSize * ScaleFactor);
-          FCloudItem[High(FCloudItem)].BoundWidth := TextWidth;
-          FCloudItem[High(FCloudItem)].BoundHeight := TextHeight;
+          SetLength(FWordCloudItem, Length(FWordCloudItem) + 1);
+          FWordCloudItem[High(FWordCloudItem)].WordText := AWord[i];
+          FWordCloudItem[High(FWordCloudItem)].PosX := TemporaryRectangle.Left + 2;
+          FWordCloudItem[High(FWordCloudItem)].PosY := TemporaryRectangle.Top + 2;
+          FWordCloudItem[High(FWordCloudItem)].FontSize := Round(FontSize * ScaleFactor);
+          FWordCloudItem[High(FWordCloudItem)].BoundWidth := TextWidth;
+          FWordCloudItem[High(FWordCloudItem)].BoundHeight := TextHeight;
           PlacedSuccess := True;
           Break;
         end;
@@ -321,21 +321,21 @@ begin
       if not PlacedSuccess then ScaleFactor := ScaleFactor - 0.15;
     end;
   end;
-  if Length(FCloudItem) > 0 then
+  if Length(FWordCloudItem) > 0 then
   begin
-    MinX := FCloudItem[0].PosX; MinY := FCloudItem[0].PosY;
-    MaxX := MinX + FCloudItem[0].BoundWidth; MaxY := MinY + FCloudItem[0].BoundHeight;
-    for i := 1 to High(FCloudItem) do
+    MinX := FWordCloudItem[0].PosX; MinY := FWordCloudItem[0].PosY;
+    MaxX := MinX + FWordCloudItem[0].BoundWidth; MaxY := MinY + FWordCloudItem[0].BoundHeight;
+    for i := 1 to High(FWordCloudItem) do
     begin
-      MinX := Min(MinX, FCloudItem[i].PosX);
-      MinY := Min(MinY, FCloudItem[i].PosY);
-      MaxX := Max(MaxX, FCloudItem[i].PosX + FCloudItem[i].BoundWidth);
-      MaxY := Max(MaxY, FCloudItem[i].PosY + FCloudItem[i].BoundHeight);
+      MinX := Min(MinX, FWordCloudItem[i].PosX);
+      MinY := Min(MinY, FWordCloudItem[i].PosY);
+      MaxX := Max(MaxX, FWordCloudItem[i].PosX + FWordCloudItem[i].BoundWidth);
+      MaxY := Max(MaxY, FWordCloudItem[i].PosY + FWordCloudItem[i].BoundHeight);
     end;
-    for i := 0 to High(FCloudItem) do
+    for i := 0 to High(FWordCloudItem) do
     begin
-      FCloudItem[i].PosX := FCloudItem[i].PosX - MinX + 20.0;
-      FCloudItem[i].PosY := FCloudItem[i].PosY - MinY + 20.0;
+      FWordCloudItem[i].PosX := FWordCloudItem[i].PosX - MinX + 20.0;
+      FWordCloudItem[i].PosY := FWordCloudItem[i].PosY - MinY + 20.0;
     end;
     VWidth := Round((MaxX - MinX) + 40.0);
     VHeight := Round((MaxY - MinY) + 40.0);
@@ -517,17 +517,17 @@ begin
   LogicalHeight := ViewHeight / Zoom;
   cairo_set_source_rgb(Context, 106/255.0, 0, 69/255.0);
   pango_layout_set_width(FLayout, -1);
-  for i := 0 to High(FCloudItem) do
+  for i := 0 to High(FWordCloudItem) do
   begin
-    if (FCloudItem[i].PosX + FCloudItem[i].BoundWidth >= LogicalX) and (FCloudItem[i].PosX <= LogicalX + LogicalWidth) and
-       (FCloudItem[i].PosY + FCloudItem[i].BoundHeight >= LogicalY) and (FCloudItem[i].PosY <= LogicalY + LogicalHeight) then
+    if (FWordCloudItem[i].PosX + FWordCloudItem[i].BoundWidth >= LogicalX) and (FWordCloudItem[i].PosX <= LogicalX + LogicalWidth) and
+       (FWordCloudItem[i].PosY + FWordCloudItem[i].BoundHeight >= LogicalY) and (FWordCloudItem[i].PosY <= LogicalY + LogicalHeight) then
     begin
-      FontStr := GetUniversalFontStack + ' ' + IntToStr(FCloudItem[i].FontSize);
+      FontStr := GetUniversalFontStack + ' ' + IntToStr(FWordCloudItem[i].FontSize);
       FontDescription := pango_font_description_from_string(PChar(FontStr));
       pango_layout_set_font_description(FLayout, FontDescription);
       pango_font_description_free(FontDescription);
-      pango_layout_set_text(FLayout, PChar(FCloudItem[i].WordText), -1);
-      cairo_move_to(Context, FCloudItem[i].PosX, FCloudItem[i].PosY);
+      pango_layout_set_text(FLayout, PChar(FWordCloudItem[i].WordText), -1);
+      cairo_move_to(Context, FWordCloudItem[i].PosX, FWordCloudItem[i].PosY);
       pango_cairo_show_layout(Context, FLayout);
     end;
   end;
