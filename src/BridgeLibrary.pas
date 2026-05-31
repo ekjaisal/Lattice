@@ -22,7 +22,7 @@ unit BridgeLibrary;
 interface
 
 uses
-  Classes, Graphics, LCLIntf, LCLType, SysUtils;
+  Graphics, LCLType;
 
 const
   CairoLib = 'libcairo-2.dll';
