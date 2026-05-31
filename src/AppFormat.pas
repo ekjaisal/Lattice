@@ -21,9 +21,6 @@ unit AppFormat;
 
 interface
 
-uses
-  SysUtils;
-
 type
   TAppFormat = class
   public
@@ -34,7 +31,7 @@ type
 implementation
 
 uses
-  LazUTF8;
+  LazUTF8, SysUtils;
 
 class function TAppFormat.Pluralize(Count: Integer; const Singular, Plural: String): String;
 begin
