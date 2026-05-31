@@ -22,8 +22,8 @@ unit DialogAbout;
 interface
 
 uses
-  Buttons, Classes, ComCtrls, Controls, ExtCtrls, Forms, Graphics, LCLIntf, Menus,
-  StdCtrls, SysUtils {$IFDEF WINDOWS}, Windows{$ENDIF}, BridgeLibrary;
+  Buttons, Classes, ComCtrls, Controls, ExtCtrls, Forms, Graphics, Menus, StdCtrls,
+  SysUtils {$IFDEF WINDOWS}, Windows{$ENDIF}, BridgeLibrary;
 
 type
   TfrmDialogAbout = class(TForm)
@@ -71,7 +71,7 @@ type
 implementation
 
 uses
-  LCLType, AppFont, AppIdentity;
+  LCLIntf, LCLType, AppFont, AppIdentity;
 
 {$R *.lfm}
 
