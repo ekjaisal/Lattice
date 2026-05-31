@@ -22,8 +22,7 @@ unit RenderDocument;
 interface
 
 uses
-  Classes, Controls, ExtCtrls, Forms, Graphics, LCLIntf, LCLType, LMessages, Menus, SysUtils
-  {$IFDEF WINDOWS}, Windows{$ENDIF}, EngineText;
+  Classes, Controls, ExtCtrls, Graphics, LCLIntf, LCLType, LMessages, EngineText;
 
 type
   TBracketHoverEvent = procedure(Sender: TObject; const CodeID: String; CodingIndex: Integer) of object;
