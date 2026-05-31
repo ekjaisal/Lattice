@@ -22,7 +22,7 @@ unit EngineText;
 interface
 
 uses
-  Classes, Graphics, LCLIntf, LCLType, SysUtils, Types, BridgeLibrary;
+  Classes, Graphics, LCLIntf, LCLType, Types, BridgeLibrary;
 
 const
   BRACKET_LANE_WIDTH = 12;
@@ -222,7 +222,7 @@ type
 implementation
 
 uses
-  LazUTF8, Math, StrUtils, AppFont;
+  LazUTF8, Math, StrUtils, SysUtils, AppFont;
 
 class procedure TEngineText.WarmUpEngine;
 var
