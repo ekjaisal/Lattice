@@ -22,7 +22,7 @@ unit DialogProgress;
 interface
 
 uses
-  Classes, ComCtrls, Controls, Dialogs, ExtCtrls, Forms, Graphics, StdCtrls, SysUtils;
+  ComCtrls, ExtCtrls, Forms, StdCtrls;
 
 type
 
