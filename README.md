@@ -108,7 +108,7 @@ Lattice is built and shipped with a ready-to-set-up installer. However, if requi
 
 4. **Fetch Dependencies into the Project**
    
-   Clone the Lattice repository, navigate to the `scripts/` directory, and execute the `fetch-dependencies.bat` script to copy all the required `.dll` files (along with their dependencies) from MSYS2 into the `bin/` directory.
+   Clone the Lattice repository, navigate to the `scripts/` directory, and execute the `setup-deps.bat` script to copy all the required `.dll` files (along with their dependencies) from MSYS2 into the `bin/` directory.
 
 5. **Compile the Application**
    
