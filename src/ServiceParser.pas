@@ -21,9 +21,6 @@ unit ServiceParser;
 
 interface
 
-uses
-  Classes, SysUtils;
-
 type
   TDataParser = class
   public
@@ -33,6 +30,9 @@ type
   end;
 
 implementation
+
+uses
+  SysUtils;
 
 class function TDataParser.TryParseDate(const Input: String; out ISOString: String): Boolean;
 var
