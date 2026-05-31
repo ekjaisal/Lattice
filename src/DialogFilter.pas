@@ -81,7 +81,7 @@ var
 implementation
 
 uses
-  Math, StrUtils, SysUtils, SQLDB, AppFont;
+  Math, SysUtils, SQLDB, AppFont;
 
 {$R *.lfm}
 
