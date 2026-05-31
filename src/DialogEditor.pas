@@ -36,7 +36,7 @@ type
     lblSubtitle: TLabel;
     lblTitle: TLabel;
     memContent: TMemo;
-    pnlActions: TPanel;
+    pnlAction: TPanel;
     pnlClient: TPanel;
     pnlTop: TPanel;
     procedure btnDeleteClick(Sender: TObject);

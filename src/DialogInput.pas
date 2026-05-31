@@ -36,7 +36,7 @@ type
     edtFloat: TFloatSpinEdit;
     edtText: TEdit;
     lblPrompt: TLabel;
-    pnlActions: TPanel;
+    pnlAction: TPanel;
     pnlInputContainer: TPanel;
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormShow(Sender: TObject);

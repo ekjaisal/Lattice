@@ -94,7 +94,7 @@ type
     lblScopeAttributeTitle: TLabel;
     pbxVisualization: TPaintBox;
     pcAnalysisType: TPageControl;
-    pnlActions: TPanel;
+    pnlAction: TPanel;
     pnlAttributeFilterDef: TPanel;
     pnlVisualization: TPanel;
     pnlCloudTools: TPanel;

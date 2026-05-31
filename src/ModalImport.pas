@@ -51,12 +51,12 @@ type
     lblNewAttributeName: TLabel;
     lblNewAttributeType: TLabel;
     lblTargetType: TLabel;
-    pnlActions: TPanel;
+    pnlAction: TPanel;
     pnlAttributeSettings: TPanel;
     pnlLeft: TPanel;
     pnlMap: TPanel;
     pnlRight: TPanel;
-    splSplitter: TSplitter;
+    splMapContent: TSplitter;
     vstMapping: TLazVirtualStringTree;
     procedure btnApplyClick(Sender: TObject);
     procedure btnImportClick(Sender: TObject);

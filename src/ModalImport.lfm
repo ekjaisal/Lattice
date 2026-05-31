@@ -19,7 +19,7 @@ object frmModalImport: TfrmModalImport
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
-  object pnlActions: TPanel
+  object pnlAction: TPanel
     AnchorSideLeft.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
@@ -36,10 +36,10 @@ object frmModalImport: TfrmModalImport
     ClientWidth = 1080
     TabOrder = 0
     object btnImport: TButton
-      AnchorSideTop.Control = pnlActions
-      AnchorSideRight.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
+      AnchorSideRight.Control = pnlAction
       AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 960
       Height = 29
@@ -53,9 +53,9 @@ object frmModalImport: TfrmModalImport
       OnClick = btnImportClick
     end
     object btnCancel: TButton
-      AnchorSideTop.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnImport
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 850
       Height = 29
@@ -73,7 +73,7 @@ object frmModalImport: TfrmModalImport
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = pnlActions
+    AnchorSideBottom.Control = pnlAction
     Left = 20
     Height = 631
     Top = 20
@@ -85,7 +85,7 @@ object frmModalImport: TfrmModalImport
     ClientWidth = 1040
     TabOrder = 1
     object pnlRight: TPanel
-      AnchorSideLeft.Control = splSplitter
+      AnchorSideLeft.Control = splMapContent
       AnchorSideLeft.Side = asrBottom
       AnchorSideTop.Control = pnlMap
       AnchorSideRight.Control = pnlMap
@@ -353,7 +353,7 @@ object frmModalImport: TfrmModalImport
     object pnlLeft: TPanel
       AnchorSideLeft.Control = pnlMap
       AnchorSideTop.Control = pnlMap
-      AnchorSideRight.Control = splSplitter
+      AnchorSideRight.Control = splMapContent
       AnchorSideBottom.Control = pnlMap
       AnchorSideBottom.Side = asrBottom
       Left = 0
@@ -411,7 +411,7 @@ object frmModalImport: TfrmModalImport
         OnPaintText = vstMappingPaintText
       end
     end
-    object splSplitter: TSplitter
+    object splMapContent: TSplitter
       AnchorSideTop.Control = pnlMap
       AnchorSideBottom.Control = pnlMap
       AnchorSideBottom.Side = asrBottom

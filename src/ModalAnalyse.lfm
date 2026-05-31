@@ -18,7 +18,7 @@ object frmModalAnalyse: TfrmModalAnalyse
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
-  object pnlActions: TPanel
+  object pnlAction: TPanel
     AnchorSideLeft.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
@@ -36,10 +36,10 @@ object frmModalAnalyse: TfrmModalAnalyse
     ClientWidth = 1850
     TabOrder = 0
     object btnClose: TButton
-      AnchorSideTop.Control = pnlActions
-      AnchorSideRight.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
+      AnchorSideRight.Control = pnlAction
       AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 1730
       Height = 29
@@ -52,9 +52,9 @@ object frmModalAnalyse: TfrmModalAnalyse
       TabOrder = 4
     end
     object btnExportData: TButton
-      AnchorSideTop.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnReset
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 1410
       Height = 29
@@ -67,9 +67,9 @@ object frmModalAnalyse: TfrmModalAnalyse
       OnClick = btnExportDataClick
     end
     object btnVisualizationSave: TButton
-      AnchorSideTop.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnExportData
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 1200
       Height = 29
@@ -82,9 +82,9 @@ object frmModalAnalyse: TfrmModalAnalyse
       OnClick = btnVisualizationSaveClick
     end
     object btnReset: TButton
-      AnchorSideTop.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnClose
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 1620
       Height = 29
@@ -97,10 +97,10 @@ object frmModalAnalyse: TfrmModalAnalyse
       OnClick = btnResetClick
     end
     object btnAnalyse: TButton
-      AnchorSideLeft.Control = pnlActions
-      AnchorSideTop.Control = pnlActions
+      AnchorSideLeft.Control = pnlAction
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 20
       Height = 29
@@ -117,7 +117,7 @@ object frmModalAnalyse: TfrmModalAnalyse
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = splMain
-    AnchorSideBottom.Control = pnlActions
+    AnchorSideBottom.Control = pnlAction
     Left = 20
     Height = 821
     Top = 20
@@ -1342,7 +1342,7 @@ object frmModalAnalyse: TfrmModalAnalyse
   end
   object splMain: TSplitter
     AnchorSideTop.Control = Owner
-    AnchorSideBottom.Control = pnlActions
+    AnchorSideBottom.Control = pnlAction
     Left = 920
     Height = 841
     Top = 0
@@ -1358,7 +1358,7 @@ object frmModalAnalyse: TfrmModalAnalyse
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = pnlActions
+    AnchorSideBottom.Control = pnlAction
     Left = 932
     Height = 821
     Top = 20

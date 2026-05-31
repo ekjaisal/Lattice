@@ -33,7 +33,7 @@ type
     btnSort: TButton;
     cmbSortCriteria: TComboBox;
     lblCriteria: TLabel;
-    pnlActions: TPanel;
+    pnlAction: TPanel;
     rgSortOrder: TRadioGroup;
     procedure btnPersistClick(Sender: TObject);
     procedure btnResetClick(Sender: TObject);
