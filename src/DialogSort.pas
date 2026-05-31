@@ -22,7 +22,7 @@ unit DialogSort;
 interface
 
 uses
-  Classes, Controls, Dialogs, ExtCtrls, Forms, Graphics, StdCtrls, SysUtils;
+  Classes, Controls, ExtCtrls, Forms, StdCtrls;
 
 type
   TfrmDialogSort = class(TForm)
@@ -50,7 +50,7 @@ var
 implementation
 
 uses
-  AppFont;
+  SysUtils, AppFont;
 
 {$R *.lfm}
 
