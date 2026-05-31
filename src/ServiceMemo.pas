@@ -33,7 +33,7 @@ type
 implementation
 
 uses
-  Controls, Dialogs, Forms, StrUtils, SysUtils, SQLDB, DialogEditor, MonoLexID;
+  Dialogs, StrUtils, SysUtils, SQLDB, DialogEditor, MonoLexID;
 
 class function TServiceMemo.Execute(AConnection: TSQLite3Connection; const ATargetType: String; const ATargetID: String; const AReferenceName: String): Boolean;
 var
