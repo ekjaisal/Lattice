@@ -23,9 +23,8 @@ interface
 
 uses
   Buttons, Cairo, Classes, ComCtrls, Controls, Dialogs, EditBtn, ExtCtrls, Forms,
-  Generics.Collections, Graphics, Spin, StdCtrls, SQLDB, Types
-  {$IFDEF WINDOWS}, Windows{$ENDIF}, laz.VirtualTrees, BridgeLibrary,
-  ServiceDatabase, ServiceVisualize;
+  Generics.Collections, Graphics, Spin, StdCtrls, Types {$IFDEF WINDOWS}, Windows{$ENDIF},
+  laz.VirtualTrees, BridgeLibrary, ServiceDatabase, ServiceVisualize;
 
 type
   TAttributeCache = record
@@ -283,8 +282,8 @@ var
 implementation
 
 uses
-  LazUTF8, Math, StrUtils, SysUtils, AppBase, AppFont, AppFormat, DialogEditor,
-  DialogProgress, ServiceExport, ServiceThread;
+  LazUTF8, Math, StrUtils, SysUtils, SQLDB, AppBase, AppFont, AppFormat,
+  DialogEditor, DialogProgress, ServiceExport, ServiceThread;
 
 type
   TThreadLoadAnalyseContext = class(TBackgroundWorker)
