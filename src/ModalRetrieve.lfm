@@ -609,10 +609,10 @@ object frmModalRetrieve: TfrmModalRetrieve
               TabOrder = 1
               OnChange = cmbAttributeOperatorChange
             end
-            object btnClearAttributeFilter: TButton
-              AnchorSideTop.Control = btnApplyAttributeFilter
-              AnchorSideRight.Control = btnApplyAttributeFilter
-              AnchorSideBottom.Control = btnApplyAttributeFilter
+            object btnAttributeFilterClear: TButton
+              AnchorSideTop.Control = btnAttributeFilterApply
+              AnchorSideRight.Control = btnAttributeFilterApply
+              AnchorSideBottom.Control = btnAttributeFilterApply
               AnchorSideBottom.Side = asrBottom
               Left = 324
               Height = 29
@@ -622,12 +622,12 @@ object frmModalRetrieve: TfrmModalRetrieve
               BorderSpacing.Right = 6
               Caption = 'Clear Selected'
               TabOrder = 2
-              OnClick = btnClearAttributeFilterClick
+              OnClick = btnAttributeFilterClearClick
             end
             object btnAttributeClearAll: TButton
-              AnchorSideTop.Control = btnApplyAttributeFilter
-              AnchorSideRight.Control = btnClearAttributeFilter
-              AnchorSideBottom.Control = btnApplyAttributeFilter
+              AnchorSideTop.Control = btnAttributeFilterApply
+              AnchorSideRight.Control = btnAttributeFilterClear
+              AnchorSideBottom.Control = btnAttributeFilterApply
               AnchorSideBottom.Side = asrBottom
               Left = 218
               Height = 29
@@ -639,7 +639,7 @@ object frmModalRetrieve: TfrmModalRetrieve
               TabOrder = 3
               OnClick = btnAttributeClearAllClick
             end
-            object btnApplyAttributeFilter: TButton
+            object btnAttributeFilterApply: TButton
               AnchorSideTop.Control = pnlValueInput
               AnchorSideTop.Side = asrBottom
               AnchorSideRight.Control = pnlValueInput
@@ -654,7 +654,7 @@ object frmModalRetrieve: TfrmModalRetrieve
               BorderSpacing.Bottom = 6
               Caption = 'Apply'
               TabOrder = 4
-              OnClick = btnApplyAttributeFilterClick
+              OnClick = btnAttributeFilterApplyClick
             end
           end
         end

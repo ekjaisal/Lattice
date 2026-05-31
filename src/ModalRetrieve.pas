@@ -68,9 +68,9 @@ type
 
   { TfrmModalRetrieve }
   TfrmModalRetrieve = class(TForm)
-    btnApplyAttributeFilter: TButton;
+    btnAttributeFilterApply: TButton;
     btnAttributeClearAll: TButton;
-    btnClearAttributeFilter: TButton;
+    btnAttributeFilterClear: TButton;
     btnClose: TButton;
     btnCodeClearAll: TButton;
     btnCodeSelectAll: TButton;
@@ -146,9 +146,9 @@ type
     procedure FormShow(Sender: TObject);
     procedure ListBoxMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure SearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure btnApplyAttributeFilterClick(Sender: TObject);
+    procedure btnAttributeFilterApplyClick(Sender: TObject);
     procedure btnAttributeClearAllClick(Sender: TObject);
-    procedure btnClearAttributeFilterClick(Sender: TObject);
+    procedure btnAttributeFilterClearClick(Sender: TObject);
     procedure btnCodeClearAllClick(Sender: TObject);
     procedure btnCodeSelectAllClick(Sender: TObject);
     procedure btnDocumentClearAllClick(Sender: TObject);
@@ -1577,7 +1577,7 @@ begin
   deValueDateEnd.Visible := (pnlValueDate.Visible) and (Op = 'Between');
 end;
 
-procedure TfrmModalRetrieve.btnApplyAttributeFilterClick(Sender: TObject);
+procedure TfrmModalRetrieve.btnAttributeFilterApplyClick(Sender: TObject);
 var
   CurrentValue, Op: String;
 begin
@@ -1612,7 +1612,7 @@ begin
   lblStatus.Caption := 'Filter applied for ' + FAttributeCache[FCurrentAttributeIndex].Name;
 end;
 
-procedure TfrmModalRetrieve.btnClearAttributeFilterClick(Sender: TObject);
+procedure TfrmModalRetrieve.btnAttributeFilterClearClick(Sender: TObject);
 begin
   if FCurrentAttributeIndex = -1 then Exit;
   FAttributeCache[FCurrentAttributeIndex].OperatorVal := '';

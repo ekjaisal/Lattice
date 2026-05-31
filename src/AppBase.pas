@@ -172,7 +172,7 @@ type
     procedure BracketCopySegmentClick(Sender: TObject);
     procedure BracketRecodeSegmentClick(Sender: TObject);
     procedure BracketRemoveCodingClick(Sender: TObject);
-    procedure btnCloseDocumentClick(Sender: TObject);
+    procedure btnDocumentCloseClick(Sender: TObject);
     procedure btnCodeAddClick(Sender: TObject);
     procedure btnCodeSortClick(Sender: TObject);
     procedure btnDocumentEditExitClick(Sender: TObject);
@@ -872,7 +872,7 @@ begin
     FRenderDocument.Invalidate;
 end;
 
-procedure TfrmAppBase.btnCloseDocumentClick(Sender: TObject);
+procedure TfrmAppBase.btnDocumentCloseClick(Sender: TObject);
 begin
   FControllerTreeDocument.ClearSelection;
 end;

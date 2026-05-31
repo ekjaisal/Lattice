@@ -66,7 +66,7 @@ object frmModalAnalyse: TfrmModalAnalyse
       TabOrder = 2
       OnClick = btnExportDataClick
     end
-    object btnSaveVisualization: TButton
+    object btnVisualizationSave: TButton
       AnchorSideTop.Control = pnlActions
       AnchorSideRight.Control = btnExportData
       AnchorSideBottom.Control = pnlActions
@@ -79,7 +79,7 @@ object frmModalAnalyse: TfrmModalAnalyse
       BorderSpacing.Right = 10
       Caption = 'Export Visualisation'
       TabOrder = 1
-      OnClick = btnSaveVisualizationClick
+      OnClick = btnVisualizationSaveClick
     end
     object btnReset: TButton
       AnchorSideTop.Control = pnlActions

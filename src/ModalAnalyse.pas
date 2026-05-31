@@ -59,7 +59,7 @@ type
     btnFrequencyClearAll: TButton;
     btnFrequencySelectAll: TButton;
     btnReset: TButton;
-    btnSaveVisualization: TButton;
+    btnVisualizationSave: TButton;
     btnScopeAttributeApply: TButton;
     btnScopeAttributeClear: TButton;
     btnScopeAttributeClearAll: TButton;
@@ -166,7 +166,7 @@ type
     procedure btnFrequencyClearAllClick(Sender: TObject);
     procedure btnFrequencySelectAllClick(Sender: TObject);
     procedure btnResetClick(Sender: TObject);
-    procedure btnSaveVisualizationClick(Sender: TObject);
+    procedure btnVisualizationSaveClick(Sender: TObject);
     procedure btnScopeAttributeApplyClick(Sender: TObject);
     procedure btnScopeAttributeClearAllClick(Sender: TObject);
     procedure btnScopeAttributeClearClick(Sender: TObject);
@@ -583,7 +583,7 @@ begin
   if Assigned(splResults) then splResults.Visible := False;
   if Assigned(vstResultGrid) then vstResultGrid.RootNodeCount := 0;
   btnExportData.Enabled := False;
-  btnSaveVisualization.Enabled := False;
+  btnVisualizationSave.Enabled := False;
   if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
 end;
 
@@ -2136,7 +2136,7 @@ begin
         ResetViewContext;
         FAnalysisState := asComplete;
         btnExportData.Enabled := True;
-        btnSaveVisualization.Enabled := True;
+        btnVisualizationSave.Enabled := True;
       end
       else
       begin
@@ -2149,7 +2149,7 @@ begin
     begin
       FAnalysisState := asNoResults;
       btnExportData.Enabled := False;
-      btnSaveVisualization.Enabled := False;
+      btnVisualizationSave.Enabled := False;
     end;
     if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
   finally
@@ -2585,7 +2585,7 @@ begin
     frmDialogProgress.ModalResult := mrOk;
 end;
 
-procedure TfrmModalAnalyse.btnSaveVisualizationClick(Sender: TObject);
+procedure TfrmModalAnalyse.btnVisualizationSaveClick(Sender: TObject);
 var
   RequestedWidth, RequestedHeight: Integer;
   Margin: Double;

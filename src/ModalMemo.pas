@@ -38,7 +38,7 @@ type
 
   { TfrmModalMemo }
   TfrmModalMemo = class(TForm)
-    btnClearSelection: TButton;
+    btnSelectionClear: TButton;
     btnDelete: TButton;
     btnEdit: TButton;
     btnExport: TButton;
@@ -61,7 +61,7 @@ type
     vstMemo: TLazVirtualStringTree;
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure btnClearSelectionClick(Sender: TObject);
+    procedure btnSelectionClearClick(Sender: TObject);
     procedure btnDeleteClick(Sender: TObject);
     procedure btnEditClick(Sender: TObject);
     procedure btnExportClick(Sender: TObject);
@@ -253,7 +253,7 @@ begin
   HasSelection := vstMemo.SelectedCount > 0;
   IsMulti := vstMemo.SelectedCount > 1;
   IsFiltered := (cmbTypeFilter.ItemIndex > 0) or (Trim(edtMemoSearch.Text) <> '');
-  btnClearSelection.Visible := HasSelection;
+  btnSelectionClear.Visible := HasSelection;
   btnEdit.Enabled := HasSelection and not IsMulti;
   btnDelete.Enabled := HasSelection;
   btnExport.Enabled := (vstMemo.RootNodeCount > 0);
@@ -578,7 +578,7 @@ begin
   tmrMemoSearch.Enabled := True;
 end;
 
-procedure TfrmModalMemo.btnClearSelectionClick(Sender: TObject);
+procedure TfrmModalMemo.btnSelectionClearClick(Sender: TObject);
 begin
   vstMemo.ClearSelection;
   FSelectedID := '';
