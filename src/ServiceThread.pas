@@ -22,7 +22,7 @@ unit ServiceThread;
 interface
 
 uses
-  Classes, SysUtils, sqldb, sqlite3conn;
+  Classes, SQLDB, SQLite3Conn;
 
 type
   TBackgroundWorker = class(TThread)
@@ -46,7 +46,7 @@ type
 implementation
 
 uses
-  Controls, DialogProgress, ServiceDatabase;
+  Controls, SysUtils, DialogProgress, ServiceDatabase;
 
 constructor TBackgroundWorker.Create(const ADBPath: String);
 begin
