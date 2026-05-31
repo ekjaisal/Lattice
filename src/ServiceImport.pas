@@ -22,7 +22,7 @@ unit ServiceImport;
 interface
 
 uses
-  Classes, SysUtils, fpjson, fpspreadsheet, fpsTypes, SQLDB, SQLite3Conn;
+  Classes, fpjson, fpsTypes, SQLDB, SQLite3Conn;
 
 type
   TImportColumnMap = record
@@ -58,9 +58,10 @@ type
 implementation
 
 uses
-  Controls, Dialogs, fpsopendocument, jsonparser, laz2_DOM, laz2_XMLRead, LazFileUtils, LazUTF8,
-  zipper, xlsxOOXML, AppFormat, BridgeLibrary, DialogEditor, DialogInput, DialogProgress, ModalImport,
-  MonoLexID, ServiceParser, ServiceThread;
+  Controls, Dialogs, fpsopendocument, fpspreadsheet, jsonparser, laz2_DOM, laz2_XMLRead,
+  LazFileUtils, LazUTF8, SysUtils, zipper, xlsxOOXML, AppFormat, BridgeLibrary,
+  DialogEditor, DialogInput, DialogProgress, ModalImport, MonoLexID, ServiceParser,
+  ServiceThread;
 
 type
   TThreadImportText = class(TBackgroundWorker)
