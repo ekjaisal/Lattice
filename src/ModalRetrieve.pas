@@ -22,8 +22,8 @@ unit ModalRetrieve;
 interface
 
 uses
-  Buttons, Classes, ComCtrls, Controls, DB, Dialogs, EditBtn, ExtCtrls, Forms, Generics.Collections,
-  Graphics, Spin, StdCtrls, SysUtils, Types, SQLDB, laz.VirtualTrees;
+  Buttons, Classes, ComCtrls, Controls, Dialogs, EditBtn, ExtCtrls, Forms,
+  Generics.Collections, Graphics, laz.VirtualTrees, Spin, StdCtrls, Types;
 
 type
   PCodeTreeData = ^TCodeTreeData;
@@ -220,8 +220,8 @@ var
 implementation
 
 uses
-  LazUTF8, LCLIntf, LCLType, Math, StrUtils, AppBase, AppFont, AppFormat, DialogProgress,
-  DataShared, ServiceExport, ServiceThread;
+  DB, LazUTF8, LCLIntf, LCLType, Math, StrUtils, SysUtils, SQLDB, AppBase,
+  AppFont, AppFormat, DataShared, DialogProgress, ServiceExport, ServiceThread;
 
 type
   TThreadLoadRetrieveContext = class(TBackgroundWorker)
