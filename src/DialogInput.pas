@@ -22,8 +22,7 @@ unit DialogInput;
 interface
 
 uses
-  Classes, Controls, Dialogs, ExtCtrls, Forms, Graphics, LCLType, Spin, StdCtrls, SysUtils,
-  DateTimeCtrls, DateTimePicker;
+  Classes, Controls, ExtCtrls, Forms, Spin, StdCtrls, DateTimeCtrls, DateTimePicker;
 
 type
   TDialogMode = (dmText, dmSelector, dmAttribute);
@@ -57,7 +56,7 @@ var
 implementation
 
 uses
-  AppFont;
+  Dialogs, LCLType, SysUtils, AppFont;
 
 {$R *.lfm}
 
