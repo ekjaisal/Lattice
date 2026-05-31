@@ -22,8 +22,7 @@ unit DialogFilter;
 interface
 
 uses
-  Classes, Controls, Dialogs, ExtCtrls, Forms, Graphics, Spin, StdCtrls, SysUtils,
-  EditBtn, SQLDB, SQLite3Conn;
+  Classes, Controls, ExtCtrls, Forms, Spin, StdCtrls, EditBtn, SQLite3Conn;
 
 type
   TfrmDialogFilter = class(TForm)
@@ -82,7 +81,7 @@ var
 implementation
 
 uses
-  Math, StrUtils, AppFont;
+  Math, StrUtils, SysUtils, SQLDB, AppFont;
 
 {$R *.lfm}
 
