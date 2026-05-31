@@ -22,7 +22,7 @@ unit ServiceVisualize;
 interface
 
 uses
-  Classes, Graphics, SysUtils, Types, Cairo, BridgeLibrary;
+  Cairo, Graphics, BridgeLibrary;
 
 type
   TChartElement = record
@@ -80,7 +80,7 @@ type
 implementation
 
 uses
-  Math, AppFont;
+  Math, SysUtils, Types, AppFont;
 
 constructor TServiceVisualize.Create;
 begin
