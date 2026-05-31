@@ -22,9 +22,10 @@ unit ModalAnalyse;
 interface
 
 uses
-  Buttons, Classes, ComCtrls, Controls, DB, Dialogs, EditBtn, ExtCtrls, Forms, Generics.Collections,
-  Graphics, Spin, StdCtrls, SysUtils, Types {$IFDEF WINDOWS}, Windows{$ENDIF}, SQLDB, laz.VirtualTrees,
-  Cairo, BridgeLibrary, ServiceDatabase, ServiceVisualize;
+  Buttons, Cairo, Classes, ComCtrls, Controls, Dialogs, EditBtn, ExtCtrls, Forms,
+  Generics.Collections, Graphics, Spin, StdCtrls, SQLDB, Types
+  {$IFDEF WINDOWS}, Windows{$ENDIF}, laz.VirtualTrees, BridgeLibrary,
+  ServiceDatabase, ServiceVisualize;
 
 type
   TAttributeCache = record
@@ -282,8 +283,8 @@ var
 implementation
 
 uses
-  LazUTF8, Math, StrUtils, AppBase, AppFont, AppFormat, DialogEditor, DialogProgress,
-  ServiceExport, ServiceThread;
+  LazUTF8, Math, StrUtils, SysUtils, AppBase, AppFont, AppFormat, DialogEditor,
+  DialogProgress, ServiceExport, ServiceThread;
 
 type
   TThreadLoadAnalyseContext = class(TBackgroundWorker)
