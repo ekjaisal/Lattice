@@ -1441,7 +1441,7 @@ var
     LocalList := TList.Create;
     try
       AQuery.Close;
-      AQuery.SQL.Text := 'SELECT id, name, description, color FROM codes WHERE parent_id = :p';
+      AQuery.SQL.Text := 'SELECT id, name, description, color FROM codes WHERE parent_id = :p ORDER BY sort_order ASC, id ASC';
       AQuery.Params.ParamByName('p').AsString := ParentID;
       AQuery.Open;
       while not AQuery.EOF do

@@ -3320,7 +3320,7 @@ begin
   if not ForceExitEditMode then Exit;
   dlgImport.Filter := 'Code System (*.json)|*.json';
   if not dlgImport.Execute then Exit;
-  if TServiceImport.ImportCodingScheme(conMain, dlgImport.FileName) then
+  if TServiceImport.ImportCodeSystem(conMain, dlgImport.FileName) then
   begin
     RefreshCodeTree;
     MessageDlg('Success', 'Code system imported successfully.', mtInformation, [mbOK], 0);
@@ -3331,6 +3331,11 @@ end;
 procedure TfrmAppBase.mniCodeSystemExportClick(Sender: TObject);
 begin
   if not ForceExitEditMode then Exit;
+  if FControllerTreeCode.SortField <> 'sort_order' then
+  begin
+    MessageDlg('Action Locked', 'The code system is currently under a temporary custom sort. To release the lock, either reset the sort or make the current order permanent before exporting.', mtInformation, [mbOK], 0);
+    Exit;
+  end;
   if not dlgExportSystem.Execute then Exit;
   try
     if TServiceExport.ExportCodeSystem(qryUtil, dlgExportSystem.FileName) then
@@ -3338,7 +3343,7 @@ begin
     else
       MessageDlg('Error', 'Failed to export code system.', mtError, [mbOK], 0);
   except
-    on E: Exception do 
+    on E: Exception do
       MessageDlg('Export Error', E.Message, mtError, [mbOK], 0);
   end;
 end;

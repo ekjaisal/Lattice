@@ -44,9 +44,9 @@ type
     class function GetTextFromODT(const AFileName: String): String;
     class function GetUniqueTitle(AQuery: TSQLQuery; const BaseTitle: String): String;
     class function SanitizeText(const AText: String): String;
-    class procedure RecursiveImportCodingScheme(AQuery: TSQLQuery; JSONArray: TJSONArray; const ParentID: String);
+    class procedure RecursiveImportCodeSystem(AQuery: TSQLQuery; JSONArray: TJSONArray; const ParentID: String);
   public
-    class function ImportCodingScheme(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
+    class function ImportCodeSystem(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
     class function ImportJSON(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
     class function ImportSQLite(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
     class function ImportSpreadsheet(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
@@ -157,10 +157,10 @@ begin
   AQuery.Close;
 end;
 
-class procedure TServiceImport.RecursiveImportCodingScheme(AQuery: TSQLQuery; JSONArray: TJSONArray; const ParentID: String);
+class procedure TServiceImport.RecursiveImportCodeSystem(AQuery: TSQLQuery; JSONArray: TJSONArray; const ParentID: String);
 var
   i: Integer;
-  NewID: String;
+  NewID, ParsedName: String;
   CodeObj: TJSONObject;
 begin
   for i := 0 to JSONArray.Count - 1 do
@@ -168,23 +168,25 @@ begin
     if JSONArray.Items[i].JSONType <> jtObject then Continue;
     CodeObj := TJSONObject(JSONArray.Items[i]);
     NewID := CodeObj.Get('ID', '');
-    if (NewID = '') or (CodeObj.Get('Name', '') = '') then Continue;
+    if NewID = '' then NewID := NewMonoLexID;
+    ParsedName := CodeObj.Get('Name', '');
     AQuery.Params.ParamByName('g').AsString := NewID;
-    AQuery.Params.ParamByName('n').AsString := CodeObj.Get('Name', '');
+    AQuery.Params.ParamByName('n').AsString := ParsedName;
     AQuery.Params.ParamByName('d').AsString := CodeObj.Get('Description', '');
-    AQuery.Params.ParamByName('c').AsInteger := CodeObj.Get('Color', 8421504); 
+    AQuery.Params.ParamByName('c').AsInteger := CodeObj.Get('Color', 8421504);
     AQuery.Params.ParamByName('p').AsString := ParentID;
     AQuery.ExecSQL;
     if (CodeObj.Find('SubCodes') <> nil) and (CodeObj.Types['SubCodes'] = jtArray) then
-      RecursiveImportCodingScheme(AQuery, CodeObj.Arrays['SubCodes'], NewID);
+      RecursiveImportCodeSystem(AQuery, CodeObj.Arrays['SubCodes'], NewID);
   end;
 end;
 
-class function TServiceImport.ImportCodingScheme(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
+class function TServiceImport.ImportCodeSystem(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
 var
   JSONData: TJSONData;
   FileContent: TStringList;
   Query: TSQLQuery;
+  ErrorCount: Integer;
 begin
   Result := False;
   JSONData := nil;
@@ -219,14 +221,48 @@ begin
       end;
       if TJSONArray(JSONData).Count = 0 then
       begin
-        MessageDlg('Empty Scheme', 'The selected code system file contains no codes.', mtInformation, [mbOK], 0);
+        MessageDlg('Empty Code System', 'The selected code system file contains no codes.', mtInformation, [mbOK], 0);
         Exit;
       end;
       if not AConnection.Transaction.Active then AConnection.Transaction.StartTransaction;
       try
-        Query.SQL.Text := 'INSERT INTO codes (id, name, description, color, parent_id) VALUES (:g, :n, :d, :c, :p)';
+        AConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_import_codes');
+        AConnection.ExecuteDirect('CREATE TEMP TABLE temp_import_codes (import_seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT, name TEXT, description TEXT, color INTEGER, parent_id TEXT)');
+        Query.SQL.Text := 'INSERT INTO temp_import_codes (id, name, description, color, parent_id) VALUES (:g, :n, :d, :c, :p)';
         Query.Prepare;
-        RecursiveImportCodingScheme(Query, TJSONArray(JSONData), '');
+        RecursiveImportCodeSystem(Query, TJSONArray(JSONData), '');
+        Query.SQL.Text := 'SELECT COUNT(*) FROM temp_import_codes WHERE TRIM(name) = ''''';
+        Query.Open;
+        ErrorCount := Query.Fields[0].AsInteger;
+        Query.Close;
+        if ErrorCount > 0 then
+        begin
+          AConnection.Transaction.Rollback;
+          MessageDlg('Validation Error', Format('Import aborted. The file contains %d codes with an empty name.', [ErrorCount]), mtError, [mbOK], 0);
+          Exit;
+        end;
+        Query.SQL.Text := 'SELECT COUNT(*) FROM (SELECT id FROM temp_import_codes GROUP BY id HAVING COUNT(id) > 1)';
+        Query.Open;
+        ErrorCount := Query.Fields[0].AsInteger;
+        Query.Close;
+        if ErrorCount > 0 then
+        begin
+          AConnection.Transaction.Rollback;
+          MessageDlg('Validation Error', 'Import aborted. The file contains codes with duplicate identifiers.', mtError, [mbOK], 0);
+          Exit;
+        end;
+        Query.SQL.Text := 'SELECT COUNT(*) FROM temp_import_codes t JOIN codes c ON t.id = c.id';
+        Query.Open;
+        ErrorCount := Query.Fields[0].AsInteger;
+        Query.Close;
+        if ErrorCount > 0 then
+        begin
+          AConnection.Transaction.Rollback;
+          MessageDlg('Validation Error', 'Import aborted. The file contains codes that already exist in the current project.', mtError, [mbOK], 0);
+          Exit;
+        end;
+        AConnection.ExecuteDirect('INSERT INTO codes (id, name, description, color, parent_id, sort_order) SELECT id, name, description, color, parent_id, ROW_NUMBER() OVER (PARTITION BY parent_id ORDER BY import_seq) * 10 FROM temp_import_codes');
+        AConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_import_codes');
         AConnection.Transaction.Commit;
         Result := True;
       except
