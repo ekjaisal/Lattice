@@ -214,12 +214,12 @@ begin
       end;
       if (JSONData = nil) or (JSONData.JSONType <> jtArray) then
       begin
-        MessageDlg('Invalid Format', 'The selected file is not a valid coding scheme.', mtError, [mbOK], 0);
+        MessageDlg('Invalid Format', 'The selected file is not a valid code system.', mtError, [mbOK], 0);
         Exit;
       end;
       if TJSONArray(JSONData).Count = 0 then
       begin
-        MessageDlg('Empty Scheme', 'The selected coding scheme contains no codes.', mtInformation, [mbOK], 0);
+        MessageDlg('Empty Scheme', 'The selected code system file contains no codes.', mtInformation, [mbOK], 0);
         Exit;
       end;
       if not AConnection.Transaction.Active then AConnection.Transaction.StartTransaction;

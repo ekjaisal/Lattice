@@ -1208,7 +1208,7 @@ object frmAppBase: TfrmAppBase
   object dlgExportSystem: TSaveDialog
     Title = 'Export Code System'
     DefaultExt = '.json'
-    Filter = 'Coding Scheme (*.json)|*.json'
+    Filter = 'Code System (*.json)|*.json'
     Left = 920
     Top = 408
   end
