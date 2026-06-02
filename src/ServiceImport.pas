@@ -238,7 +238,7 @@ begin
         if ErrorCount > 0 then
         begin
           AConnection.Transaction.Rollback;
-          MessageDlg('Validation Error', Format('Import aborted. The file contains %d codes with an empty name.', [ErrorCount]), mtError, [mbOK], 0);
+          MessageDlg('Validation Error', Format('Import aborted. The file contains %d %s with an empty name.', [ErrorCount, TAppFormat.Pluralize(ErrorCount, 'code', 'codes')]), mtError, [mbOK], 0);
           Exit;
         end;
         Query.SQL.Text := 'SELECT COUNT(*) FROM (SELECT id FROM temp_import_codes GROUP BY id HAVING COUNT(id) > 1)';
