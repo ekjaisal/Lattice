@@ -2533,7 +2533,7 @@ end;
 
 procedure TfrmAppBase.pmnTreeCodePopup(Sender: TObject);
 var
-  SelCount: Integer;
+  SelCount, TotalCount: Integer;
   IsAnalytical: Boolean;
   P: TPoint;
   HitInfo: THitInfo;
@@ -2541,17 +2541,27 @@ var
   AllExpanded, AllCollapsed: Boolean;
 begin
   SelCount := vstCode.SelectedCount;
+  TotalCount := 0;
+  Node := vstCode.GetFirst;
+  while Assigned(Node) do
+  begin
+    Inc(TotalCount);
+    Node := vstCode.GetNext(Node);
+  end;
   IsAnalytical := FControllerTreeCode.SortField <> 'sort_order';
   mniTreeCodeAddSubCode.Enabled := (SelCount = 1) and not IsAnalytical;
   mniTreeCodeRename.Enabled := (SelCount = 1);
   mniTreeCodeColorChange.Enabled := (SelCount > 0);
   mniTreeCodeMemo.Enabled := (SelCount = 1);
   mniTreeCodeDelete.Enabled := (SelCount > 0) and not IsAnalytical;
-  mniTreeCodeMerge.Enabled := (SelCount >= 2) and not IsAnalytical;
-  mniTreeCodeMoveUp.Enabled := (SelCount > 0) and not IsAnalytical;
-  mniTreeCodeMoveDown.Enabled := (SelCount > 0) and not IsAnalytical;
-  mniTreeCodePromote.Enabled := (SelCount > 0) and not IsAnalytical;
-  mniTreeCodeDemote.Enabled := (SelCount > 0) and not IsAnalytical;
+  if SelCount = 0 then
+    mniTreeCodeDelete.Caption := 'Delete Code'
+  else if SelCount = 1 then
+    mniTreeCodeDelete.Caption := 'Delete Code'
+  else if (TotalCount > 0) and (SelCount = TotalCount) then
+    mniTreeCodeDelete.Caption := 'Delete All Codes'
+  else
+    mniTreeCodeDelete.Caption := 'Delete Selected Codes';
   P := vstCode.ScreenToClient(Mouse.CursorPos);
   vstCode.GetHitTestInfoAt(P.X, P.Y, True, HitInfo);
   if Assigned(HitInfo.HitNode) then
@@ -2846,21 +2856,24 @@ end;
 
 procedure TfrmAppBase.mniTreeCodeDeleteClick(Sender: TObject);
 var
-  CodeID: String;
+  CodeIDs: TStringDynArray;
   TotalCode, TotalCoding, TotalMemo: Integer;
-  CodeName, ConfirmMessage: String;
+  ConfirmMessage: String;
   Worker: TThreadBatchCodeDeleteRecursive;
 begin
-  if not FControllerTreeCode.GetFocusedNodeData(CodeID, CodeName) then Exit;
+  CodeIDs := FControllerTreeCode.GetSelectedID;
+  if Length(CodeIDs) = 0 then Exit;
   if not ForceExitEditMode then Exit;
-  FServiceDatabase.GetRecursiveCount(CodeID, TotalCode, TotalCoding, TotalMemo);
-  ConfirmMessage := 'Are you sure you want to permanently delete "' + CodeName + '"?';
-  if (TotalCode > 1) or (TotalCoding > 0) or (TotalMemo > 0) then
+  FServiceDatabase.GetRecursiveCount(CodeIDs, TotalCode, TotalCoding, TotalMemo);
+  if Length(CodeIDs) = 1 then
+    ConfirmMessage := 'Are you sure you want to permanently delete the selected code?'
+  else
+    ConfirmMessage := Format('Are you sure you want to permanently delete the %d selected codes?', [Length(CodeIDs)]);
+  if (TotalCode > Length(CodeIDs)) or (TotalCoding > 0) or (TotalMemo > 0) then
   begin
-    ConfirmMessage := ConfirmMessage + sLineBreak + sLineBreak +
-                  'The following associated data will also be deleted:' + sLineBreak;
-    if TotalCode > 1 then
-      ConfirmMessage := ConfirmMessage + ' • ' + IntToStr(TotalCode - 1) + ' ' + TAppFormat.Pluralize(TotalCode - 1, 'sub-code', 'sub-codes') + sLineBreak;
+    ConfirmMessage := ConfirmMessage + sLineBreak + sLineBreak + 'The following associated data will also be deleted:' + sLineBreak;
+    if TotalCode > Length(CodeIDs) then
+      ConfirmMessage := ConfirmMessage + ' • ' + IntToStr(TotalCode - Length(CodeIDs)) + ' nested ' + TAppFormat.Pluralize(TotalCode - Length(CodeIDs), 'sub-code', 'sub-codes') + sLineBreak;
     if TotalCoding > 0 then
       ConfirmMessage := ConfirmMessage + ' • ' + IntToStr(TotalCoding) + ' ' + TAppFormat.Pluralize(TotalCoding, 'coding application', 'coding applications') + sLineBreak;
     if TotalMemo > 0 then
@@ -2871,9 +2884,9 @@ begin
     FRenderDocument.ClearSelection;
     Worker := TThreadBatchCodeDeleteRecursive.Create(conMain.DatabaseName);
     try
-      Worker.FCodeID := CodeID;
+      Worker.FCodeIDs := CodeIDs;
       Worker.Start;
-      TfrmDialogProgress.Prepare('Deleting Code', 'Initialising...');
+      TfrmDialogProgress.Prepare('Deleting Codes', 'Initialising...');
       frmDialogProgress.ShowModal;
       if trnMain.Active then trnMain.Commit;
       if Worker.Success then

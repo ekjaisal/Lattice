@@ -126,7 +126,7 @@ type
 
   TThreadBatchCodeDeleteRecursive = class(TBackgroundWorker)
   public
-    FCodeID: String;
+    FCodeIDs: TStringDynArray;
   protected
     procedure DoHeavyLifting; override;
   end;
@@ -185,7 +185,7 @@ type
     procedure GetCategoricalValue(const AttributeID: String; List: TStrings);
     procedure GetCommonAttributeName(const DocumentID: TStringDynArray; List: TStrings);
     procedure GetDashboardStatistic(out TotalDocument, CodedDocument, TotalCode, TotalCoding, TotalSegmentMemo: Integer);
-    procedure GetRecursiveCount(const CodeID: String; out TotalCode, TotalCoding, TotalMemo: Integer);
+    procedure GetRecursiveCount(const CodeIDs: TStringDynArray; out TotalCode, TotalCoding, TotalMemo: Integer);
     procedure InitializeProject;
     procedure LoadProjectData(const FilePath: String; out DocumentCache: TDocumentCacheArray; out CodeCache: TCodeFlatArray; out TotalDocument, CodedDocument, TotalCode, TotalCoding, TotalSegmentMemo: Integer);
     procedure MoveCode(const TargetID: String; const SourceID: TStringDynArray; DropMode: Integer);
@@ -1031,19 +1031,20 @@ begin
   end;
 end;
 
-procedure TServiceDatabase.GetRecursiveCount(const CodeID: String; out TotalCode, TotalCoding, TotalMemo: Integer);
+procedure TServiceDatabase.GetRecursiveCount(const CodeIDs: TStringDynArray; out TotalCode, TotalCoding, TotalMemo: Integer);
 begin
   TotalCode := 0; TotalCoding := 0; TotalMemo := 0;
+  if Length(CodeIDs) = 0 then Exit;
+  PopulateTempTable('temp_del_roots', CodeIDs);
   FQuery.Close;
   FQuery.SQL.Text :=
     'WITH RECURSIVE descendant_codes(id) AS ( ' +
-    '  SELECT :root_id UNION ALL SELECT codes.id FROM codes ' +
+    '  SELECT id FROM temp_del_roots UNION ALL SELECT codes.id FROM codes ' +
     '  JOIN descendant_codes ON codes.parent_id = descendant_codes.id ' +
     ') SELECT ' +
-    '  (SELECT COUNT(*) FROM descendant_codes) as code_count, ' +
-    '  (SELECT COUNT(*) FROM codings WHERE code_id IN descendant_codes) as coding_count, ' +
-    '  (SELECT COUNT(*) FROM memos WHERE memo_type = ''Code'' AND reference IN descendant_codes) as memo_count';
-  FQuery.Params.ParamByName('root_id').AsString := CodeID;
+    '  (SELECT COUNT(DISTINCT id) FROM descendant_codes) as code_count, ' +
+    '  (SELECT COUNT(DISTINCT id) FROM codings WHERE code_id IN descendant_codes) as coding_count, ' +
+    '  (SELECT COUNT(DISTINCT id) FROM memos WHERE memo_type = ''Code'' AND reference IN descendant_codes) as memo_count';
   FQuery.Open;
   if not FQuery.EOF then
   begin
@@ -1222,6 +1223,7 @@ end;
 procedure TThreadBatchCodeDeleteRecursive.DoHeavyLifting;
 var
   Q: TSQLQuery;
+  i: Integer;
 begin
   Q := TSQLQuery.Create(nil);
   try
@@ -1229,14 +1231,22 @@ begin
     Q.Transaction := FTransaction;
     if not FTransaction.Active then FTransaction.StartTransaction;
     SyncUpdateStatus('Identifying code hierarchy...');
+    FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_del_roots');
+    FConnection.ExecuteDirect('CREATE TEMP TABLE temp_del_roots (id TEXT PRIMARY KEY)');
+    Q.SQL.Text := 'INSERT INTO temp_del_roots (id) VALUES (:id)';
+    Q.Prepare;
+    for i := Low(FCodeIDs) to High(FCodeIDs) do
+    begin
+      Q.Params[0].AsString := FCodeIDs[i];
+      Q.ExecSQL;
+    end;
     FConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_del_codes');
     FConnection.ExecuteDirect('CREATE TEMP TABLE temp_del_codes (id TEXT PRIMARY KEY)');
     Q.SQL.Text := 
       'INSERT INTO temp_del_codes (id) ' +
-      'WITH RECURSIVE descendants(id) AS ( SELECT :root_id UNION ALL ' +
+      'WITH RECURSIVE descendants(id) AS ( SELECT id FROM temp_del_roots UNION ALL ' +
       'SELECT codes.id FROM codes JOIN descendants ON codes.parent_id = descendants.id ) ' +
-      'SELECT id FROM descendants';
-    Q.Params.ParamByName('root_id').AsString := FCodeID;
+      'SELECT DISTINCT id FROM descendants';
     Q.ExecSQL;
     SyncUpdateStatus('Removing associated code memos...');
     FConnection.ExecuteDirect('DELETE FROM memos WHERE memo_type = ''Code'' AND reference IN (SELECT id FROM temp_del_codes)');
