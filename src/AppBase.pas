@@ -391,6 +391,7 @@ procedure TfrmAppBase.ShowStartupDialog(Data: PtrInt);
 var
   Selection: Integer;
   IsFileClean: Boolean;
+  IsDeletionSuccessful: Boolean;
 begin
   frmDialogStartUp := TfrmDialogStartUp.Create(Self);
   try
@@ -400,34 +401,32 @@ begin
   end;
   if Selection = mrYes then
   begin
+    TAppFormat.PrepareFileDialog(dlgNewProject);
     if dlgNewProject.Execute then
     begin
       IsFileClean := True;
       if FileExists(dlgNewProject.FileName) then
       begin
-        if MessageDlg('Overwrite Project', 
-           'The file "' + ExtractFileName(dlgNewProject.FileName) + '" already exists.' + sLineBreak + 
-           'Do you want to overwrite it? All data in the existing project will be lost.', 
+        if MessageDlg('Overwrite Project',
+           'The file "' + ExtractFileName(dlgNewProject.FileName) + '" already exists.' + sLineBreak +
+           'Do you want to overwrite it? All data in the existing project will be lost.',
            mtWarning, [mbYes, mbNo], 0) = mrYes then
         begin
-          try
-            if conMain.Connected then FServiceDatabase.CloseProject;
-            SysUtils.DeleteFile(dlgNewProject.FileName);
-          except
-            on E: Exception do
-            begin
-              MessageDlg('File Locked', 
-                'Could not overwrite the file. It is likely open in another application.' + sLineBreak + 
-                'Error: ' + E.Message, mtError, [mbOK], 0);
-              IsFileClean := False;
-              Application.QueueAsyncCall(@ShowStartupDialog, 0); 
-              Exit; 
-            end;
+          if conMain.Connected then FServiceDatabase.CloseProject;
+          conMain.Connected := False;
+          IsDeletionSuccessful := SysUtils.DeleteFile(dlgNewProject.FileName);
+          if not IsDeletionSuccessful then
+          begin
+            MessageDlg('File Locked',
+              'Could not overwrite the file. It is likely open in another application.', mtError, [mbOK], 0);
+            IsFileClean := False;
+            Application.QueueAsyncCall(@ShowStartupDialog, 0);
+            Exit;
           end;
         end
         else
         begin
-          Application.QueueAsyncCall(@ShowStartupDialog, 0); 
+          Application.QueueAsyncCall(@ShowStartupDialog, 0);
           Exit;
         end;
       end;
@@ -455,6 +454,7 @@ begin
   end
   else if Selection = mrNo then
   begin
+    TAppFormat.PrepareFileDialog(dlgOpenProject);
     if dlgOpenProject.Execute then
     begin
       if not OpenProject(dlgOpenProject.FileName) then
@@ -3167,6 +3167,7 @@ begin
   if not ForceExitEditMode then Exit;
   dlgImport.Filter := 'Text Files (*.txt)|*.txt|All Files (*.*)|*.*';
   dlgImport.Title := 'Select Text Files to Import';
+  TAppFormat.PrepareFileDialog(dlgImport);
   if dlgImport.Execute then
   begin
     Count := TServiceImport.ImportTextFile(conMain, dlgImport.Files);
@@ -3183,6 +3184,7 @@ begin
   if not ForceExitEditMode then Exit;
   dlgImport.Filter := 'Word Processor Files (*.docx;*.odt)|*.docx;*.odt';
   dlgImport.Title := 'Select Word Processor Files to Import';
+  TAppFormat.PrepareFileDialog(dlgImport);
   if dlgImport.Execute then
   begin
     TServiceImport.ImportWordProcessorFile(conMain, dlgImport.Files);
@@ -3197,6 +3199,7 @@ begin
   MessageDlg('Import PDF Files as Plain-Text', 'PDF imports are supported only for machine-readable or accurately OCR-processed text. Image-only pages and encrypted documents will be skipped. Please note that visual layout structures may vary in the extracted text.', mtInformation, [mbOK], 0);
   dlgImport.Filter := 'PDF Documents (*.pdf)|*.pdf';
   dlgImport.Title := 'Select PDF Files to Import';
+  TAppFormat.PrepareFileDialog(dlgImport);
   if dlgImport.Execute then
   begin
     TServiceImport.ImportPDFDocument(conMain, dlgImport.Files);
@@ -3209,6 +3212,7 @@ procedure TfrmAppBase.mniDocumentImportSheetClick(Sender: TObject);
 begin
   if not ForceExitEditMode then Exit;
   dlgImport.Filter := 'Spreadsheet Files (*.xlsx;*.ods)|*.xlsx;*.ods';
+  TAppFormat.PrepareFileDialog(dlgImport);
   if not dlgImport.Execute then Exit;
   if TServiceImport.ImportSpreadsheet(conMain, dlgImport.FileName) then
   begin
@@ -3221,6 +3225,7 @@ procedure TfrmAppBase.mniDocumentImportJSONClick(Sender: TObject);
 begin
   if not ForceExitEditMode then Exit;
   dlgImport.Filter := 'Structured Data (*.json)|*.json';
+  TAppFormat.PrepareFileDialog(dlgImport);
   if not dlgImport.Execute then Exit;
   if TServiceImport.ImportJSON(conMain, dlgImport.FileName) then
   begin
@@ -3233,6 +3238,7 @@ procedure TfrmAppBase.mniDocumentImportSQLiteClick(Sender: TObject);
 begin
   if not ForceExitEditMode then Exit;
   dlgImport.Filter := 'SQLite Database (*.sqlite;*.db;*.db3)|*.sqlite;*.db;*.db3';
+  TAppFormat.PrepareFileDialog(dlgImport);
   if not dlgImport.Execute then Exit;
   if TServiceImport.ImportSQLite(conMain, dlgImport.FileName) then
   begin
@@ -3252,6 +3258,7 @@ begin
     MessageDlg('No Documents', 'There are no documents to export in the current scope.', mtInformation, [mbOK], 0);
     Exit;
   end;
+  TAppFormat.PrepareFileDialog(dlgExportDirectory);
   if not dlgExportDirectory.Execute then Exit;
   if TServiceExport.ExportDocumentText(conMain, dlgExportDirectory.FileName, DocumentID) then
     MessageDlg('Success', 'Documents exported successfully.', mtInformation, [mbOK], 0);
@@ -3276,6 +3283,7 @@ begin
   dlgExportCodebook.Title := 'Export Documents';
   dlgExportCodebook.DefaultExt := '.xlsx';
   dlgExportCodebook.Filter := 'Excel Spreadsheet (*.xlsx)|*.xlsx|OpenDocument Spreadsheet (*.ods)|*.ods';
+  TAppFormat.PrepareFileDialog(dlgExportCodebook);
   if not dlgExportCodebook.Execute then Exit;
   if LowerCase(ExtractFileExt(dlgExportCodebook.FileName)) = '.ods' then
     TargetFormat := sfOpenDocument
@@ -3299,6 +3307,7 @@ begin
   dlgExportCodebook.Title := 'Export Documents';
   dlgExportCodebook.DefaultExt := '.json';
   dlgExportCodebook.Filter := 'JSON Structured Data (*.json)|*.json';
+  TAppFormat.PrepareFileDialog(dlgExportCodebook);
   if not dlgExportCodebook.Execute then Exit;
   if TServiceExport.ExportDocumentJSON(conMain, dlgExportCodebook.FileName, DocumentID) then
     MessageDlg('Success', 'Documents exported successfully.', mtInformation, [mbOK], 0);
@@ -3318,6 +3327,7 @@ begin
   dlgExportCodebook.Title := 'Export Documents';
   dlgExportCodebook.DefaultExt := '.xml';
   dlgExportCodebook.Filter := 'XML Structured Data (*.xml)|*.xml';
+  TAppFormat.PrepareFileDialog(dlgExportCodebook);
   if not dlgExportCodebook.Execute then Exit;
   if TServiceExport.ExportDocumentXML(conMain, dlgExportCodebook.FileName, DocumentID) then
     MessageDlg('Success', 'Documents exported successfully.', mtInformation, [mbOK], 0);
@@ -3327,6 +3337,7 @@ procedure TfrmAppBase.mniCodeSystemImportClick(Sender: TObject);
 begin
   if not ForceExitEditMode then Exit;
   dlgImport.Filter := 'Code System (*.json)|*.json';
+  TAppFormat.PrepareFileDialog(dlgImport);
   if not dlgImport.Execute then Exit;
   if TServiceImport.ImportCodeSystem(conMain, dlgImport.FileName) then
   begin
@@ -3344,6 +3355,7 @@ begin
     MessageDlg('Action Locked', 'The code system is currently under a temporary custom sort. To release the lock, either reset the sort or make the current order permanent before exporting.', mtInformation, [mbOK], 0);
     Exit;
   end;
+  TAppFormat.PrepareFileDialog(dlgExportSystem);
   if not dlgExportSystem.Execute then Exit;
   try
     if TServiceExport.ExportCodeSystem(qryUtil, dlgExportSystem.FileName) then
@@ -3359,6 +3371,7 @@ end;
 procedure TfrmAppBase.mniCodebookExportClick(Sender: TObject);
 begin
   if not ForceExitEditMode then Exit;
+  TAppFormat.PrepareFileDialog(dlgExportCodebook);
   if not dlgExportCodebook.Execute then Exit;
   try
     if TServiceExport.ExportCodebook(conMain, dlgExportCodebook.FileName) then
@@ -3406,6 +3419,7 @@ begin
   if not ForceExitEditMode then Exit;
   BaseName := ChangeFileExt(ExtractFileName(conMain.DatabaseName), '');
   dlgSnapshotSave.FileName := BaseName + '-Snapshot-' + FormatDateTime('yyyymmdd-hhnnss', Now) + '.lattice';
+  TAppFormat.PrepareFileDialog(dlgSnapshotSave);
   if dlgSnapshotSave.Execute then
   begin
     if FileExists(dlgSnapshotSave.FileName) then SysUtils.DeleteFile(dlgSnapshotSave.FileName);

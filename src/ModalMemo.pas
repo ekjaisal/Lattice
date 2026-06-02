@@ -644,6 +644,7 @@ var
   Node: PVirtualNode;
 begin
   if vstMemo.RootNodeCount = 0 then Exit;
+  TAppFormat.PrepareFileDialog(dlgExport);
   if not dlgExport.Execute then Exit;
   IDList := '';
   if vstMemo.SelectedCount > 0 then

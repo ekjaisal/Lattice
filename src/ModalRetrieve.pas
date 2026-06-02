@@ -2002,6 +2002,7 @@ begin
     MessageDlg('No Data', 'Please perform a retrieval before exporting.', mtInformation, [mbOK], 0);
     Exit;
   end;
+  TAppFormat.PrepareFileDialog(dlgExport);
   if not dlgExport.Execute then Exit;
   ExportFieldArray := GetExportFieldList;
   SortDescription := GetSortDescription;

@@ -21,17 +21,34 @@ unit AppFormat;
 
 interface
 
+uses
+  Dialogs;
+
 type
   TAppFormat = class
   public
-    class function Pluralize(Count: Integer; const Singular, Plural: String): String;
     class function FormatUIHint(const AText: String): String;
+    class function Pluralize(Count: Integer; const Singular, Plural: String): String;
+    class procedure PrepareFileDialog(ADialog: TFileDialog);
   end;
 
 implementation
 
 uses
   LazUTF8, SysUtils;
+
+class procedure TAppFormat.PrepareFileDialog(ADialog: TFileDialog);
+var
+  InitialDirectory: String;
+begin
+  if ADialog.FileName <> '' then
+  begin
+    InitialDirectory := ExtractFilePath(ADialog.FileName);
+    if InitialDirectory <> '' then
+      ADialog.InitialDir := InitialDirectory;
+    ADialog.FileName := ExtractFileName(ADialog.FileName);
+  end;
+end;
 
 class function TAppFormat.Pluralize(Count: Integer; const Singular, Plural: String): String;
 begin

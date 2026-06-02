@@ -2386,7 +2386,9 @@ var
   Node: PVirtualNode;
 begin
   if not Assigned(vstResultGrid) or (vstResultGrid.RootNodeCount = 0) then Exit;
-  if not Assigned(dlgExportData) or not dlgExportData.Execute then Exit;
+  if not Assigned(dlgExportData) then Exit;
+  TAppFormat.PrepareFileDialog(dlgExportData);
+  if not dlgExportData.Execute then Exit;
   ColCount := vstResultGrid.Header.Columns.Count;
   RowCount := vstResultGrid.RootNodeCount;
   SetLength(Header, ColCount);
@@ -2594,7 +2596,9 @@ var
   CurrentLimit: Integer;
 begin
   if FAnalysisState <> asComplete then Exit;
-  if not Assigned(dlgSaveVisualization) or not dlgSaveVisualization.Execute then Exit;
+  if not Assigned(dlgSaveVisualization) then Exit;
+  TAppFormat.PrepareFileDialog(dlgSaveVisualization);
+  if not dlgSaveVisualization.Execute then Exit;
   RequestedWidth := FVirtualWidth;
   RequestedHeight := FVirtualHeight;
   Margin := MulDiv(38, Font.PixelsPerInch, 96);
