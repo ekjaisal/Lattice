@@ -79,7 +79,7 @@ Lattice is built and shipped with a ready-to-set-up installer. However, if requi
 
 ### Build Prerequisites
 
-1. [Lazarus](https://www.lazarus-ide.org) IDE v4.6 or later
+1. [Lazarus IDE](https://www.lazarus-ide.org) v4.6 or later
 
 2. [Free Pascal Compiler](https://www.freepascal.org) v3.2.2 (included with the Lazarus IDE)
 
