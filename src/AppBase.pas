@@ -51,7 +51,6 @@ type
     dlgImport: TOpenDialog;
     dlgNewProject: TSaveDialog;
     dlgOpenProject: TOpenDialog;
-    dlgPickColor: TColorDialog;
     edtCodeSearch: TEdit;
     edtDocumentSearch: TEdit;
     edtReadSearch: TEdit;
@@ -315,9 +314,9 @@ implementation
 
 uses
   Clipbrd, fpjson, fpsTypes, jsonparser, LazFileUtils, LazUTF8, AppFont, AppFormat,
-  AppIdentity, DialogAbout, DialogEditor, DialogFilter, DialogInput, DialogProgress,
-  DialogSort, DialogStartup, ModalAnalyse, ModalAttribute, ModalMemo, ModalRetrieve,
-  ServiceExport, ServiceImport, ServiceMemo;
+  AppIdentity, DialogAbout, DialogEditor, DialogFilter, DialogInput, DialogPalette,
+  DialogProgress, DialogSort, DialogStartup, ModalAnalyse, ModalAttribute, ModalMemo,
+  ModalRetrieve, ServiceExport, ServiceImport, ServiceMemo;
 
 {$R *.lfm}
 
@@ -539,20 +538,15 @@ begin
 end;
 
 function TfrmAppBase.GetNextColor: TColor;
-const Palette: array[0..19] of TColor = (
-  $00693A5C, $001E1C8B, $006E421D, $00155E1E, $004A248C,
-  $00004FA6, $00095975, $00575C10, $00263A5E, $00323338,
-  $00805B8E, $003F3CC4, $0091623B, $00378A41, $006F4AB8,
-  $00146FD9, $001D7F9E, $007D822E, $003F5785, $0054555E
-);
-var Count: Integer;
+var
+  Count: Integer;
 begin
   qryCheck.Close;
   qryCheck.SQL.Text := 'SELECT count(*) FROM codes';
   try
     qryCheck.Open;
     Count := qryCheck.Fields[0].AsInteger;
-    Result := Palette[Count mod 20];
+    Result := APP_PALETTE[Count mod 20];
   finally
     qryCheck.Close;
   end;
@@ -2780,12 +2774,13 @@ end;
 procedure TfrmAppBase.mniTreeCodeColorChangeClick(Sender: TObject);
 var
   CodeIDs: TStringDynArray;
+  NewColor: TColor;
 begin
   CodeIDs := FControllerTreeCode.GetSelectedID;
   if Length(CodeIDs) = 0 then Exit;
-  if dlgPickColor.Execute then
+  if TfrmDialogPalette.Execute(NewColor) then
   begin
-    FServiceDatabase.UpdateCodeColorBatch(CodeIDs, dlgPickColor.Color);
+    FServiceDatabase.UpdateCodeColorBatch(CodeIDs, NewColor);
     RefreshCodeTree; 
     LoadCodingForCurrentDocument;
     if Assigned(FRenderDocument) then FRenderDocument.Invalidate;

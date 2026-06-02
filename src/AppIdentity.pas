@@ -22,7 +22,7 @@ unit AppIdentity;
 interface
 
 uses
-  Cairo, BridgeLibrary;
+  Cairo, Graphics, BridgeLibrary;
 
 var
   APP_ATTRIBUTION: String;
@@ -37,6 +37,7 @@ const
   APP_URL = 'https://lattice.jaisal.in';
   DEV_SPONSOR = 'https://sponsor.jaisal.in';
   DEV_URL = 'https://jaisal.in';
+
   APP_LOGO_SVG =
     '<svg width="100%" height="100%" viewBox="0 0 3515 2999" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve"' +
     'xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">' +
@@ -152,6 +153,13 @@ const
         '<stop offset="1" style="stop-color:rgb(255,200,140);stop-opacity:1"/><stop offset="1" style="stop-color:white;stop-opacity:1"/></linearGradient>' +
     '</defs>' +
 '   </svg>';
+
+  APP_PALETTE: array[0..19] of TColor = (
+    $00693A5C, $001E1C8B, $006E421D, $00155E1E, $004A248C,
+    $00004FA6, $00095975, $00575C10, $00263A5E, $00323338,
+    $00805B8E, $003F3CC4, $0091623B, $00378A41, $006F4AB8,
+    $00146FD9, $001D7F9E, $007D822E, $003F5785, $0054555E
+  );
 
 procedure RenderAppLogo(cr: Pcairo_t; const AX, AY, ARequestedHeight: Double);
 
