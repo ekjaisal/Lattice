@@ -48,7 +48,12 @@ A Lattice analysis project is a single file. The user interface is, and will pro
 
 ## Usage
 
-1. Download the installer from the [Releases](https://github.com/ekjaisal/Lattice/releases/latest) page or from [https://lattice.jaisal.in](https://lattice.jaisal.in).
+1. Download the latest installer from any of the following sources:
+
+   * Project [Homepage](https://lattice.jaisal.in)
+   * GitHub [Releases](https://github.com/ekjaisal/Lattice/releases/latest)
+   * [Zenodo](https://doi.org/10.5281/zenodo.20271310)
+   * [SourceForge](https://sourceforge.net/projects/lattice)
 
 2. Install and launch the application.
 > [!NOTE]
