@@ -2527,42 +2527,70 @@ end;
 
 procedure TfrmAppBase.pmnTreeCodePopup(Sender: TObject);
 var
-  SelCount, TotalCount: Integer;
-  IsAnalytical: Boolean;
-  P: TPoint;
-  HitInfo: THitInfo;
-  TargetNode, Node: PVirtualNode;
-  AllExpanded, AllCollapsed: Boolean;
+  SelectionCount, TotalCount, Index: Integer;
+  IsAnalytical, IsContiguousBlock, AllExpanded, AllCollapsed: Boolean;
+  CursorPoint: TPoint;
+  HitInformation: THitInfo;
+  TargetNode, CurrentNode: PVirtualNode;
+  NodeArray: TNodeArray;
 begin
-  SelCount := vstCode.SelectedCount;
+  SelectionCount := vstCode.SelectedCount;
   TotalCount := 0;
-  Node := vstCode.GetFirst;
-  while Assigned(Node) do
+  CurrentNode := vstCode.GetFirst;
+  while Assigned(CurrentNode) do
   begin
     Inc(TotalCount);
-    Node := vstCode.GetNext(Node);
+    CurrentNode := vstCode.GetNext(CurrentNode);
   end;
   IsAnalytical := FControllerTreeCode.SortField <> 'sort_order';
-  mniTreeCodeAddSubCode.Enabled := (SelCount = 1) and not IsAnalytical;
-  mniTreeCodeRename.Enabled := (SelCount = 1);
-  mniTreeCodeColorChange.Enabled := (SelCount > 0);
-  mniTreeCodeMemo.Enabled := (SelCount = 1);
-  mniTreeCodeDelete.Enabled := (SelCount > 0) and not IsAnalytical;
-  if SelCount = 0 then
+  IsContiguousBlock := True;
+  if SelectionCount > 1 then
+  begin
+    NodeArray := vstCode.GetSortedSelection(False);
+    for Index := 0 to High(NodeArray) do
+    begin
+      if NodeArray[Index]^.Parent <> NodeArray[0]^.Parent then
+      begin
+        IsContiguousBlock := False;
+        Break;
+      end;
+    end;
+    if IsContiguousBlock then
+    begin
+      for Index := 0 to High(NodeArray) - 1 do
+      begin
+        if NodeArray[Index]^.NextSibling <> NodeArray[Index + 1] then
+        begin
+          IsContiguousBlock := False;
+          Break;
+        end;
+      end;
+    end;
+  end;
+  mniTreeCodeAddSubCode.Enabled := (SelectionCount = 1) and not IsAnalytical;
+  mniTreeCodeRename.Enabled := (SelectionCount = 1);
+  mniTreeCodeColorChange.Enabled := (SelectionCount > 0);
+  mniTreeCodeMemo.Enabled := (SelectionCount = 1);
+  mniTreeCodeDelete.Enabled := (SelectionCount > 0) and not IsAnalytical;
+  mniTreeCodeMoveUp.Enabled := (SelectionCount > 0) and not IsAnalytical and IsContiguousBlock;
+  mniTreeCodeMoveDown.Enabled := (SelectionCount > 0) and not IsAnalytical and IsContiguousBlock;
+  mniTreeCodePromote.Enabled := (SelectionCount > 0) and not IsAnalytical and IsContiguousBlock;
+  mniTreeCodeDemote.Enabled := (SelectionCount > 0) and not IsAnalytical and IsContiguousBlock;
+  if SelectionCount = 0 then
     mniTreeCodeDelete.Caption := 'Delete Code'
-  else if SelCount = 1 then
+  else if SelectionCount = 1 then
     mniTreeCodeDelete.Caption := 'Delete Code'
-  else if (TotalCount > 0) and (SelCount = TotalCount) then
+  else if (TotalCount > 0) and (SelectionCount = TotalCount) then
     mniTreeCodeDelete.Caption := 'Delete All Codes'
   else
     mniTreeCodeDelete.Caption := 'Delete Selected Codes';
-  P := vstCode.ScreenToClient(Mouse.CursorPos);
-  vstCode.GetHitTestInfoAt(P.X, P.Y, True, HitInfo);
-  if Assigned(HitInfo.HitNode) then
+  CursorPoint := vstCode.ScreenToClient(Mouse.CursorPos);
+  vstCode.GetHitTestInfoAt(CursorPoint.X, CursorPoint.Y, True, HitInformation);
+  if Assigned(HitInformation.HitNode) then
   begin
     mniTreeCodeExpandAll.Caption := 'Expand Branch';
     mniTreeCodeCollapseAll.Caption := 'Collapse Branch';
-    TargetNode := HitInfo.HitNode;
+    TargetNode := HitInformation.HitNode;
     mniTreeCodeExpandAll.Enabled := (TargetNode^.ChildCount > 0) and not FControllerTreeCode.IsBranchFullyExpanded(TargetNode);
     mniTreeCodeCollapseAll.Enabled := (TargetNode^.ChildCount > 0) and not FControllerTreeCode.IsBranchFullyCollapsed(TargetNode);
   end
@@ -2572,15 +2600,15 @@ begin
     mniTreeCodeCollapseAll.Caption := 'Collapse All';
     AllExpanded := True;
     AllCollapsed := True;
-    Node := vstCode.GetFirst;
-    while Assigned(Node) do
+    CurrentNode := vstCode.GetFirst;
+    while Assigned(CurrentNode) do
     begin
-      if (Node^.ChildCount > 0) then
+      if (CurrentNode^.ChildCount > 0) then
       begin
-        if not FControllerTreeCode.IsBranchFullyExpanded(Node) then AllExpanded := False;
-        if not FControllerTreeCode.IsBranchFullyCollapsed(Node) then AllCollapsed := False;
+        if not FControllerTreeCode.IsBranchFullyExpanded(CurrentNode) then AllExpanded := False;
+        if not FControllerTreeCode.IsBranchFullyCollapsed(CurrentNode) then AllCollapsed := False;
       end;
-      Node := Node^.NextSibling;
+      CurrentNode := CurrentNode^.NextSibling;
     end;
     mniTreeCodeExpandAll.Enabled := (vstCode.RootNodeCount > 0) and not AllExpanded;
     mniTreeCodeCollapseAll.Enabled := (vstCode.RootNodeCount > 0) and not AllCollapsed;

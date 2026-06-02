@@ -68,6 +68,7 @@ type
     procedure DoFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure DoGetImageIndex(Sender: TBaseVirtualTree; Node: PVirtualNode; Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean; var ImageIndex: Integer);
     procedure DoGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: String);
+    procedure DoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure DoMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure DoMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure DoMouseLeave(Sender: TObject);
@@ -141,6 +142,7 @@ begin
   FTree.OnDragOver := @DoDragOver;
   FTree.OnDragDrop := @DoDragDrop;
   FTree.OnDblClick := @DoDblClick;
+  FTree.OnKeyDown := @DoKeyDown;
   FTree.OnMouseDown := @DoMouseDown;
   FTree.OnMouseMove := @DoMouseMove;
   FTree.OnMouseLeave := @DoMouseLeave;
@@ -155,89 +157,111 @@ procedure TCodeTreeController.LoadData(const AFlatCode: TCodeFlatArray; const Fi
 var
   ChildMap: specialize TDictionary<String, specialize TList<Integer>>;
   RootCodeList: specialize TList<Integer>;
-  i: Integer;
+  Index: Integer;
   ChildList: specialize TList<Integer>;
+  SavedSelection: specialize TDictionary<String, Boolean>;
+  CurrentNode: PVirtualNode;
+  NodeData: PCodeData;
   function AddNodeRecursive(ParentNode: PVirtualNode; CodeIndex: Integer): Integer;
   var
     NewNode: PVirtualNode;
-    NodeData: PCodeData;
-    ChildTotal, c: Integer;
-    ChildList: specialize TList<Integer>;
+    ChildNodeData: PCodeData;
+    ChildTotal, SubIndex: Integer;
+    ChildListRecursive: specialize TList<Integer>;
   begin
     NewNode := FTree.AddChild(ParentNode);
-    NodeData := FTree.GetNodeData(NewNode);
-    NodeData^.ID := AFlatCode[CodeIndex].ID;
-    NodeData^.Name := AFlatCode[CodeIndex].Name;
-    NodeData^.Color := TColor(AFlatCode[CodeIndex].Color);
-    NodeData^.CodingCount := AFlatCode[CodeIndex].UsageCount;
-    NodeData^.HasMemo := AFlatCode[CodeIndex].HasMemo;
-    if NodeData^.ID = FRestoreFocusID then FRestoreFocusNode := NewNode;
-    if NodeData^.ID = FRestoreTopID then FRestoreTopNode := NewNode;
+    ChildNodeData := FTree.GetNodeData(NewNode);
+    ChildNodeData^.ID := AFlatCode[CodeIndex].ID;
+    ChildNodeData^.Name := AFlatCode[CodeIndex].Name;
+    ChildNodeData^.Color := TColor(AFlatCode[CodeIndex].Color);
+    ChildNodeData^.CodingCount := AFlatCode[CodeIndex].UsageCount;
+    ChildNodeData^.HasMemo := AFlatCode[CodeIndex].HasMemo;
+    if ChildNodeData^.ID = FRestoreFocusID then FRestoreFocusNode := NewNode;
+    if ChildNodeData^.ID = FRestoreTopID then FRestoreTopNode := NewNode;
     ChildTotal := 0;
-    if ChildMap.TryGetValue(NodeData^.ID, ChildList) then
+    if ChildMap.TryGetValue(ChildNodeData^.ID, ChildListRecursive) then
     begin
-      for c := 0 to ChildList.Count - 1 do
-        ChildTotal := ChildTotal + AddNodeRecursive(NewNode, ChildList[c]);
+      for SubIndex := 0 to ChildListRecursive.Count - 1 do
+        ChildTotal := ChildTotal + AddNodeRecursive(NewNode, ChildListRecursive[SubIndex]);
     end;
-    NodeData^.TotalCount := NodeData^.CodingCount + ChildTotal;
+    ChildNodeData^.TotalCount := ChildNodeData^.CodingCount + ChildTotal;
     if FilterText = '' then FTree.Expanded[NewNode] := AFlatCode[CodeIndex].IsExpanded;
-    Result := NodeData^.TotalCount;
+    Result := ChildNodeData^.TotalCount;
   end;
 begin
-  FLastFilterText := FilterText;
-  FRestoreFocusID := '';
-  FRestoreTopID := '';
-  FRestoreFocusNode := nil;
-  FRestoreTopNode := nil;
-  if Assigned(FTree.FocusedNode) then
-  begin
-    if Assigned(FTree.GetNodeData(FTree.FocusedNode)) then
-      FRestoreFocusID := PCodeData(FTree.GetNodeData(FTree.FocusedNode))^.ID;
-  end;
-  if Assigned(FTree.TopNode) then
-  begin
-    if Assigned(FTree.GetNodeData(FTree.TopNode)) then
-      FRestoreTopID := PCodeData(FTree.GetNodeData(FTree.TopNode))^.ID;
-  end;
-  FIsBatchOperation := True;
-  FTree.BeginUpdate;
-  ChildMap := specialize TDictionary<String, specialize TList<Integer>>.Create;
-  RootCodeList := specialize TList<Integer>.Create;
+  SavedSelection := specialize TDictionary<String, Boolean>.Create;
   try
-    for i := Low(AFlatCode) to High(AFlatCode) do
+    CurrentNode := FTree.GetFirstSelected;
+    while Assigned(CurrentNode) do
     begin
-      if AFlatCode[i].ParentID = '' then
-        RootCodeList.Add(i)
-      else
-      begin
-        if not ChildMap.TryGetValue(AFlatCode[i].ParentID, ChildList) then
-        begin
-          ChildList := specialize TList<Integer>.Create;
-          ChildMap.Add(AFlatCode[i].ParentID, ChildList);
-        end;
-        ChildList.Add(i);
-      end;
+      NodeData := FTree.GetNodeData(CurrentNode);
+      if Assigned(NodeData) then SavedSelection.AddOrSetValue(NodeData^.ID, True);
+      CurrentNode := FTree.GetNextSelected(CurrentNode);
     end;
-    FTree.Clear;
-    for i := 0 to RootCodeList.Count - 1 do
-      AddNodeRecursive(nil, RootCodeList[i]);
-    if FilterText <> '' then FTree.FullExpand(nil);
+    FLastFilterText := FilterText;
+    FRestoreFocusID := '';
+    FRestoreTopID := '';
+    FRestoreFocusNode := nil;
+    FRestoreTopNode := nil;
+    if Assigned(FTree.FocusedNode) then
+    begin
+      if Assigned(FTree.GetNodeData(FTree.FocusedNode)) then
+        FRestoreFocusID := PCodeData(FTree.GetNodeData(FTree.FocusedNode))^.ID;
+    end;
+    if Assigned(FTree.TopNode) then
+    begin
+      if Assigned(FTree.GetNodeData(FTree.TopNode)) then
+        FRestoreTopID := PCodeData(FTree.GetNodeData(FTree.TopNode))^.ID;
+    end;
+    FIsBatchOperation := True;
+    FTree.BeginUpdate;
+    ChildMap := specialize TDictionary<String, specialize TList<Integer>>.Create;
+    RootCodeList := specialize TList<Integer>.Create;
+    try
+      for Index := Low(AFlatCode) to High(AFlatCode) do
+      begin
+        if AFlatCode[Index].ParentID = '' then
+          RootCodeList.Add(Index)
+        else
+        begin
+          if not ChildMap.TryGetValue(AFlatCode[Index].ParentID, ChildList) then
+          begin
+            ChildList := specialize TList<Integer>.Create;
+            ChildMap.Add(AFlatCode[Index].ParentID, ChildList);
+          end;
+          ChildList.Add(Index);
+        end;
+      end;
+      FTree.Clear;
+      for Index := 0 to RootCodeList.Count - 1 do
+        AddNodeRecursive(nil, RootCodeList[Index]);
+      if FilterText <> '' then FTree.FullExpand(nil);
+      CurrentNode := FTree.GetFirst;
+      while Assigned(CurrentNode) do
+      begin
+        NodeData := FTree.GetNodeData(CurrentNode);
+        if Assigned(NodeData) and SavedSelection.ContainsKey(NodeData^.ID) then
+          FTree.Selected[CurrentNode] := True;
+        CurrentNode := FTree.GetNext(CurrentNode);
+      end;
+    finally
+      for ChildList in ChildMap.Values do ChildList.Free;
+      ChildMap.Free;
+      RootCodeList.Free;
+      FIsBatchOperation := False;
+      FTree.EndUpdate;
+    end;
+    if Assigned(FRestoreFocusNode) then
+    begin
+      FTree.FocusedNode := FRestoreFocusNode;
+    end;
+    if Assigned(FRestoreTopNode) then
+      FTree.TopNode := FRestoreTopNode;
+    if Assigned(FRestoreFocusNode) then
+      FTree.ScrollIntoView(FRestoreFocusNode, False);
   finally
-    for ChildList in ChildMap.Values do ChildList.Free;
-    ChildMap.Free;
-    RootCodeList.Free;
-    FIsBatchOperation := False;
-    FTree.EndUpdate;
+    SavedSelection.Free;
   end;
-  if Assigned(FRestoreFocusNode) then
-  begin
-    FTree.Selected[FRestoreFocusNode] := True;
-    FTree.FocusedNode := FRestoreFocusNode;
-  end;
-  if Assigned(FRestoreTopNode) then
-    FTree.TopNode := FRestoreTopNode
-  else if Assigned(FRestoreFocusNode) then
-    FTree.ScrollIntoView(FRestoreFocusNode, True);
 end;
 
 procedure TCodeTreeController.RefreshTree(const FilterText: String);
@@ -389,19 +413,38 @@ procedure TCodeTreeController.NudgeSelected(NudgeType: Integer);
 var
   NodeArray: TNodeArray;
   FirstNode, LastNode, TargetNode: PVirtualNode;
-  SourceID: TStringDynArray;
-  i: Integer;
+  SourceIDArray: TStringDynArray;
+  Index: Integer;
   TargetID: String;
   TargetData, SourceData: PCodeData;
-  DropModeInt: Integer;
+  DropModeInteger: Integer;
 begin
   if VerifySortLock then Exit;
   NodeArray := FTree.GetSortedSelection(False);
   if Length(NodeArray) = 0 then Exit;
   FirstNode := NodeArray[0];
   LastNode := NodeArray[High(NodeArray)];
+  if Length(NodeArray) > 1 then
+  begin
+    for Index := 0 to High(NodeArray) do
+    begin
+      if NodeArray[Index]^.Parent <> FirstNode^.Parent then
+      begin
+        MessageDlg('Invalid Selection', 'Batch action requires all selected codes to belong to the same parent.', mtWarning, [mbOK], 0);
+        Exit;
+      end;
+    end;
+    for Index := 0 to High(NodeArray) - 1 do
+    begin
+      if NodeArray[Index]^.NextSibling <> NodeArray[Index + 1] then
+      begin
+        MessageDlg('Invalid Selection', 'Please select a continuous block of codes to perform batch action.', mtWarning, [mbOK], 0);
+        Exit;
+      end;
+    end;
+  end;
   TargetNode := nil;
-  DropModeInt := -1;
+  DropModeInteger := -1;
   case NudgeType of
     0:
       begin
@@ -409,7 +452,7 @@ begin
         while (TargetNode <> nil) and (vsSelected in TargetNode^.States) do
           TargetNode := TargetNode^.PrevSibling;
         if TargetNode = nil then Exit;
-        DropModeInt := 1;
+        DropModeInteger := 1;
       end;
     1:
       begin
@@ -417,13 +460,13 @@ begin
         while (TargetNode <> nil) and (vsSelected in TargetNode^.States) do
           TargetNode := TargetNode^.NextSibling;
         if TargetNode = nil then Exit;
-        DropModeInt := 2;
+        DropModeInteger := 2;
       end;
     2:
       begin
         TargetNode := FirstNode^.Parent;
         if (TargetNode = nil) or (TargetNode = FTree.RootNode) then Exit;
-        DropModeInt := 2;
+        DropModeInteger := 2;
       end;
     3:
       begin
@@ -431,26 +474,26 @@ begin
         while (TargetNode <> nil) and (vsSelected in TargetNode^.States) do
           TargetNode := TargetNode^.PrevSibling;
         if TargetNode = nil then Exit;
-        DropModeInt := 0;
+        DropModeInteger := 0;
       end;
   end;
   if TargetNode = nil then Exit;
   TargetData := FTree.GetNodeData(TargetNode);
   TargetID := TargetData^.ID;
-  SetLength(SourceID, Length(NodeArray));
-  for i := 0 to High(NodeArray) do
+  SetLength(SourceIDArray, Length(NodeArray));
+  for Index := 0 to High(NodeArray) do
   begin
-    SourceData := FTree.GetNodeData(NodeArray[i]);
-    SourceID[i] := SourceData^.ID;
-    if (NudgeType = 3) and (FTree.GetNodeLevel(NodeArray[i]) + 1 + GetNodeHeight(NodeArray[i]) > 5) then
+    SourceData := FTree.GetNodeData(NodeArray[Index]);
+    SourceIDArray[Index] := SourceData^.ID;
+    if (NudgeType = 3) and (FTree.GetNodeLevel(NodeArray[Index]) + 1 + GetNodeHeight(NodeArray[Index]) > 5) then
     begin
       MessageDlg('Code Hierarchy Overshoot', 'The code tree hierarchy is limited to six levels. This action is not allowed as it would overshoot the limit.', mtInformation, [mbOK], 0);
       Exit;
     end;
   end;
   try
-    FDatabase.MoveCode(TargetID, SourceID, DropModeInt);
-    if DropModeInt = 0 then FDatabase.SetCodeExpandedState(TargetID, True, False);
+    FDatabase.MoveCode(TargetID, SourceIDArray, DropModeInteger);
+    if DropModeInteger = 0 then FDatabase.SetCodeExpandedState(TargetID, True, False);
     if Assigned(FOnTreeChanged) then Application.QueueAsyncCall(@AsyncRefreshTree, 0);
   except
     on E: Exception do MessageDlg('Database Error', 'Move failed: ' + E.Message, mtError, [mbOK], 0);
@@ -701,6 +744,19 @@ begin
         Application.QueueAsyncCall(@AsyncRefreshTree, 0);
     except
       on E: Exception do MessageDlg('Database Error', 'The move operation failed: ' + E.Message, mtError, [mbOK], 0);
+    end;
+  end;
+end;
+
+procedure TCodeTreeController.DoKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (ssCtrl in Shift) then
+  begin
+    case Key of
+      VK_UP: begin NudgeSelected(0); Key := 0; end;
+      VK_DOWN: begin NudgeSelected(1); Key := 0; end;
+      VK_LEFT: begin NudgeSelected(2); Key := 0; end;
+      VK_RIGHT: begin NudgeSelected(3); Key := 0; end;
     end;
   end;
 end;
