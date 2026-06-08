@@ -27,9 +27,10 @@
       <UseVersionInfo Value="True"/>
       <AutoIncrementBuild Value="True"/>
       <MajorVersionNr Value="1"/>
-      <BuildNr Value="614"/>
+      <RevisionNr Value="1"/>
+      <BuildNr Value="53"/>
       <Language Value="0809"/>
-      <StringTable Comments="Structure Meaning. Foreground Mechanisms." CompanyName="Jaisal E. K." FileDescription="Lattice" InternalName="Lattice" LegalCopyright="© 2026 Jaisal E. K." OriginalFilename="Lattice.exe" ProductName="Lattice" ProductVersion="1.0.0"/>
+      <StringTable Comments="Structure Meaning. Foreground Mechanisms." CompanyName="Jaisal E. K." FileDescription="Lattice" InternalName="Lattice" LegalCopyright="© 2026 Jaisal E. K." OriginalFilename="Lattice.exe" ProductName="Lattice" ProductVersion="1.0.1"/>
     </VersionInfo>
     <BuildModes>
       <Item Name="Debug" Default="True"/>
@@ -250,6 +251,13 @@
       <Unit>
         <Filename Value="src\AppFormat.pas"/>
         <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="src\DialogPalette.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="frmDialogPalette"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit>
     </Units>
   </ProjectOptions>

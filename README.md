@@ -48,7 +48,12 @@ A Lattice analysis project is a single file. The user interface is, and will pro
 
 ## Usage
 
-1. Download the installer from the [Releases](https://github.com/ekjaisal/Lattice/releases/latest) page or from [https://lattice.jaisal.in](https://lattice.jaisal.in).
+1. Download the latest installer from any of the following sources:
+
+   * Project [Homepage](https://lattice.jaisal.in)
+   * GitHub [Releases](https://github.com/ekjaisal/Lattice/releases/latest)
+   * [Zenodo](https://doi.org/10.5281/zenodo.20271310)
+   * [SourceForge](https://sourceforge.net/projects/lattice)
 
 2. Install and launch the application.
 > [!NOTE]
@@ -74,9 +79,9 @@ Lattice is built and shipped with a ready-to-set-up installer. However, if requi
 
 ### Build Prerequisites
 
-1. [Lazarus](https://www.lazarus-ide.org) IDE v4.6 or later
+1. [Lazarus IDE](https://www.lazarus-ide.org) v4.6 or later
 
-2. [Free Pascal Compiler](https://www.freepascal.org) v3.2.2 (included with the Lazarus IDE)
+2. [Free Pascal Compiler](https://www.freepascal.org) v3.2.2 or later (included with the Lazarus IDE)
 
 3. [FPSpreadsheet](https://wiki.freepascal.org/FPSpreadsheet) installed in Lazarus IDE via [Online Package Manager](https://wiki.freepascal.org/Online_Package_Manager)
 
@@ -108,7 +113,7 @@ Lattice is built and shipped with a ready-to-set-up installer. However, if requi
 
 4. **Fetch Dependencies into the Project**
    
-   Clone the Lattice repository, navigate to the `scripts/` directory, and execute the `fetch-dependencies.bat` script to copy all the required `.dll` files (along with their dependencies) from MSYS2 into the `bin/` directory.
+   Clone the Lattice repository, navigate to the `scripts/` directory, and execute the `setup-deps.bat` script to copy all the required `.dll` files (along with their dependencies) from MSYS2 into the `bin/` directory.
 
 5. **Compile the Application**
    

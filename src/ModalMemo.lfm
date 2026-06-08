@@ -249,7 +249,7 @@ object frmModalMemo: TfrmModalMemo
     ClientHeight = 29
     ClientWidth = 1560
     TabOrder = 3
-    object btnClearSelection: TButton
+    object btnSelectionClear: TButton
       AnchorSideLeft.Control = pnlMemoActions
       AnchorSideTop.Control = pnlMemoActions
       AnchorSideBottom.Control = pnlMemoActions
@@ -262,7 +262,7 @@ object frmModalMemo: TfrmModalMemo
       Caption = 'Clear Selection'
       TabOrder = 3
       Visible = False
-      OnClick = btnClearSelectionClick
+      OnClick = btnSelectionClearClick
     end
     object btnEdit: TButton
       AnchorSideTop.Control = pnlMemoActions

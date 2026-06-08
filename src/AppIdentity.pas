@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -22,7 +22,7 @@ unit AppIdentity;
 interface
 
 uses
-  Classes, elfreader, fileinfo, machoreader, SysUtils, winpeimagereader, Cairo, BridgeLibrary;
+  Cairo, Graphics, BridgeLibrary;
 
 var
   APP_ATTRIBUTION: String;
@@ -37,6 +37,7 @@ const
   APP_URL = 'https://lattice.jaisal.in';
   DEV_SPONSOR = 'https://sponsor.jaisal.in';
   DEV_URL = 'https://jaisal.in';
+
   APP_LOGO_SVG =
     '<svg width="100%" height="100%" viewBox="0 0 3515 2999" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve"' +
     'xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">' +
@@ -153,9 +154,19 @@ const
     '</defs>' +
 '   </svg>';
 
+  APP_PALETTE: array[0..19] of TColor = (
+    $00693A5C, $001E1C8B, $006E421D, $00155E1E, $004A248C,
+    $00004FA6, $00095975, $00575C10, $00263A5E, $00323338,
+    $00805B8E, $003F3CC4, $0091623B, $00378A41, $006F4AB8,
+    $00146FD9, $001D7F9E, $007D822E, $003F5785, $0054555E
+  );
+
 procedure RenderAppLogo(cr: Pcairo_t; const AX, AY, ARequestedHeight: Double);
 
 implementation
+
+uses
+  elfreader, fileinfo, machoreader, SysUtils, winpeimagereader;
 
 procedure RenderAppLogo(cr: Pcairo_t; const AX, AY, ARequestedHeight: Double);
 const

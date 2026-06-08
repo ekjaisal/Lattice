@@ -18,7 +18,7 @@ object frmModalAnalyse: TfrmModalAnalyse
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
-  object pnlActions: TPanel
+  object pnlAction: TPanel
     AnchorSideLeft.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
@@ -36,10 +36,10 @@ object frmModalAnalyse: TfrmModalAnalyse
     ClientWidth = 1850
     TabOrder = 0
     object btnClose: TButton
-      AnchorSideTop.Control = pnlActions
-      AnchorSideRight.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
+      AnchorSideRight.Control = pnlAction
       AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 1730
       Height = 29
@@ -52,9 +52,9 @@ object frmModalAnalyse: TfrmModalAnalyse
       TabOrder = 4
     end
     object btnExportData: TButton
-      AnchorSideTop.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnReset
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 1410
       Height = 29
@@ -66,10 +66,10 @@ object frmModalAnalyse: TfrmModalAnalyse
       TabOrder = 2
       OnClick = btnExportDataClick
     end
-    object btnSaveVisualization: TButton
-      AnchorSideTop.Control = pnlActions
+    object btnVisualizationSave: TButton
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnExportData
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 1200
       Height = 29
@@ -79,12 +79,12 @@ object frmModalAnalyse: TfrmModalAnalyse
       BorderSpacing.Right = 10
       Caption = 'Export Visualisation'
       TabOrder = 1
-      OnClick = btnSaveVisualizationClick
+      OnClick = btnVisualizationSaveClick
     end
     object btnReset: TButton
-      AnchorSideTop.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnClose
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 1620
       Height = 29
@@ -97,10 +97,10 @@ object frmModalAnalyse: TfrmModalAnalyse
       OnClick = btnResetClick
     end
     object btnAnalyse: TButton
-      AnchorSideLeft.Control = pnlActions
-      AnchorSideTop.Control = pnlActions
+      AnchorSideLeft.Control = pnlAction
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 20
       Height = 29
@@ -117,7 +117,7 @@ object frmModalAnalyse: TfrmModalAnalyse
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = splMain
-    AnchorSideBottom.Control = pnlActions
+    AnchorSideBottom.Control = pnlAction
     Left = 20
     Height = 821
     Top = 20
@@ -548,7 +548,7 @@ object frmModalAnalyse: TfrmModalAnalyse
               TabOrder = 1
               OnClick = btnCrosstabSelectAllClick
             end
-            object btnCrossClearAll: TButton
+            object btnCrosstabClearAll: TButton
               AnchorSideLeft.Control = btnCrosstabSelectAll
               AnchorSideLeft.Side = asrBottom
               AnchorSideTop.Control = edtSearchCrosstab
@@ -560,7 +560,7 @@ object frmModalAnalyse: TfrmModalAnalyse
               BorderSpacing.Left = 6
               Caption = 'Clear All'
               TabOrder = 2
-              OnClick = btnCrossClearAllClick
+              OnClick = btnCrosstabClearAllClick
             end
           end
           object vstCrosstabCode: TLazVirtualStringTree
@@ -707,7 +707,7 @@ object frmModalAnalyse: TfrmModalAnalyse
             OnChange = edtSearchCloudChange
             OnKeyDown = SearchKeyDown
           end
-          object btnCloudSelectAll: TButton
+          object btnWordCloudSelectAll: TButton
             AnchorSideLeft.Control = pnlCloudTools
             AnchorSideTop.Control = edtSearchCloud
             AnchorSideTop.Side = asrBottom
@@ -717,10 +717,10 @@ object frmModalAnalyse: TfrmModalAnalyse
             Width = 150
             Caption = 'Select All'
             TabOrder = 1
-            OnClick = btnCloudSelectAllClick
+            OnClick = btnWordCloudSelectAllClick
           end
-          object btnCloudClearAll: TButton
-            AnchorSideLeft.Control = btnCloudSelectAll
+          object btnWordCloudClearAll: TButton
+            AnchorSideLeft.Control = btnWordCloudSelectAll
             AnchorSideLeft.Side = asrBottom
             AnchorSideTop.Control = edtSearchCloud
             AnchorSideTop.Side = asrBottom
@@ -731,7 +731,7 @@ object frmModalAnalyse: TfrmModalAnalyse
             BorderSpacing.Left = 6
             Caption = 'Clear All'
             TabOrder = 2
-            OnClick = btnCloudClearAllClick
+            OnClick = btnWordCloudClearAllClick
           end
         end
         object vstWordCloudCode: TLazVirtualStringTree
@@ -1342,7 +1342,7 @@ object frmModalAnalyse: TfrmModalAnalyse
   end
   object splMain: TSplitter
     AnchorSideTop.Control = Owner
-    AnchorSideBottom.Control = pnlActions
+    AnchorSideBottom.Control = pnlAction
     Left = 920
     Height = 841
     Top = 0
@@ -1358,7 +1358,7 @@ object frmModalAnalyse: TfrmModalAnalyse
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = pnlActions
+    AnchorSideBottom.Control = pnlAction
     Left = 932
     Height = 821
     Top = 20

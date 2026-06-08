@@ -1,23 +1,20 @@
 {
- BSD 3-Clause License
- ____________________
- 
  Copyright © 2026, Jaisal E. K.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
- 1. Redistributions of source code must retain the above copyright notice, this
-    list of conditions and the following disclaimer.
- 
- 2. Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
- 
- 3. Neither the name of the copyright holder nor the names of its
-    contributors may be used to endorse or promote products derived from
-    this software without specific prior written permission.
- 
+
+   1. Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+
+   3. Neither the name of the copyright holder nor the names of its
+      contributors may be used to endorse or promote products derived from
+      this software without specific prior written permission.
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,35 +27,43 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 }
 
-{ 
+{
  ==================================================================================
  MonoLexID (https://github.com/ekjaisal/MonoLexID)
  ==================================================================================
- 
- A time-ordered and sortable Universally Unique Identifier (UUID) generator for 
- Object Pascal (Lazarus/Free Pascal), producing identifiers structurally compatible 
- with the RFC 9562 UUIDv7 layout while privileging intra-millisecond monotonicity.
+
+ A time-ordered and sortable Universally Unique Identifier (UUID) generator
+ for Object Pascal (Lazarus/Free Pascal), producing identifiers structurally
+ compatible with the RFC 9562 UUIDv7 layout while privileging intra-millisecond
+ monotonicity.
 
  Generation Policy
- _________________
- 
- 1. Lexicographic Monotonicity: Identifiers are time-ordered at millisecond 
-    precision, ensuring natural sequential sorting, preventing index fragmentation 
+ __________________________________________________________________________________
+
+ 1. Lexicographic Monotonicity: Identifiers are time-ordered at millisecond
+    precision, ensuring natural sequential sorting, preventing index fragmentation,
     and optimising database insertion performance.
- 
- 2. Time Integrity: The generator privileges chronological truth (clock-dependent). 
-    Should the system exhaust the sequence counter (4,096 allocations per millisecond) 
-    or detect a retrograde clock shift, generation is suspended via a CPU spin-wait 
-    loop. It yields (pauses) until physical time advances, so that identifiers are not 
-    generated with a fictitious-future time.
- 
- 3. Cryptographic Uniqueness: To preclude collisions in distributed environments, the 
-    remainder of the string payload is populated using OS-native, cryptographically 
-    secure pseudorandom number generators to minimise collision risk.
+
+ 2. Time Integrity: The generator privileges clock-dependent chronological truth.
+    Should the system exhaust the sequence counter (4,096 allocations per
+    millisecond) or detect a retrograde clock shift, generation is suspended via
+    an adaptive spin/yield loop. It yields (pauses) until physical time advances,
+    so that identifiers are not generated with a fictitious-future time.
+
+ 3. Cryptographic Uniqueness: To preclude collisions in distributed environments,
+    the remainder of the string payload is populated using OS-native,
+    cryptographically secure pseudorandom number generators to minimise collision
+    risk.
+
+ 4. Fail-Closed Under Clock Rollback: If the system clock is stepped backwards and
+    remains so, generation will suspend until physical time catches up or the
+    configurable spin timeout (MonoLexIDSpinTimeoutMS, default 5000 ms) is
+    exceeded. Applications that require fail-open UUID generation under clock
+    instability should not rely on MonoLexID’s time integrity guarantees.
 
  36 Character String Layout (UUIDv7 Compatible Encoding)
- _______________________________________________________
- 
+ __________________________________________________________________________________
+
  • Chars 1-8:   UNIX Timestamp in Milliseconds (Part 1)
  • Char 9:      Hyphen
  • Chars 10-13: UNIX Timestamp in Milliseconds (Part 2)
@@ -83,6 +88,36 @@ unit MonoLexID;
 
 interface
 
+const
+  MonoLexIDVersionMajor = 1;
+  MonoLexIDVersionMinor = 1;
+  MonoLexIDVersionPatch = 0;
+
+type
+  TMonoLexIDBytes = array[0..15] of Byte;
+  TGetTimeMSFunc = function: Int64;
+  TYieldThreadFunc = procedure;
+  TSaveStateFunc = procedure(const SessionNonce: QWord; const ThreadNodeID: QWord; const LastTS: Int64; const LastMonoLexID: TMonoLexIDBytes);
+  TLoadStateFunc = function(const SessionNonce: QWord; const ThreadNodeID: QWord; out LastTS: Int64; out LastMonoLexID: TMonoLexIDBytes): Boolean;
+
+function NewMonoLexID: String;
+function TryNewMonoLexID(out ID: String): Boolean;
+function NewMonoLexIDBytes: TMonoLexIDBytes;
+function TryNewMonoLexIDBytes(out IDBytes: TMonoLexIDBytes): Boolean;
+procedure MonoLexIDFlushState;
+function MonoLexIDReinitialize: Boolean;
+function MonoLexIDGetLastError: String;
+
+var
+  MonoLexIDGetTimeMS: TGetTimeMSFunc;
+  MonoLexIDYieldThread: TYieldThreadFunc;
+  MonoLexIDSaveState: TSaveStateFunc;
+  MonoLexIDLoadState: TLoadStateFunc;
+  MonoLexIDInitError: String;
+  MonoLexIDSpinTimeoutMS: Int64;
+
+implementation
+
 uses
   SysUtils
   {$IFDEF WINDOWS}
@@ -92,39 +127,13 @@ uses
   {$ENDIF};
 
 const
-  MonoLexIDVersionMajor = 1;
-  MonoLexIDVersionMinor = 0;
-  MonoLexIDVersionPatch = 0;
-
-type
-  TMonoLexIDBytes = array[0..15] of Byte;
-  TGetTimeMSFunc = function: Int64;
-  TYieldThreadFunc = procedure;
-
-  TSaveStateFunc = procedure(const SessionNonce: QWord; const ThreadNodeID: QWord; const LastTS: Int64; const LastMonoLexID: TMonoLexIDBytes);
-  TLoadStateFunc = function(const SessionNonce: QWord; const ThreadNodeID: QWord; out LastTS: Int64; out LastMonoLexID: TMonoLexIDBytes): Boolean;
-
-function NewMonoLexID: String;
-function TryNewMonoLexID(out ID: String): Boolean;
-function NewMonoLexIDBytes: TMonoLexIDBytes;
-function TryNewMonoLexIDBytes(out IDBytes: TMonoLexIDBytes): Boolean;
-procedure MonoLexIDFlushState;
-
-var
-  MonoLexIDGetTimeMS: TGetTimeMSFunc;
-  MonoLexIDYieldThread: TYieldThreadFunc;
-  MonoLexIDSaveState: TSaveStateFunc;
-  MonoLexIDLoadState: TLoadStateFunc;
-
-implementation
-
-const
   HexMap: array[0..15] of AnsiChar = '0123456789abcdef';
-  SEQ_MASK_MAX  = $FFF;
-  SEQ_MASK_SEED = $FFF;
-  PERSIST_FREQUENCY = 1024;
-  MAX_SPIN_YIELDS = 100000;
+  SEQ_MASK_MAX         = $FFF;
+  SEQ_MASK_SEED        = $FFF;
+  PERSIST_FREQUENCY    = 1024;
+  MAX_SPIN_YIELDS      = 100000;
   SPIN_SLEEP_THRESHOLD = 100;
+  DEFAULT_SPIN_TIMEOUT = 5000;
 
 type
   TGeneratorState = record
@@ -136,24 +145,31 @@ type
     RndBuf: array[0..1023] of Byte;
     RndIdx: Integer;
     UnpersistedCount: Integer;
-    {$IFNDEF WINDOWS}
+    {$IFDEF UNIX}
     PID: TPid;
     {$ENDIF}
   end;
 
 var
+  GInitFailed: Boolean;
   GSessionNonce: QWord;
+  GInitLock: TRTLCriticalSection;
+  GErrorLock: TRTLCriticalSection;
+  GForkErrorStatus: Integer = 0;
 
 {$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
 var
   GState: TGeneratorState;
   GMonoLexIDLock: TRTLCriticalSection;
+  GLastError: String;
+  GLockInitialized: Boolean;
 {$ELSE}
 threadvar
   GState: TGeneratorState;
+  GLastError: String;
 {$ENDIF}
 
-{$IFNDEF WINDOWS}
+{$IFDEF UNIX}
 var
   GURandomFD: THandle = THandle(-1);
 {$ENDIF}
@@ -180,67 +196,15 @@ end;
 procedure SecureRandom(var Buffer; Count: SizeInt);
 begin
   if not RtlGenRandom(@Buffer, Count) then
-    raise Exception.Create('MonoLexID Generation Failed: Windows CSPRNG is unavailable.');
+    raise Exception.Create('MonoLexID: Windows CSPRNG (RtlGenRandom) is unavailable.');
 end;
 
 procedure DefaultYieldThread;
 begin
   SwitchToThread;
 end;
-{$ELSE}
-procedure SecureRandom(var Buffer; Count: SizeInt);
-var
-  P: PByte;
-  ReadNow, Total: SizeInt;
-begin
-  if GURandomFD = THandle(-1) then
-    raise Exception.Create('MonoLexID Generation Failed: /dev/urandom is not open.');
-
-  P := @Buffer;
-  Total := 0;
-  while Total < Count do
-  begin
-    ReadNow := FileRead(GURandomFD, P[Total], Count - Total);
-    if ReadNow <= 0 then
-      raise Exception.Create('MonoLexID Generation Failed: OS I/O error reading from entropy source.');
-    Inc(Total, ReadNow);
-  end;
-end;
-
-procedure DefaultYieldThread;
-begin
-  Sleep(0);
-end;
-{$ENDIF}
-
-procedure GetBufferedRandom(var Buffer; Count: Integer);
-var
-  Dst: PByte;
-  I: Integer;
-begin
-  {$IFNDEF WINDOWS}
-  if GState.PID <> fpGetpid then
-  begin
-    GState.IsInit := False;
-    GState.PID := fpGetpid;
-  end;
-  {$ENDIF}
-
-  if GState.RndIdx + Count > SizeOf(GState.RndBuf) then
-  begin
-    SecureRandom(GState.RndBuf, SizeOf(GState.RndBuf));
-    GState.RndIdx := 0;
-  end;
-  
-  Dst := @Buffer;
-  for I := 0 to Count - 1 do
-    Dst[I] := GState.RndBuf[GState.RndIdx + I];
-    
-  Inc(GState.RndIdx, Count);
-end;
 
 function DefaultGetUnixTimeMS: Int64;
-{$IFDEF WINDOWS}
 var
   FileTime: TFileTime;
   LL: QWord;
@@ -253,7 +217,33 @@ begin
   LL := (QWord(FileTime.dwHighDateTime) shl 32) or FileTime.dwLowDateTime;
   Result := (LL div 10000) - 11644473600000;
 end;
+
 {$ELSE}
+
+procedure SecureRandom(var Buffer; Count: SizeInt);
+var
+  P: PByte;
+  ReadNow, Total: SizeInt;
+begin
+  if GURandomFD = THandle(-1) then
+    raise Exception.Create('MonoLexID: /dev/urandom is not open.');
+  P := @Buffer;
+  Total := 0;
+  while Total < Count do
+  begin
+    ReadNow := FileRead(GURandomFD, P[Total], Count - Total);
+    if ReadNow <= 0 then
+      raise Exception.Create('MonoLexID: OS I/O error reading from /dev/urandom.');
+    Inc(Total, ReadNow);
+  end;
+end;
+
+procedure DefaultYieldThread;
+begin
+  Sleep(0);
+end;
+
+function DefaultGetUnixTimeMS: Int64;
 var
   TV: BaseUnix.timeval;
 begin
@@ -262,16 +252,53 @@ begin
 end;
 {$ENDIF}
 
-function CompareMonoLexID(const A, B: TMonoLexIDBytes): Integer; inline;
-var
-  I: Integer;
+procedure SetLastError(const Msg: String);
 begin
-  Result := 0;
-  for I := 0 to 15 do
-  begin
-    if A[I] > B[I] then Exit(1);
-    if A[I] < B[I] then Exit(-1);
+{$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
+  EnterCriticalSection(GErrorLock);
+  try
+    GLastError := Msg;
+  finally
+    LeaveCriticalSection(GErrorLock);
   end;
+{$ELSE}
+  GLastError := Msg;
+{$ENDIF}
+end;
+
+function MonoLexIDGetLastError: String;
+begin
+{$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
+  EnterCriticalSection(GErrorLock);
+  try
+    Result := GLastError;
+  finally
+    LeaveCriticalSection(GErrorLock);
+  end;
+{$ELSE}
+  Result := GLastError;
+{$ENDIF}
+end;
+
+procedure GetBufferedRandom(var Buffer; Count: Integer);
+begin
+  if (GState.RndIdx < 0) or (GState.RndIdx > SizeOf(GState.RndBuf)) then
+    raise Exception.Create('MonoLexID: RndBuf index invariant violated.');
+{$IFDEF UNIX}
+  if GState.PID <> fpGetpid then
+  begin
+    GState.IsInit := False;
+    GState.PID := fpGetpid;
+    GState.RndIdx := SizeOf(GState.RndBuf);
+  end;
+{$ENDIF}
+  if GState.RndIdx + Count > SizeOf(GState.RndBuf) then
+  begin
+    SecureRandom(GState.RndBuf, SizeOf(GState.RndBuf));
+    GState.RndIdx := 0;
+  end;
+  Move(GState.RndBuf[GState.RndIdx], Buffer, Count);
+  Inc(GState.RndIdx, Count);
 end;
 
 procedure InitGeneratorState;
@@ -281,15 +308,13 @@ var
   LoadedMonoLexID: TMonoLexIDBytes;
 begin
   RandWord := 0;
-
-  {$IFNDEF WINDOWS}
+{$IFDEF UNIX}
   GState.PID := fpGetpid;
-  {$ENDIF}
-
+{$ENDIF}
   GState.RndIdx := SizeOf(GState.RndBuf);
   GetBufferedRandom(GState.ThreadNodeID, SizeOf(GState.ThreadNodeID));
-
-  if Assigned(MonoLexIDLoadState) and MonoLexIDLoadState(GSessionNonce, GState.ThreadNodeID, LoadedTS, LoadedMonoLexID) then
+  if Assigned(MonoLexIDLoadState) and
+     MonoLexIDLoadState(GSessionNonce, GState.ThreadNodeID, LoadedTS, LoadedMonoLexID) then
   begin
     GState.LastTS := LoadedTS;
     GState.LastMonoLexID := LoadedMonoLexID;
@@ -299,7 +324,6 @@ begin
     GState.LastTS := 0;
     GState.LastMonoLexID := Default(TMonoLexIDBytes);
   end;
-
   GState.Seq := 0;
   GState.UnpersistedCount := 0;
   GetBufferedRandom(RandWord, SizeOf(RandWord));
@@ -307,139 +331,361 @@ begin
   GState.IsInit := True;
 end;
 
-procedure PersistGeneratorState(const TS: Int64; const MonoLexID: TMonoLexIDBytes);
+procedure PersistGeneratorState(const TS: Int64; const ID: TMonoLexIDBytes);
 begin
   if Assigned(MonoLexIDSaveState) then
-    MonoLexIDSaveState(GSessionNonce, GState.ThreadNodeID, TS, MonoLexID);
-  GState.UnpersistedCount := 0;
+  begin
+    try
+      MonoLexIDSaveState(GSessionNonce, GState.ThreadNodeID, TS, ID);
+    except
+      on E: Exception do
+        SetLastError('MonoLexID: State persistence failed: ' + E.Message);
+    end;
+  end;
 end;
 
 procedure MonoLexIDFlushState;
+var
+  DoPersist: Boolean;
+  PersistTS: Int64;
+  PersistID: TMonoLexIDBytes;
 begin
-  if GState.IsInit then PersistGeneratorState(GState.LastTS, GState.LastMonoLexID);
+  if GInitFailed then Exit;
+  DoPersist := False;
+  PersistTS := 0;
+  PersistID := Default(TMonoLexIDBytes);
+  if GState.IsInit then
+  begin
+{$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
+    EnterCriticalSection(GMonoLexIDLock);
+    try
+      if GState.IsInit then
+      begin
+        DoPersist := True;
+        PersistTS := GState.LastTS;
+        PersistID := GState.LastMonoLexID;
+        GState.UnpersistedCount := 0;
+      end;
+    finally
+      LeaveCriticalSection(GMonoLexIDLock);
+    end;
+{$ELSE}
+    DoPersist := True;
+    PersistTS := GState.LastTS;
+    PersistID := GState.LastMonoLexID;
+    GState.UnpersistedCount := 0;
+{$ENDIF}
+  end;
+  if DoPersist then
+    PersistGeneratorState(PersistTS, PersistID);
+end;
+
+function MonoLexIDReinitialize: Boolean;
+begin
+  Result := False;
+  EnterCriticalSection(GInitLock);
+  try
+    try
+{$IFDEF WINDOWS}
+      InitWindowsPreciseTime;
+{$ELSE}
+      if GURandomFD = THandle(-1) then
+      begin
+        GURandomFD := FileOpen('/dev/urandom', fmOpenRead or fmShareDenyNone);
+        if GURandomFD = THandle(-1) then
+        begin
+          MonoLexIDInitError := 'MonoLexID: Cannot open /dev/urandom.';
+          Exit;
+        end;
+      end;
+{$ENDIF}
+      GSessionNonce := 0;
+      SecureRandom(GSessionNonce, SizeOf(GSessionNonce));
+      MonoLexIDInitError := '';
+      Result := True;
+    except
+      on E: Exception do
+        MonoLexIDInitError := 'MonoLexID: Initialization failed: ' + E.Message;
+    end;
+  finally
+    LeaveCriticalSection(GInitLock);
+  end;
+  if Result then
+  begin
+{$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
+    EnterCriticalSection(GMonoLexIDLock);
+    try
+      if GLockInitialized then
+      begin
+        GState.IsInit := False;
+        GState := Default(TGeneratorState);
+      end;
+    finally
+      LeaveCriticalSection(GMonoLexIDLock);
+    end;
+{$ELSE}
+    GState.IsInit := False;
+    GState := Default(TGeneratorState);
+    GState.RndIdx := SizeOf(GState.RndBuf);
+{$ENDIF}
+  end;
+  GInitFailed := not Result;
+end;
+
+{$IFDEF UNIX}
+procedure MonoLexIDForkPrepare; cdecl;
+begin
+  EnterCriticalSection(GInitLock);
+{$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
+  EnterCriticalSection(GMonoLexIDLock);
+  EnterCriticalSection(GErrorLock);
+{$ENDIF}
+end;
+
+procedure MonoLexIDForkParent; cdecl;
+begin
+{$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
+  LeaveCriticalSection(GErrorLock);
+  LeaveCriticalSection(GMonoLexIDLock);
+{$ENDIF}
+  LeaveCriticalSection(GInitLock);
+end;
+
+procedure MonoLexIDForkChild; cdecl;
+var
+  ReadNow: SizeInt;
+begin
+{$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
+  LeaveCriticalSection(GErrorLock);
+  LeaveCriticalSection(GMonoLexIDLock);
+{$ENDIF}
+  GState.IsInit := False;
+  GState := Default(TGeneratorState);
+  GState.RndIdx := SizeOf(GState.RndBuf);
+  GState.PID := fpGetpid;
+  if GURandomFD <> THandle(-1) then
+  begin
+    FileClose(GURandomFD);
+    GURandomFD := THandle(-1);
+  end;
+  GURandomFD := FileOpen('/dev/urandom', fmOpenRead or fmShareDenyNone);
+  if GURandomFD = THandle(-1) then
+  begin
+    GInitFailed := True;
+    GForkErrorStatus := 1;
+  end
+  else
+  begin
+    ReadNow := FileRead(GURandomFD, GSessionNonce, SizeOf(GSessionNonce));
+    if ReadNow <> SizeOf(GSessionNonce) then
+    begin
+      GInitFailed := True;
+      GForkErrorStatus := 2;
+    end
+    else
+    begin
+      GInitFailed := False;
+      GForkErrorStatus := 0;
+    end;
+  end;
+  LeaveCriticalSection(GInitLock);
+end;
+
+function pthread_atfork(prepare: Pointer; parent: Pointer; child: Pointer): Integer;
+  cdecl; external {$IFDEF DARWIN}'libc'{$ELSE}'libpthread'{$ENDIF};
+{$ENDIF}
+
+function IsNewIDCollidingWithLast(const NewID, LastID: TMonoLexIDBytes): Boolean; inline;
+var
+  I: Integer;
+begin
+  for I := 0 to 15 do
+  begin
+    if NewID[I] > LastID[I] then Exit(False);
+    if NewID[I] < LastID[I] then Exit(True);
+  end;
+  Result := True;
 end;
 
 function NewMonoLexIDBytes: TMonoLexIDBytes;
 var
-  CurrentMS: Int64;
+  CurrentMS, SpinDeadline: Int64;
   Seq, RandStep: LongWord;
   RandWord: LongWord;
   RandBytes: array[0..7] of Byte;
-  IsValid, RequiresPersistence: Boolean;
+  IsValid, RequiresPersistence, NeedsSpin: Boolean;
+  SpinReason: Byte;
   SpinCount: Integer;
+  TimeoutMS: Int64;
+  PersistTS: Int64;
+  PersistID: TMonoLexIDBytes;
+  LocalTargetTS: Int64;
 begin
+  if GForkErrorStatus <> 0 then
+  begin
+    EnterCriticalSection(GInitLock);
+    try
+      if GForkErrorStatus = 1 then
+        MonoLexIDInitError := 'MonoLexID: Post-fork /dev/urandom failure.'
+      else if GForkErrorStatus = 2 then
+        MonoLexIDInitError := 'MonoLexID: Post-fork entropy read failure.';
+      GInitFailed := True;
+      GForkErrorStatus := 0;
+    finally
+      LeaveCriticalSection(GInitLock);
+    end;
+  end;
+  if GInitFailed then
+  begin
+    EnterCriticalSection(GInitLock);
+    try
+      raise Exception.Create('MonoLexID: Subsystem failed to initialize. Reason: ' + MonoLexIDInitError);
+    finally
+      LeaveCriticalSection(GInitLock);
+    end;
+  end;
+  if not Assigned(MonoLexIDGetTimeMS) then
+    raise Exception.Create('MonoLexID: MonoLexIDGetTimeMS is nil. Assign a valid time function before use.');
+  if not Assigned(MonoLexIDYieldThread) then
+    raise Exception.Create('MonoLexID: MonoLexIDYieldThread is nil. Assign a valid yield function before use.');
+  TimeoutMS := MonoLexIDSpinTimeoutMS;
+  if TimeoutMS <= 0 then
+    TimeoutMS := DEFAULT_SPIN_TIMEOUT;
   RandWord := 0;
   RandBytes[0] := 0;
-
-  {$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
-  EnterCriticalSection(GMonoLexIDLock);
-  try
-  {$ENDIF}
-
-  if not GState.IsInit then InitGeneratorState;
-
+  RequiresPersistence := False;
+  PersistTS := 0;
+  PersistID := Default(TMonoLexIDBytes);
+  LocalTargetTS := 0;
   repeat
-    IsValid := True;
-    RequiresPersistence := False;
-    GetBufferedRandom(RandBytes, SizeOf(RandBytes));
-
-    RandStep := 1 + (RandBytes[7] and $01);
-
-    CurrentMS := MonoLexIDGetTimeMS();
-
-    SpinCount := 0;
-    while CurrentMS < GState.LastTS do
-    begin
-      if SpinCount > SPIN_SLEEP_THRESHOLD then Sleep(1) else MonoLexIDYieldThread();
+    IsValid := False;
+    NeedsSpin := False;
+    SpinReason := 0;
+{$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
+    EnterCriticalSection(GMonoLexIDLock);
+    try
+{$ENDIF}
+      if not GState.IsInit then InitGeneratorState;
+      GetBufferedRandom(RandBytes, SizeOf(RandBytes));
+      RandStep := 1 + (RandBytes[7] and $01);
       CurrentMS := MonoLexIDGetTimeMS();
-      Inc(SpinCount);
-      if SpinCount > MAX_SPIN_YIELDS then
-        raise Exception.Create('MonoLexID Generation Failed: Clock retrograde timeout.');
-    end;
-
-    if CurrentMS > GState.LastTS then
-    begin
-      GState.LastTS := CurrentMS;
-      GetBufferedRandom(RandWord, SizeOf(RandWord));
-      GState.Seq := RandWord and SEQ_MASK_SEED;
-      RequiresPersistence := True;
-    end
-    else
-    begin
-      Inc(GState.Seq, RandStep);
-      if GState.Seq > SEQ_MASK_MAX then
+      if CurrentMS < GState.LastTS then
       begin
-        SpinCount := 0;
-        repeat
-          if SpinCount > SPIN_SLEEP_THRESHOLD then Sleep(1) else MonoLexIDYieldThread();
-          CurrentMS := MonoLexIDGetTimeMS();
-          Inc(SpinCount);
-          if SpinCount > MAX_SPIN_YIELDS then
-            raise Exception.Create('MonoLexID Generation Failed: Sequence overflow timeout.');
-        until CurrentMS > GState.LastTS;
-
-        GState.LastTS := CurrentMS;
-        GetBufferedRandom(RandWord, SizeOf(RandWord));
-        GState.Seq := RandWord and SEQ_MASK_SEED;
-        RequiresPersistence := True;
+        NeedsSpin := True;
+        SpinReason := 1;
+        LocalTargetTS := GState.LastTS;
+      end
+      else
+      begin
+        if CurrentMS > GState.LastTS then
+        begin
+          GState.LastTS := CurrentMS;
+          GetBufferedRandom(RandWord, SizeOf(RandWord));
+          GState.Seq := RandWord and SEQ_MASK_SEED;
+          RequiresPersistence := True;
+        end
+        else
+        begin
+          Inc(GState.Seq, RandStep);
+          if GState.Seq > SEQ_MASK_MAX then
+          begin
+            NeedsSpin := True;
+            SpinReason := 2;
+            LocalTargetTS := GState.LastTS;
+          end;
+        end;
+        if not NeedsSpin then
+        begin
+          CurrentMS := GState.LastTS;
+          Seq := GState.Seq;
+          Result[0]  := (CurrentMS shr 40) and $FF;
+          Result[1]  := (CurrentMS shr 32) and $FF;
+          Result[2]  := (CurrentMS shr 24) and $FF;
+          Result[3]  := (CurrentMS shr 16) and $FF;
+          Result[4]  := (CurrentMS shr 8)  and $FF;
+          Result[5]  :=  CurrentMS         and $FF;
+          Result[6]  := $70 or ((Seq shr 8) and $0F);
+          Result[7]  :=  Seq and $FF;
+          Result[8]  := $80 or (RandBytes[7] and $3F);
+          Result[9]  := RandBytes[6];
+          Result[10] := RandBytes[5];
+          Result[11] := RandBytes[4];
+          Result[12] := RandBytes[3];
+          Result[13] := RandBytes[2];
+          Result[14] := RandBytes[1];
+          Result[15] := RandBytes[0];
+          if (GState.LastTS > 0) and IsNewIDCollidingWithLast(Result, GState.LastMonoLexID) then
+          begin
+            NeedsSpin := True;
+            SpinReason := 3;
+            LocalTargetTS := GState.LastTS;
+          end
+          else
+          begin
+            GState.LastMonoLexID := Result;
+            Inc(GState.UnpersistedCount);
+            if RequiresPersistence or (GState.UnpersistedCount >= PERSIST_FREQUENCY) then
+            begin
+              RequiresPersistence := True;
+              PersistTS := GState.LastTS;
+              PersistID := Result;
+              GState.UnpersistedCount := 0;
+            end;
+            IsValid := True;
+          end;
+        end;
       end;
+{$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
+    finally
+      LeaveCriticalSection(GMonoLexIDLock);
     end;
-    
-    CurrentMS := GState.LastTS;
-    Seq := GState.Seq;
-
-    Result[0] := (CurrentMS shr 40) and $FF;
-    Result[1] := (CurrentMS shr 32) and $FF;
-    Result[2] := (CurrentMS shr 24) and $FF;
-    Result[3] := (CurrentMS shr 16) and $FF;
-    Result[4] := (CurrentMS shr 8) and $FF;
-    Result[5] := CurrentMS and $FF;
-
-    Result[6] := $70 or ((Seq shr 8) and $0F);
-    Result[7] := Seq and $FF;
-
-    Result[8] := $80 or (RandBytes[7] and $3F);
-    Result[9] := RandBytes[6];
-    Result[10] := RandBytes[5];
-    Result[11] := RandBytes[4];
-    Result[12] := RandBytes[3];
-    Result[13] := RandBytes[2];
-    Result[14] := RandBytes[1];
-    Result[15] := RandBytes[0];
-
-    if GState.LastTS > 0 then
+{$ENDIF}
+    if NeedsSpin then
     begin
-      if CompareMonoLexID(Result, GState.LastMonoLexID) <= 0 then
-      begin
-        SpinCount := 0;
-        repeat
-          if SpinCount > SPIN_SLEEP_THRESHOLD then Sleep(1) else MonoLexIDYieldThread();
-          CurrentMS := MonoLexIDGetTimeMS();
-          Inc(SpinCount);
-          if SpinCount > MAX_SPIN_YIELDS then
-            raise Exception.Create('MonoLexID Generation Failed: Collision mitigation timeout.');
-        until CurrentMS > GState.LastTS;
-
-        GState.LastTS := CurrentMS;
-        GetBufferedRandom(RandWord, SizeOf(RandWord));
-        GState.Seq := RandWord and SEQ_MASK_SEED;
-        IsValid := False;
-        RequiresPersistence := True;
+      SpinDeadline := MonoLexIDGetTimeMS() + TimeoutMS;
+      SpinCount := 0;
+      case SpinReason of
+        1:
+          begin
+            while MonoLexIDGetTimeMS() < LocalTargetTS do
+            begin
+              if MonoLexIDGetTimeMS() > SpinDeadline then
+                raise Exception.Create('MonoLexID: Clock retrograde spin timeout exceeded.');
+              if SpinCount > SPIN_SLEEP_THRESHOLD then Sleep(1) else MonoLexIDYieldThread();
+              Inc(SpinCount);
+              if SpinCount > MAX_SPIN_YIELDS then
+                raise Exception.Create('MonoLexID: Clock retrograde yield count exceeded.');
+            end;
+          end;
+        2:
+          begin
+            while MonoLexIDGetTimeMS() <= LocalTargetTS do
+            begin
+              if MonoLexIDGetTimeMS() > SpinDeadline then
+                raise Exception.Create('MonoLexID: Sequence overflow spin timeout exceeded.');
+              if SpinCount > SPIN_SLEEP_THRESHOLD then Sleep(1) else MonoLexIDYieldThread();
+              Inc(SpinCount);
+              if SpinCount > MAX_SPIN_YIELDS then
+                raise Exception.Create('MonoLexID: Sequence overflow yield count exceeded.');
+            end;
+          end;
+        3:
+          begin
+            while MonoLexIDGetTimeMS() <= LocalTargetTS do
+            begin
+              if MonoLexIDGetTimeMS() > SpinDeadline then
+                raise Exception.Create('MonoLexID: Collision mitigation spin timeout exceeded.');
+              if SpinCount > SPIN_SLEEP_THRESHOLD then Sleep(1) else MonoLexIDYieldThread();
+              Inc(SpinCount);
+              if SpinCount > MAX_SPIN_YIELDS then
+                raise Exception.Create('MonoLexID: Collision mitigation yield count exceeded.');
+            end;
+          end;
       end;
     end;
   until IsValid;
-
-  GState.LastMonoLexID := Result;
-  Inc(GState.UnpersistedCount);
-
-  if RequiresPersistence or (GState.UnpersistedCount >= PERSIST_FREQUENCY) then
-    PersistGeneratorState(GState.LastTS, Result);
-
-  {$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
-  finally
-    LeaveCriticalSection(GMonoLexIDLock);
-  end;
-  {$ENDIF}
+  if RequiresPersistence then
+    PersistGeneratorState(PersistTS, PersistID);
 end;
 
 function TryNewMonoLexIDBytes(out IDBytes: TMonoLexIDBytes): Boolean;
@@ -451,6 +697,7 @@ begin
     on E: Exception do
     begin
       IDBytes := Default(TMonoLexIDBytes);
+      SetLastError(E.Message);
       Result := False;
     end;
   end;
@@ -461,7 +708,7 @@ var
   Bytes: TMonoLexIDBytes;
   I, P: Integer;
 begin
-  Result := ''; 
+  Result := '';
   Bytes := NewMonoLexIDBytes;
   SetLength(Result, 36);
   P := 1;
@@ -472,7 +719,7 @@ begin
       Result[P] := '-';
       Inc(P);
     end;
-    Result[P] := HexMap[Bytes[I] shr 4];
+    Result[P]     := HexMap[Bytes[I] shr 4];
     Result[P + 1] := HexMap[Bytes[I] and $0F];
     Inc(P, 2);
   end;
@@ -487,38 +734,47 @@ begin
     on E: Exception do
     begin
       ID := '';
+      SetLastError(E.Message);
       Result := False;
     end;
   end;
 end;
 
 initialization
-  MonoLexIDGetTimeMS := @DefaultGetUnixTimeMS;
-  MonoLexIDYieldThread := @DefaultYieldThread;
-  MonoLexIDSaveState := nil;
-  MonoLexIDLoadState := nil;
-
-  {$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
+  MonoLexIDGetTimeMS    := @DefaultGetUnixTimeMS;
+  MonoLexIDYieldThread  := @DefaultYieldThread;
+  MonoLexIDSaveState    := nil;
+  MonoLexIDLoadState    := nil;
+  MonoLexIDInitError    := '';
+  MonoLexIDSpinTimeoutMS := DEFAULT_SPIN_TIMEOUT;
+  InitCriticalSection(GInitLock);
+  InitCriticalSection(GErrorLock);
+{$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
   InitCriticalSection(GMonoLexIDLock);
-  {$ENDIF}
-  
-  {$IFDEF WINDOWS}
-  InitWindowsPreciseTime;
-  {$ELSE}
-  GURandomFD := FileOpen('/dev/urandom', fmOpenRead or fmShareDenyNone);
-  if GURandomFD = THandle(-1) then
-    raise Exception.Create('MonoLexID Initialization Failed: Cannot open /dev/urandom.');
-  {$ENDIF}
-
-  GSessionNonce := 0;
-  SecureRandom(GSessionNonce, SizeOf(GSessionNonce));
+  GLockInitialized := True;
+{$ENDIF}
+{$IFDEF UNIX}
+  pthread_atfork(@MonoLexIDForkPrepare, @MonoLexIDForkParent, @MonoLexIDForkChild);
+{$ENDIF}
+  MonoLexIDReinitialize;
 
 finalization
-  {$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
-  DoneCriticalSection(GMonoLexIDLock);
-  {$ENDIF}
-  {$IFNDEF WINDOWS}
-  if GURandomFD <> THandle(-1) then FileClose(GURandomFD);
-  {$ENDIF}
+  MonoLexIDFlushState;
+{$IFDEF MONOLEXID_GLOBAL_MONOTONIC}
+  if GLockInitialized then
+  begin
+    DoneCriticalSection(GMonoLexIDLock);
+    GLockInitialized := False;
+  end;
+{$ENDIF}
+  DoneCriticalSection(GErrorLock);
+  DoneCriticalSection(GInitLock);
+{$IFDEF UNIX}
+  if GURandomFD <> THandle(-1) then
+  begin
+    FileClose(GURandomFD);
+    GURandomFD := THandle(-1);
+  end;
+{$ENDIF}
 
 end.

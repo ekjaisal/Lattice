@@ -64,7 +64,7 @@ object frmDialogSort: TfrmDialogSort
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = pnlActions
+    AnchorSideBottom.Control = pnlAction
     Left = 20
     Height = 123
     Top = 98
@@ -92,7 +92,7 @@ object frmDialogSort: TfrmDialogSort
     )
     TabOrder = 1
   end
-  object pnlActions: TPanel
+  object pnlAction: TPanel
     AnchorSideLeft.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
@@ -109,10 +109,10 @@ object frmDialogSort: TfrmDialogSort
     ClientWidth = 680
     TabOrder = 2
     object btnSort: TButton
-      AnchorSideTop.Control = pnlActions
-      AnchorSideRight.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
+      AnchorSideRight.Control = pnlAction
       AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 580
       Height = 29
@@ -125,9 +125,9 @@ object frmDialogSort: TfrmDialogSort
       TabOrder = 0
     end
     object btnCancel: TButton
-      AnchorSideTop.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnSort
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 470
       Height = 29
@@ -140,9 +140,9 @@ object frmDialogSort: TfrmDialogSort
       TabOrder = 1
     end
     object btnReset: TButton
-      AnchorSideLeft.Control = pnlActions
-      AnchorSideTop.Control = pnlActions
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideLeft.Control = pnlAction
+      AnchorSideTop.Control = pnlAction
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 0
       Height = 29
@@ -154,9 +154,9 @@ object frmDialogSort: TfrmDialogSort
       OnClick = btnResetClick
     end
     object btnPersist: TButton
-      AnchorSideTop.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnCancel
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 230
       Height = 29

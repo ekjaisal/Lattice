@@ -261,7 +261,7 @@ object frmDialogFilter: TfrmDialogFilter
         TabOrder = 0
         OnChange = InputChange
       end
-      object pnlValNumeric: TPanel
+      object pnlValueNumeric: TPanel
         AnchorSideLeft.Control = pnlAttributeInput
         AnchorSideTop.Control = pnlAttributeInput
         AnchorSideRight.Control = pnlAttributeInput
@@ -278,9 +278,9 @@ object frmDialogFilter: TfrmDialogFilter
         TabOrder = 1
         Visible = False
         object fseAttributeValueNum: TFloatSpinEdit
-          AnchorSideLeft.Control = pnlValNumeric
-          AnchorSideTop.Control = pnlValNumeric
-          AnchorSideRight.Control = pnlValNumeric
+          AnchorSideLeft.Control = pnlValueNumeric
+          AnchorSideTop.Control = pnlValueNumeric
+          AnchorSideRight.Control = pnlValueNumeric
           AnchorSideRight.Side = asrBottom
           Left = 0
           Height = 29
@@ -292,10 +292,10 @@ object frmDialogFilter: TfrmDialogFilter
           OnChange = InputChange
         end
         object fseAttributeValueNumEnd: TFloatSpinEdit
-          AnchorSideLeft.Control = pnlValNumeric
+          AnchorSideLeft.Control = pnlValueNumeric
           AnchorSideTop.Control = fseAttributeValueNum
           AnchorSideTop.Side = asrBottom
-          AnchorSideRight.Control = pnlValNumeric
+          AnchorSideRight.Control = pnlValueNumeric
           AnchorSideRight.Side = asrBottom
           Left = 0
           Height = 29
@@ -308,7 +308,7 @@ object frmDialogFilter: TfrmDialogFilter
           Visible = False
         end
       end
-      object pnlValDate: TPanel
+      object pnlValueDate: TPanel
         AnchorSideLeft.Control = pnlAttributeInput
         AnchorSideTop.Control = pnlAttributeInput
         AnchorSideRight.Control = pnlAttributeInput
@@ -324,10 +324,10 @@ object frmDialogFilter: TfrmDialogFilter
         ClientWidth = 680
         TabOrder = 2
         Visible = False
-        object deValDate: TDateEdit
-          AnchorSideLeft.Control = pnlValDate
-          AnchorSideTop.Control = pnlValDate
-          AnchorSideRight.Control = pnlValDate
+        object deValueDate: TDateEdit
+          AnchorSideLeft.Control = pnlValueDate
+          AnchorSideTop.Control = pnlValueDate
+          AnchorSideRight.Control = pnlValueDate
           AnchorSideRight.Side = asrBottom
           Left = 0
           Height = 29
@@ -342,11 +342,11 @@ object frmDialogFilter: TfrmDialogFilter
           TabOrder = 0
           OnChange = InputChange
         end
-        object deValDateEnd: TDateEdit
-          AnchorSideLeft.Control = pnlValDate
-          AnchorSideTop.Control = deValDate
+        object deValueDateEnd: TDateEdit
+          AnchorSideLeft.Control = pnlValueDate
+          AnchorSideTop.Control = deValueDate
           AnchorSideTop.Side = asrBottom
-          AnchorSideRight.Control = pnlValDate
+          AnchorSideRight.Control = pnlValueDate
           AnchorSideRight.Side = asrBottom
           Left = 0
           Height = 29
@@ -382,7 +382,7 @@ object frmDialogFilter: TfrmDialogFilter
       end
     end
   end
-  object pnlActions: TPanel
+  object pnlAction: TPanel
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = pnlOpVal
     AnchorSideTop.Side = asrBottom
@@ -401,8 +401,8 @@ object frmDialogFilter: TfrmDialogFilter
     ClientWidth = 680
     TabOrder = 5
     object btnApply: TButton
-      AnchorSideTop.Control = pnlActions
-      AnchorSideRight.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
+      AnchorSideRight.Control = pnlAction
       AnchorSideRight.Side = asrBottom
       Left = 580
       Height = 29
@@ -414,7 +414,7 @@ object frmDialogFilter: TfrmDialogFilter
       OnClick = btnApplyClick
     end
     object btnClear: TButton
-      AnchorSideTop.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnApply
       Left = 470
       Height = 29
@@ -427,7 +427,7 @@ object frmDialogFilter: TfrmDialogFilter
       OnClick = btnClearClick
     end
     object btnCancel: TButton
-      AnchorSideTop.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnClear
       Left = 360
       Height = 29

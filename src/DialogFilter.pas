@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -22,10 +22,10 @@ unit DialogFilter;
 interface
 
 uses
-  Classes, Controls, Dialogs, ExtCtrls, Forms, Graphics, Spin, StdCtrls, SysUtils,
-  EditBtn, SQLDB, SQLite3Conn;
+  Classes, Controls, ExtCtrls, Forms, Spin, StdCtrls, EditBtn, SQLite3Conn;
 
 type
+  { TfrmDialogFilter }
   TfrmDialogFilter = class(TForm)
     btnApply: TButton;
     btnCancel: TButton;
@@ -33,8 +33,8 @@ type
     cmbAttributeValueCat: TComboBox;
     cmbAttribute: TComboBox;
     cmbOperator: TComboBox;
-    deValDate: TDateEdit;
-    deValDateEnd: TDateEdit;
+    deValueDate: TDateEdit;
+    deValueDateEnd: TDateEdit;
     edtAttributeValueText: TEdit;
     edtBodyText: TEdit;
     edtTitlePattern: TEdit;
@@ -46,14 +46,14 @@ type
     lblFilterFeedback: TLabel;
     lblOperator: TLabel;
     lblTitlePattern: TLabel;
-    pnlActions: TPanel;
+    pnlAction: TPanel;
     pnlAttributeInput: TPanel;
     pnlFeedback: TPanel;
     pnlOpVal: TPanel;
-    pnlValCategorical: TPanel;
-    pnlValDate: TPanel;
-    pnlValNumeric: TPanel;
-    pnlValText: TPanel;
+    pnlValueCategorical: TPanel;
+    pnlValueDate: TPanel;
+    pnlValueNumeric: TPanel;
+    pnlValueText: TPanel;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -82,7 +82,7 @@ var
 implementation
 
 uses
-  Math, StrUtils, AppFont;
+  Math, SysUtils, SQLDB, AppFont;
 
 {$R *.lfm}
 
@@ -176,8 +176,8 @@ begin
     cmbOperator.Enabled := False;
     edtAttributeValueText.Visible := True;
     edtAttributeValueText.Enabled := False;
-    pnlValNumeric.Visible := False;
-    pnlValDate.Visible := False;
+    pnlValueNumeric.Visible := False;
+    pnlValueDate.Visible := False;
     cmbAttributeValueCat.Visible := False;
     Exit;
   end;
@@ -188,13 +188,13 @@ begin
     cmbOperator.Items.Clear;
     edtAttributeValueText.Visible := (AttributeType = 'Text') or (AttributeType = 'URL or Path');
     edtAttributeValueText.Enabled := edtAttributeValueText.Visible;
-    pnlValNumeric.Visible := (AttributeType = 'Numeric');
-    pnlValDate.Visible := (AttributeType = 'Date-Time');
+    pnlValueNumeric.Visible := (AttributeType = 'Numeric');
+    pnlValueDate.Visible := (AttributeType = 'Date-Time');
     cmbAttributeValueCat.Visible := (AttributeType = 'Categorical');
-    if pnlValDate.Visible then
+    if pnlValueDate.Visible then
     begin
-      deValDate.Date := Date;
-      deValDateEnd.Date := Date;
+      deValueDate.Date := Date;
+      deValueDateEnd.Date := Date;
     end;
     if (AttributeType = 'Text') or (AttributeType = 'URL or Path') then
     begin
@@ -239,19 +239,6 @@ begin
   end;
 end;
 
-procedure TfrmDialogFilter.cmbAttributeChange(Sender: TObject);
-begin
-  if FIsLoading then Exit;
-  UpdateOperators;
-  UpdateContextUI;
-end;
-
-procedure TfrmDialogFilter.InputChange(Sender: TObject);
-begin
-  if FIsLoading then Exit;
-  UpdateContextUI;
-end;
-
 procedure TfrmDialogFilter.UpdateContextUI;
 var
   S, AttributeValue, Op: String;
@@ -262,10 +249,10 @@ begin
   NeedsVal := (Op <> 'Is Empty') and (Op <> 'Is Not Empty');
   lblAttributeValue.Visible := NeedsVal;
   pnlAttributeInput.Visible := NeedsVal;
-  if pnlValNumeric.Visible then
+  if pnlValueNumeric.Visible then
     fseAttributeValueNumEnd.Visible := (Op = 'Between');
-  if pnlValDate.Visible then
-    deValDateEnd.Visible := (Op = 'Between');
+  if pnlValueDate.Visible then
+    deValueDateEnd.Visible := (Op = 'Between');
   S := '';
   HasFilters := False;
   if Trim(edtTitlePattern.Text) <> '' then
@@ -286,15 +273,15 @@ begin
     else
     begin
       if edtAttributeValueText.Visible then AttributeValue := edtAttributeValueText.Text
-      else if pnlValNumeric.Visible then 
+      else if pnlValueNumeric.Visible then 
       begin
         AttributeValue := FloatToStr(fseAttributeValueNum.Value);
         if Op = 'Between' then AttributeValue := AttributeValue + ' to ' + FloatToStr(fseAttributeValueNumEnd.Value);
       end
-      else if pnlValDate.Visible then 
+      else if pnlValueDate.Visible then 
       begin
-        AttributeValue := FormatDateTime('yyyy"-"mm"-"dd', deValDate.Date);
-        if Op = 'Between' then AttributeValue := AttributeValue + ' to ' + FormatDateTime('yyyy"-"mm"-"dd', deValDateEnd.Date);
+        AttributeValue := FormatDateTime('yyyy"-"mm"-"dd', deValueDate.Date);
+        if Op = 'Between' then AttributeValue := AttributeValue + ' to ' + FormatDateTime('yyyy"-"mm"-"dd', deValueDateEnd.Date);
       end
       else if cmbAttributeValueCat.Visible then AttributeValue := cmbAttributeValueCat.Text;
       if Trim(AttributeValue) <> '' then
@@ -328,15 +315,15 @@ begin
     Exit;
   end;
   if edtAttributeValueText.Visible then AttributeValue := Trim(edtAttributeValueText.Text)
-  else if pnlValNumeric.Visible then 
+  else if pnlValueNumeric.Visible then 
   begin
     AttributeValue := FloatToStr(fseAttributeValueNum.Value);
     if OpSelection = 'Between' then AttributeValue := AttributeValue + '|' + FloatToStr(fseAttributeValueNumEnd.Value);
   end
-  else if pnlValDate.Visible then 
+  else if pnlValueDate.Visible then 
   begin
-    AttributeValue := FormatDateTime('yyyy"-"mm"-"dd', deValDate.Date);
-    if OpSelection = 'Between' then AttributeValue := AttributeValue + '|' + FormatDateTime('yyyy"-"mm"-"dd', deValDateEnd.Date);
+    AttributeValue := FormatDateTime('yyyy"-"mm"-"dd', deValueDate.Date);
+    if OpSelection = 'Between' then AttributeValue := AttributeValue + '|' + FormatDateTime('yyyy"-"mm"-"dd', deValueDateEnd.Date);
   end
   else if cmbAttributeValueCat.Visible then AttributeValue := Trim(cmbAttributeValueCat.Text);
   if AttributeValue = '' then Exit;
@@ -364,6 +351,19 @@ begin
     Result := ' AND (json_extract(da.attributes, ''$.' + ColumnName + ''') ' + OpStr + ' OR json_extract(da.attributes, ''$.' + ColumnName + ''') IS NULL)'
   else
     Result := ' AND json_extract(da.attributes, ''$.' + ColumnName + ''') ' + OpStr;
+end;
+
+procedure TfrmDialogFilter.cmbAttributeChange(Sender: TObject);
+begin
+  if FIsLoading then Exit;
+  UpdateOperators;
+  UpdateContextUI;
+end;
+
+procedure TfrmDialogFilter.InputChange(Sender: TObject);
+begin
+  if FIsLoading then Exit;
+  UpdateContextUI;
 end;
 
 procedure TfrmDialogFilter.btnApplyClick(Sender: TObject);
@@ -406,7 +406,7 @@ begin
         Dlg.UpdateOperators;
         Dlg.cmbOperator.ItemIndex := Max(0, Dlg.cmbOperator.Items.IndexOf(VAttrOp));
         if Dlg.edtAttributeValueText.Visible then Dlg.edtAttributeValueText.Text := VAttrVal
-        else if Dlg.pnlValNumeric.Visible then 
+        else if Dlg.pnlValueNumeric.Visible then 
         begin
           PipePos := Pos('|', VAttrVal);
           if PipePos > 0 then
@@ -421,17 +421,17 @@ begin
             Dlg.fseAttributeValueNum.Value := StrToFloatDef(SafeValueFirst, 0);
           end;
         end
-        else if Dlg.pnlValDate.Visible then
+        else if Dlg.pnlValueDate.Visible then
         begin
           PipePos := Pos('|', VAttrVal);
           if PipePos > 0 then
           begin
-            if TryStrToDate(Copy(VAttrVal, 1, PipePos - 1), DummyDate, FmtSettings) then Dlg.deValDate.Date := DummyDate else Dlg.deValDate.Date := Date;
-            if TryStrToDate(Copy(VAttrVal, PipePos + 1, MaxInt), DummyDate, FmtSettings) then Dlg.deValDateEnd.Date := DummyDate else Dlg.deValDateEnd.Date := Date;
+            if TryStrToDate(Copy(VAttrVal, 1, PipePos - 1), DummyDate, FmtSettings) then Dlg.deValueDate.Date := DummyDate else Dlg.deValueDate.Date := Date;
+            if TryStrToDate(Copy(VAttrVal, PipePos + 1, MaxInt), DummyDate, FmtSettings) then Dlg.deValueDateEnd.Date := DummyDate else Dlg.deValueDateEnd.Date := Date;
           end else
           begin
-            if TryStrToDate(VAttrVal, DummyDate, FmtSettings) then Dlg.deValDate.Date := DummyDate else Dlg.deValDate.Date := Date;
-            Dlg.deValDateEnd.Date := Date;
+            if TryStrToDate(VAttrVal, DummyDate, FmtSettings) then Dlg.deValueDate.Date := DummyDate else Dlg.deValueDate.Date := Date;
+            Dlg.deValueDateEnd.Date := Date;
           end;
         end
         else if Dlg.cmbAttributeValueCat.Visible then Dlg.cmbAttributeValueCat.ItemIndex := Dlg.cmbAttributeValueCat.Items.IndexOf(VAttrVal);
@@ -449,15 +449,15 @@ begin
             OutAttributeID := Dlg.FAttributeID[Dlg.cmbAttribute.ItemIndex];
             OutAttributeOperator := Dlg.cmbOperator.Text;
             if Dlg.edtAttributeValueText.Visible then OutAttributeValue := Trim(Dlg.edtAttributeValueText.Text)
-            else if Dlg.pnlValNumeric.Visible then 
+            else if Dlg.pnlValueNumeric.Visible then 
             begin
               OutAttributeValue := FloatToStr(Dlg.fseAttributeValueNum.Value);
               if OutAttributeOperator = 'Between' then OutAttributeValue := OutAttributeValue + '|' + FloatToStr(Dlg.fseAttributeValueNumEnd.Value);
             end
-            else if Dlg.pnlValDate.Visible then 
+            else if Dlg.pnlValueDate.Visible then 
             begin
-              OutAttributeValue := FormatDateTime('yyyy"-"mm"-"dd', Dlg.deValDate.Date);
-              if OutAttributeOperator = 'Between' then OutAttributeValue := OutAttributeValue + '|' + FormatDateTime('yyyy"-"mm"-"dd', Dlg.deValDateEnd.Date);
+              OutAttributeValue := FormatDateTime('yyyy"-"mm"-"dd', Dlg.deValueDate.Date);
+              if OutAttributeOperator = 'Between' then OutAttributeValue := OutAttributeValue + '|' + FormatDateTime('yyyy"-"mm"-"dd', Dlg.deValueDateEnd.Date);
             end
             else if Dlg.cmbAttributeValueCat.Visible then OutAttributeValue := Trim(Dlg.cmbAttributeValueCat.Text);
             OutAttributeSQL := Dlg.BuildAttributeSQL;

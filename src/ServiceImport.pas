@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -22,7 +22,7 @@ unit ServiceImport;
 interface
 
 uses
-  Classes, SysUtils, fpjson, fpspreadsheet, fpsTypes, SQLDB, SQLite3Conn;
+  Classes, fpjson, fpsTypes, SQLDB, SQLite3Conn;
 
 type
   TImportColumnMap = record
@@ -35,7 +35,6 @@ type
   end;
   TImportColumnMapArray = array of TImportColumnMap;
 
-type
   TServiceImport = class
   private
     class function CleanExtractedText(const RawText: String): String;
@@ -45,9 +44,9 @@ type
     class function GetTextFromODT(const AFileName: String): String;
     class function GetUniqueTitle(AQuery: TSQLQuery; const BaseTitle: String): String;
     class function SanitizeText(const AText: String): String;
-    class procedure RecursiveImportCodingScheme(AQuery: TSQLQuery; JSONArray: TJSONArray; const ParentID: String);
+    class procedure RecursiveImportCodeSystem(AQuery: TSQLQuery; JSONArray: TJSONArray; const ParentID: String);
   public
-    class function ImportCodingScheme(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
+    class function ImportCodeSystem(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
     class function ImportJSON(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
     class function ImportSQLite(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
     class function ImportSpreadsheet(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
@@ -59,9 +58,10 @@ type
 implementation
 
 uses
-  Controls, Dialogs, fpsopendocument, jsonparser, laz2_DOM, laz2_XMLRead, LazFileUtils, LazUTF8,
-  zipper, xlsxOOXML, AppFormat, BridgeLibrary, DialogEditor, DialogInput, DialogProgress, ModalImport,
-  MonoLexID, ServiceParser, ServiceThread;
+  Dialogs, fpsopendocument, fpspreadsheet, jsonparser, laz2_DOM, laz2_XMLRead,
+  LazFileUtils, LazUTF8, SysUtils, zipper, xlsxOOXML, AppFormat, BridgeLibrary,
+  DialogEditor, DialogInput, DialogProgress, ModalImport, MonoLexID, ServiceParser,
+  ServiceThread;
 
 type
   TThreadImportText = class(TBackgroundWorker)
@@ -122,145 +122,6 @@ type
     procedure DoHeavyLifting; override;
   end;
 
-class function TServiceImport.CleanExtractedText(const RawText: String): String;
-var
-  Src, Dest: PChar;
-  Len, DestLen: Integer;
-  C1, C2, C3: Char;
-  ConsecutiveLineBreaks: Integer;
-begin
-  Len := Length(RawText);
-  if Len = 0 then Exit('');
-  SetLength(Result, Len);
-  Src := PChar(RawText);
-  Dest := PChar(Result);
-  DestLen := 0;
-  ConsecutiveLineBreaks := 0;
-  while Src^ <> #0 do
-  begin
-    C1 := Src^;
-    if C1 = #13 then
-    begin
-      Inc(Src);
-      Continue;
-    end;
-    C2 := (Src + 1)^;
-    if C2 <> #0 then
-    begin
-      C3 := (Src + 2)^;
-      if (C1 = #$EF) and (C2 = #$BF) and (C3 = #$BD) then
-      begin
-        Inc(Src, 3);
-        Continue;
-      end;
-      if (C1 = #$EF) and (C2 = #$BF) and (C3 = #$BE) then
-      begin
-        Inc(Src, 3);
-        Continue;
-      end;
-      if (C1 = #$C2) and (C2 = #$AD) then
-      begin
-        Inc(Src, 2);
-        Continue;
-      end;
-    end;
-    if C1 = #10 then
-    begin
-      Inc(ConsecutiveLineBreaks);
-      if ConsecutiveLineBreaks > 2 then
-      begin
-        Inc(Src);
-        Continue;
-      end;
-    end
-    else
-    begin
-      ConsecutiveLineBreaks := 0;
-    end;
-    Dest^ := C1;
-    Inc(Dest);
-    Inc(DestLen);
-    Inc(Src);
-  end;
-  SetLength(Result, DestLen);
-  Result := Trim(Result);
-end;
-
-class function TServiceImport.ExtractTextFromPDF(const FilePath: String): String;
-var
-  MemStream: TMemoryStream;
-  DocumentPointer: FPDF_DOCUMENT;
-  PagePointer: FPDF_PAGE;
-  TextPagePointer: FPDF_TEXTPAGE;
-  PageCount, PageIndex, CharacterCount, BufferSize: Integer;
-  WideBuffer: array of WideChar;
-  TempWide: WideString;
-  ExtractedText: String;
-  Builder: TStringBuilder;
-begin
-  Result := '';
-  if Trim(FilePath) = '' then Exit;
-  MemStream := TMemoryStream.Create;
-  Builder := TStringBuilder.Create;
-  try
-    try
-      MemStream.LoadFromFile(FilePath);
-    except
-      Exit;
-    end;
-    if MemStream.Size = 0 then Exit;
-    DocumentPointer := FPDF_LoadMemDocument(MemStream.Memory, MemStream.Size, nil);
-    if not Assigned(DocumentPointer) then Exit;
-    try
-      PageCount := FPDF_GetPageCount(DocumentPointer);
-      Builder.Capacity := PageCount * 2048;
-      for PageIndex := 0 to PageCount - 1 do
-      begin
-        PagePointer := FPDF_LoadPage(DocumentPointer, PageIndex);
-        if not Assigned(PagePointer) then Continue;
-        try
-          TextPagePointer := FPDFText_LoadPage(PagePointer);
-          if not Assigned(TextPagePointer) then Continue;
-          try
-            CharacterCount := FPDFText_CountChars(TextPagePointer);
-            if CharacterCount > 0 then
-            begin
-              if Length(WideBuffer) < CharacterCount + 2 then
-                SetLength(WideBuffer, CharacterCount + 1024);
-              BufferSize := FPDFText_GetText(TextPagePointer, 0, CharacterCount, @WideBuffer[0]);
-              if BufferSize > 1 then
-              begin
-                SetString(TempWide, PWideChar(@WideBuffer[0]), BufferSize - 1);
-                ExtractedText := CleanExtractedText(UTF8Encode(TempWide));
-                if ExtractedText <> '' then
-                begin
-                  Builder.Append(ExtractedText);
-                  Builder.Append(#10#10);
-                end;
-              end;
-            end;
-          finally
-            FPDFText_ClosePage(TextPagePointer);
-          end;
-        finally
-          FPDF_ClosePage(PagePointer);
-        end;
-      end;
-    finally
-      FPDF_CloseDocument(DocumentPointer);
-    end;
-    Result := Trim(Builder.ToString);
-  finally
-    Builder.Free;
-    MemStream.Free;
-  end;
-end;
-
-class function TServiceImport.GetSafeColumnName(const AttributeID: String): String;
-begin
-  Result := 'attribute_' + Copy(StringReplace(AttributeID, '-', '', [rfReplaceAll]), 1, 16);
-end;
-
 class function TServiceImport.SanitizeText(const AText: String): String;
 var
   i: Integer;
@@ -296,10 +157,10 @@ begin
   AQuery.Close;
 end;
 
-class procedure TServiceImport.RecursiveImportCodingScheme(AQuery: TSQLQuery; JSONArray: TJSONArray; const ParentID: String);
+class procedure TServiceImport.RecursiveImportCodeSystem(AQuery: TSQLQuery; JSONArray: TJSONArray; const ParentID: String);
 var
   i: Integer;
-  NewID: String;
+  NewID, ParsedName: String;
   CodeObj: TJSONObject;
 begin
   for i := 0 to JSONArray.Count - 1 do
@@ -307,23 +168,25 @@ begin
     if JSONArray.Items[i].JSONType <> jtObject then Continue;
     CodeObj := TJSONObject(JSONArray.Items[i]);
     NewID := CodeObj.Get('ID', '');
-    if (NewID = '') or (CodeObj.Get('Name', '') = '') then Continue;
+    if NewID = '' then NewID := NewMonoLexID;
+    ParsedName := CodeObj.Get('Name', '');
     AQuery.Params.ParamByName('g').AsString := NewID;
-    AQuery.Params.ParamByName('n').AsString := CodeObj.Get('Name', '');
+    AQuery.Params.ParamByName('n').AsString := ParsedName;
     AQuery.Params.ParamByName('d').AsString := CodeObj.Get('Description', '');
-    AQuery.Params.ParamByName('c').AsInteger := CodeObj.Get('Color', 8421504); 
+    AQuery.Params.ParamByName('c').AsInteger := CodeObj.Get('Color', 8421504);
     AQuery.Params.ParamByName('p').AsString := ParentID;
     AQuery.ExecSQL;
     if (CodeObj.Find('SubCodes') <> nil) and (CodeObj.Types['SubCodes'] = jtArray) then
-      RecursiveImportCodingScheme(AQuery, CodeObj.Arrays['SubCodes'], NewID);
+      RecursiveImportCodeSystem(AQuery, CodeObj.Arrays['SubCodes'], NewID);
   end;
 end;
 
-class function TServiceImport.ImportCodingScheme(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
+class function TServiceImport.ImportCodeSystem(AConnection: TSQLite3Connection; const AFileName: String): Boolean;
 var
   JSONData: TJSONData;
   FileContent: TStringList;
   Query: TSQLQuery;
+  ErrorCount: Integer;
 begin
   Result := False;
   JSONData := nil;
@@ -353,19 +216,53 @@ begin
       end;
       if (JSONData = nil) or (JSONData.JSONType <> jtArray) then
       begin
-        MessageDlg('Invalid Format', 'The selected file is not a valid coding scheme.', mtError, [mbOK], 0);
+        MessageDlg('Invalid Format', 'The selected file is not a valid code system.', mtError, [mbOK], 0);
         Exit;
       end;
       if TJSONArray(JSONData).Count = 0 then
       begin
-        MessageDlg('Empty Scheme', 'The selected coding scheme contains no codes.', mtInformation, [mbOK], 0);
+        MessageDlg('Empty Code System', 'The selected code system file contains no codes.', mtInformation, [mbOK], 0);
         Exit;
       end;
       if not AConnection.Transaction.Active then AConnection.Transaction.StartTransaction;
       try
-        Query.SQL.Text := 'INSERT INTO codes (id, name, description, color, parent_id) VALUES (:g, :n, :d, :c, :p)';
+        AConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_import_codes');
+        AConnection.ExecuteDirect('CREATE TEMP TABLE temp_import_codes (import_seq INTEGER PRIMARY KEY AUTOINCREMENT, id TEXT, name TEXT, description TEXT, color INTEGER, parent_id TEXT)');
+        Query.SQL.Text := 'INSERT INTO temp_import_codes (id, name, description, color, parent_id) VALUES (:g, :n, :d, :c, :p)';
         Query.Prepare;
-        RecursiveImportCodingScheme(Query, TJSONArray(JSONData), '');
+        RecursiveImportCodeSystem(Query, TJSONArray(JSONData), '');
+        Query.SQL.Text := 'SELECT COUNT(*) FROM temp_import_codes WHERE TRIM(name) = ''''';
+        Query.Open;
+        ErrorCount := Query.Fields[0].AsInteger;
+        Query.Close;
+        if ErrorCount > 0 then
+        begin
+          AConnection.Transaction.Rollback;
+          MessageDlg('Validation Error', Format('Import aborted. The file contains %d %s with an empty name.', [ErrorCount, TAppFormat.Pluralize(ErrorCount, 'code', 'codes')]), mtError, [mbOK], 0);
+          Exit;
+        end;
+        Query.SQL.Text := 'SELECT COUNT(*) FROM (SELECT id FROM temp_import_codes GROUP BY id HAVING COUNT(id) > 1)';
+        Query.Open;
+        ErrorCount := Query.Fields[0].AsInteger;
+        Query.Close;
+        if ErrorCount > 0 then
+        begin
+          AConnection.Transaction.Rollback;
+          MessageDlg('Validation Error', 'Import aborted. The file contains codes with duplicate identifiers.', mtError, [mbOK], 0);
+          Exit;
+        end;
+        Query.SQL.Text := 'SELECT COUNT(*) FROM temp_import_codes t JOIN codes c ON t.id = c.id';
+        Query.Open;
+        ErrorCount := Query.Fields[0].AsInteger;
+        Query.Close;
+        if ErrorCount > 0 then
+        begin
+          AConnection.Transaction.Rollback;
+          MessageDlg('Validation Error', 'Import aborted. The file contains codes that already exist in the current project.', mtError, [mbOK], 0);
+          Exit;
+        end;
+        AConnection.ExecuteDirect('INSERT INTO codes (id, name, description, color, parent_id, sort_order) SELECT id, name, description, color, parent_id, ROW_NUMBER() OVER (PARTITION BY parent_id ORDER BY import_seq) * 10 FROM temp_import_codes');
+        AConnection.ExecuteDirect('DROP TABLE IF EXISTS temp_import_codes');
         AConnection.Transaction.Commit;
         Result := True;
       except
@@ -710,6 +607,140 @@ begin
   end;
 end;
 
+class function TServiceImport.CleanExtractedText(const RawText: String): String;
+var
+  Src, Dest: PChar;
+  Len, DestLen: Integer;
+  C1, C2, C3: Char;
+  ConsecutiveLineBreaks: Integer;
+begin
+  Len := Length(RawText);
+  if Len = 0 then Exit('');
+  SetLength(Result, Len);
+  Src := PChar(RawText);
+  Dest := PChar(Result);
+  DestLen := 0;
+  ConsecutiveLineBreaks := 0;
+  while Src^ <> #0 do
+  begin
+    C1 := Src^;
+    if C1 = #13 then
+    begin
+      Inc(Src);
+      Continue;
+    end;
+    C2 := (Src + 1)^;
+    if C2 <> #0 then
+    begin
+      C3 := (Src + 2)^;
+      if (C1 = #$EF) and (C2 = #$BF) and (C3 = #$BD) then
+      begin
+        Inc(Src, 3);
+        Continue;
+      end;
+      if (C1 = #$EF) and (C2 = #$BF) and (C3 = #$BE) then
+      begin
+        Inc(Src, 3);
+        Continue;
+      end;
+      if (C1 = #$C2) and (C2 = #$AD) then
+      begin
+        Inc(Src, 2);
+        Continue;
+      end;
+    end;
+    if C1 = #10 then
+    begin
+      Inc(ConsecutiveLineBreaks);
+      if ConsecutiveLineBreaks > 2 then
+      begin
+        Inc(Src);
+        Continue;
+      end;
+    end
+    else
+    begin
+      ConsecutiveLineBreaks := 0;
+    end;
+    Dest^ := C1;
+    Inc(Dest);
+    Inc(DestLen);
+    Inc(Src);
+  end;
+  SetLength(Result, DestLen);
+  Result := Trim(Result);
+end;
+
+class function TServiceImport.ExtractTextFromPDF(const FilePath: String): String;
+var
+  MemStream: TMemoryStream;
+  DocumentPointer: FPDF_DOCUMENT;
+  PagePointer: FPDF_PAGE;
+  TextPagePointer: FPDF_TEXTPAGE;
+  PageCount, PageIndex, CharacterCount, BufferSize: Integer;
+  WideBuffer: array of WideChar;
+  TempWide: WideString;
+  ExtractedText: String;
+  Builder: TStringBuilder;
+begin
+  Result := '';
+  if Trim(FilePath) = '' then Exit;
+  MemStream := TMemoryStream.Create;
+  Builder := TStringBuilder.Create;
+  try
+    try
+      MemStream.LoadFromFile(FilePath);
+    except
+      Exit;
+    end;
+    if MemStream.Size = 0 then Exit;
+    DocumentPointer := FPDF_LoadMemDocument(MemStream.Memory, MemStream.Size, nil);
+    if not Assigned(DocumentPointer) then Exit;
+    try
+      PageCount := FPDF_GetPageCount(DocumentPointer);
+      Builder.Capacity := PageCount * 2048;
+      for PageIndex := 0 to PageCount - 1 do
+      begin
+        PagePointer := FPDF_LoadPage(DocumentPointer, PageIndex);
+        if not Assigned(PagePointer) then Continue;
+        try
+          TextPagePointer := FPDFText_LoadPage(PagePointer);
+          if not Assigned(TextPagePointer) then Continue;
+          try
+            CharacterCount := FPDFText_CountChars(TextPagePointer);
+            if CharacterCount > 0 then
+            begin
+              if Length(WideBuffer) < CharacterCount + 2 then
+                SetLength(WideBuffer, CharacterCount + 1024);
+              BufferSize := FPDFText_GetText(TextPagePointer, 0, CharacterCount, @WideBuffer[0]);
+              if BufferSize > 1 then
+              begin
+                SetString(TempWide, PWideChar(@WideBuffer[0]), BufferSize - 1);
+                ExtractedText := CleanExtractedText(UTF8Encode(TempWide));
+                if ExtractedText <> '' then
+                begin
+                  Builder.Append(ExtractedText);
+                  Builder.Append(#10#10);
+                end;
+              end;
+            end;
+          finally
+            FPDFText_ClosePage(TextPagePointer);
+          end;
+        finally
+          FPDF_ClosePage(PagePointer);
+        end;
+      end;
+    finally
+      FPDF_CloseDocument(DocumentPointer);
+    end;
+    Result := Trim(Builder.ToString);
+  finally
+    Builder.Free;
+    MemStream.Free;
+  end;
+end;
+
 procedure TThreadImportPDF.DoHeavyLifting;
 var
   i, SkipCount: Integer;
@@ -800,6 +831,11 @@ begin
   end;
 end;
 
+class function TServiceImport.GetSafeColumnName(const AttributeID: String): String;
+begin
+  Result := 'attribute_' + Copy(StringReplace(AttributeID, '-', '', [rfReplaceAll]), 1, 16);
+end;
+
 procedure TThreadImportSpreadsheet.DoHeavyLifting;
 var
   Workbook: TsWorkbook;
@@ -881,7 +917,7 @@ begin
       QueryAttributeUpdate.SQL.Text := AttributeUpdateSQL;
       QueryAttributeUpdate.Prepare;
     end;
-    SyncUpdateStatus('Importing typed records...');
+    SyncUpdateStatus('Importing records...');
     for r := 1 to Worksheet.GetLastRowIndex do
     begin
       BaseTitle := Trim(Worksheet.ReadAsText(r, FMapping[FTitleIndex].ColumnIndex));
@@ -1124,7 +1160,7 @@ begin
       QueryAttributeUpdate.SQL.Text := AttributeUpdateSQL;
       QueryAttributeUpdate.Prepare;
     end;
-    SyncUpdateStatus('Importing strict typed JSON records...');
+    SyncUpdateStatus('Importing records...');
     for r := 0 to JSONArray.Count - 1 do
     begin
       if JSONArray.Items[r].JSONType <> jtObject then Continue;
@@ -1347,7 +1383,7 @@ begin
       QueryAttributeUpdate.SQL.Text := AttributeUpdateSQL;
       QueryAttributeUpdate.Prepare;
     end;
-    SyncUpdateStatus('Importing typed records...');
+    SyncUpdateStatus('Importing records...');
     QueryImport.SQL.Text := 'SELECT * FROM ' + FTableName;
     QueryImport.Open;
     while not QueryImport.EOF do

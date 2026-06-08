@@ -1,0 +1,90 @@
+object frmDialogPalette: TfrmDialogPalette
+  Left = 500
+  Height = 213
+  Top = 250
+  Width = 360
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsSingle
+  Caption = 'Palette'
+  ClientHeight = 213
+  ClientWidth = 360
+  DesignTimePPI = 144
+  Font.CharSet = ANSI_CHARSET
+  Font.Name = 'Arial'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
+  Position = poMainFormCenter
+  LCLVersion = '4.6.0.0'
+  OnCreate = FormCreate
+  OnDeactivate = FormDeactivate
+  object grdPalette: TDrawGrid
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 0
+    Height = 144
+    Top = 0
+    Width = 360
+    Anchors = [akTop, akLeft, akRight]
+    AutoFillColumns = True
+    BorderStyle = bsNone
+    DefaultColWidth = 72
+    DefaultRowHeight = 36
+    FixedCols = 0
+    FixedRows = 0
+    FocusRectVisible = False
+    RowCount = 4
+    ScrollBars = ssNone
+    TabOrder = 0
+    OnDrawCell = grdPaletteDrawCell
+    OnMouseDown = grdPaletteMouseDown
+  end
+  object btnMore: TButton
+    AnchorSideLeft.Control = grdPalette
+    AnchorSideLeft.Side = asrCenter
+    AnchorSideTop.Control = grdPalette
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Side = asrCenter
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 105
+    Height = 29
+    Top = 164
+    Width = 150
+    Anchors = [akTop, akLeft, akBottom]
+    BorderSpacing.Top = 20
+    BorderSpacing.Bottom = 20
+    Caption = 'More Colours'
+    TabOrder = 1
+    OnClick = btnMoreClick
+  end
+  object dlgPickColor: TColorDialog
+    Title = 'Select Colour'
+    Color = clBlack
+    CustomColors.Strings = (
+      'ColorA=000000'
+      'ColorB=000080'
+      'ColorC=008000'
+      'ColorD=008080'
+      'ColorE=800000'
+      'ColorF=800080'
+      'ColorG=808000'
+      'ColorH=808080'
+      'ColorI=C0C0C0'
+      'ColorJ=0000FF'
+      'ColorK=00FF00'
+      'ColorL=00FFFF'
+      'ColorM=FF0000'
+      'ColorN=FF00FF'
+      'ColorO=FFFF00'
+      'ColorP=FFFFFF'
+      'ColorQ=C0DCC0'
+      'ColorR=F0CAA6'
+      'ColorS=F0FBFF'
+      'ColorT=A4A0A0'
+    )
+    Left = 152
+    Top = 48
+  end
+end

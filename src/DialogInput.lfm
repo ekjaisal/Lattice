@@ -47,7 +47,7 @@ object frmDialogInput: TfrmDialogInput
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = pnlActions
+    AnchorSideBottom.Control = pnlAction
     Left = 20
     Height = 30
     Top = 51
@@ -144,7 +144,7 @@ object frmDialogInput: TfrmDialogInput
       Visible = False
     end
   end
-  object pnlActions: TPanel
+  object pnlAction: TPanel
     AnchorSideLeft.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
@@ -161,10 +161,10 @@ object frmDialogInput: TfrmDialogInput
     ClientWidth = 680
     TabOrder = 1
     object btnOK: TButton
-      AnchorSideTop.Control = pnlActions
-      AnchorSideRight.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
+      AnchorSideRight.Control = pnlAction
       AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 580
       Height = 29
@@ -176,9 +176,9 @@ object frmDialogInput: TfrmDialogInput
       OnClick = btnOKClick
     end
     object btnCancel: TButton
-      AnchorSideTop.Control = pnlActions
+      AnchorSideTop.Control = pnlAction
       AnchorSideRight.Control = btnOK
-      AnchorSideBottom.Control = pnlActions
+      AnchorSideBottom.Control = pnlAction
       AnchorSideBottom.Side = asrBottom
       Left = 470
       Height = 29

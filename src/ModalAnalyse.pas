@@ -1,16 +1,16 @@
 {
  Copyright © 2026 Jaisal E. K.
- 
+
  This program is free software: you can redistribute it and/or modify it
  under the terms of the GNU Affero General Public License as published
  by the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  GNU Affero General Public License for more details.
- 
+
  You should have received a copy of the GNU Affero General Public License
  along with this program. If not, see <https://www.gnu.org/licenses/>.
 }
@@ -22,9 +22,9 @@ unit ModalAnalyse;
 interface
 
 uses
-  Buttons, Classes, ComCtrls, Controls, DB, Dialogs, EditBtn, ExtCtrls, Forms, Generics.Collections,
-  Graphics, Spin, StdCtrls, SysUtils, Types {$IFDEF WINDOWS}, Windows{$ENDIF}, SQLDB, laz.VirtualTrees,
-  Cairo, BridgeLibrary, ServiceDatabase, ServiceVisualize;
+  Buttons, Cairo, Classes, ComCtrls, Controls, Dialogs, EditBtn, ExtCtrls, Forms,
+  Generics.Collections, Graphics, Spin, StdCtrls, Types {$IFDEF WINDOWS}, Windows{$ENDIF},
+  laz.VirtualTrees, BridgeLibrary, ServiceDatabase, ServiceVisualize;
 
 type
   TAttributeCache = record
@@ -47,19 +47,19 @@ type
   TfrmModalAnalyse = class(TForm)
     btnAnalyse: TButton;
     btnClose: TButton;
-    btnCloudClearAll: TButton;
-    btnCloudSelectAll: TButton;
+    btnWordCloudClearAll: TButton;
+    btnWordCloudSelectAll: TButton;
     btnCoOccurrenceXClearAll: TButton;
     btnCoOccurrenceXSelectAll: TButton;
     btnCoOccurrenceYClearAll: TButton;
     btnCoOccurrenceYSelectAll: TButton;
-    btnCrossClearAll: TButton;
+    btnCrosstabClearAll: TButton;
     btnCrosstabSelectAll: TButton;
     btnExportData: TButton;
     btnFrequencyClearAll: TButton;
     btnFrequencySelectAll: TButton;
     btnReset: TButton;
-    btnSaveVisualization: TButton;
+    btnVisualizationSave: TButton;
     btnScopeAttributeApply: TButton;
     btnScopeAttributeClear: TButton;
     btnScopeAttributeClearAll: TButton;
@@ -94,7 +94,7 @@ type
     lblScopeAttributeTitle: TLabel;
     pbxVisualization: TPaintBox;
     pcAnalysisType: TPageControl;
-    pnlActions: TPanel;
+    pnlAction: TPanel;
     pnlAttributeFilterDef: TPanel;
     pnlVisualization: TPanel;
     pnlCloudTools: TPanel;
@@ -154,19 +154,19 @@ type
     procedure FormShow(Sender: TObject);
     procedure SearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure btnAnalyseClick(Sender: TObject);
-    procedure btnCloudClearAllClick(Sender: TObject);
-    procedure btnCloudSelectAllClick(Sender: TObject);
+    procedure btnWordCloudClearAllClick(Sender: TObject);
+    procedure btnWordCloudSelectAllClick(Sender: TObject);
     procedure btnCoOccurrenceXClearAllClick(Sender: TObject);
     procedure btnCoOccurrenceXSelectAllClick(Sender: TObject);
     procedure btnCoOccurrenceYClearAllClick(Sender: TObject);
     procedure btnCoOccurrenceYSelectAllClick(Sender: TObject);
-    procedure btnCrossClearAllClick(Sender: TObject);
+    procedure btnCrosstabClearAllClick(Sender: TObject);
     procedure btnCrosstabSelectAllClick(Sender: TObject);
     procedure btnExportDataClick(Sender: TObject);
     procedure btnFrequencyClearAllClick(Sender: TObject);
     procedure btnFrequencySelectAllClick(Sender: TObject);
     procedure btnResetClick(Sender: TObject);
-    procedure btnSaveVisualizationClick(Sender: TObject);
+    procedure btnVisualizationSaveClick(Sender: TObject);
     procedure btnScopeAttributeApplyClick(Sender: TObject);
     procedure btnScopeAttributeClearAllClick(Sender: TObject);
     procedure btnScopeAttributeClearClick(Sender: TObject);
@@ -221,13 +221,13 @@ type
     FAttributeKey: TStringList;
     FAttributeSortAscending: Boolean;
     FAttributeSortColumn: Integer;
-    FCheckedCloudCode: specialize TDictionary<String, Boolean>;
+    FCheckedWordCloudCode: specialize TDictionary<String, Boolean>;
     FCheckedCoOccurrenceXCode: specialize TDictionary<String, Boolean>;
     FCheckedCoOccurrenceYCode: specialize TDictionary<String, Boolean>;
     FCheckedCrosstabCode: specialize TDictionary<String, Boolean>;
     FCheckedDocumentSet: specialize TDictionary<String, Boolean>;
     FCheckedFrequencyCode: specialize TDictionary<String, Boolean>;
-    FCloudResult: TWordCloudArray;
+    FWordCloudResult: TWordCloudArray;
     FCodeCacheArray: TCodeFlatArray;
     FCodeMap: specialize TDictionary<String, TCodeNodeCache>;
     FCoOccurrenceResult: TCoOccurrenceArray;
@@ -242,7 +242,7 @@ type
     FLastCheckedDocNode: PVirtualNode;
     FLastCheckedNode: PVirtualNode;
     FLastCheckedTree: TBaseVirtualTree;
-    FLastCloudLimit: Integer;
+    FLastWordCloudLimit: Integer;
     FLastMouse: TPoint;
     FPanX, FPanY: Double;
     FServiceDatabase: TServiceDatabase;
@@ -256,7 +256,6 @@ type
     function GetDictionaryForTree(Tree: TLazVirtualStringTree): specialize TDictionary<String, Boolean>;
     function GetFullCodePath(const CodeID: String): String;
     function GetTruncatedCodePath(const CodeID: String; MaxNodeLen: Integer): String;
-    function TruncateText(const S: String; MaxLen: Integer): String;
     procedure ApplyAttributeFilter(const Filter: String);
     procedure ExecuteCoOccurrence;
     procedure ExecuteCoverage;
@@ -269,7 +268,6 @@ type
     procedure LoadCategoricalValue;
     procedure LoadCodeTree(Tree: TLazVirtualStringTree);
     procedure LoadDocumentTree(const FilterText: String);
-    procedure RenderActiveVisualisation(cr: Pcairo_t; AWidth, AHeight: Integer);
     procedure ResetResults;
     procedure ResetViewContext;
     procedure SetupGrid(const ColumnArray: array of String; const ColumnWidthArray: array of Integer; RowCount: Integer);
@@ -284,8 +282,8 @@ var
 implementation
 
 uses
-  LazUTF8, Math, StrUtils, AppBase, AppFont, AppFormat, DialogEditor, DialogProgress,
-  ServiceExport, ServiceThread;
+  LazUTF8, Math, StrUtils, SysUtils, SQLDB, AppBase, AppFont, AppFormat,
+  DialogEditor, DialogProgress, ServiceExport, ServiceThread;
 
 type
   TThreadLoadAnalyseContext = class(TBackgroundWorker)
@@ -325,8 +323,8 @@ type
     FCoOccurrenceResult: TCoOccurrenceArray;
     FCrossResult: TCrosstabArray;
     FCoverageResult: TCoverageArray;
-    FCloudResult: TWordCloudArray;
-    FLimit: Integer; // <-- Added parameter
+    FWordCloudResult: TWordCloudArray;
+    FLimit: Integer;
   private
     FSuccess: Boolean;
     FErrorMessage: String;
@@ -347,7 +345,7 @@ type
     FCoOccurrenceResult: TCoOccurrenceArray;
     FCrossResult: TCrosstabArray;
     FCoverageResult: TCoverageArray;
-    FCloudResult: TWordCloudArray;
+    FWordCloudResult: TWordCloudArray;
     FLimit: Integer;
     PreparedVisualization: TServiceVisualize;
     VWidth, VHeight: Integer;
@@ -364,6 +362,8 @@ type
     property Success: Boolean read FSuccess;
     property ErrorMessage: String read FErrorMessage;
   end;
+
+{$R *.lfm}
 
 procedure TThreadLoadAnalyseContext.DoHeavyLifting;
 var
@@ -414,183 +414,12 @@ begin
   end;
 end;
 
-procedure TThreadExportTable.Execute;
-begin
-  FSuccess := False;
-  FErrorMessage := '';
-  try
-    FSuccess := TServiceExport.ExportDataTable(FHeader, FDataKeys, FGridData, FFileName);
-    if not FSuccess then FErrorMessage := 'Export failed or file is locked.';
-  except
-    on E: Exception do FErrorMessage := E.Message;
-  end;
-  Synchronize(@CloseProgressDialog);
-end;
-
-procedure TThreadExportTable.CloseProgressDialog;
-begin
-  if Assigned(frmDialogProgress) and frmDialogProgress.Visible then
-    frmDialogProgress.ModalResult := mrOk;
-end;
-
-procedure TThreadExportVisualization.Execute;
-var
-  VW, VH, i, c, r, MaxVal, Limit: Integer;
-  ChartData: TChartElementArray;
-  CodeListX, CodeListY, CodeList, AttributeList: TStringList;
-  Matrix: TMatrixData;
-  XLabel, YLabel, LabelArray, LabelStr: array of String;
-  TotalVal, SubVal: array of Double;
-  Word: array of String;
-  Frequency: array of Integer;
-  AttributeString, DocumentName: String;
-begin
-  FSuccess := False;
-  FErrorMessage := '';
-  try
-    FLocalVisualization := TServiceVisualize.Create;
-    try
-      case FActiveAnalysis of
-        0: begin
-             SetLength(ChartData, Length(FFrequencyResult));
-             for i := 0 to High(FFrequencyResult) do
-             begin
-               ChartData[i].LabelText := frmModalAnalyse.GetTruncatedCodePath(FFrequencyResult[i].CodeID, 25);
-               ChartData[i].Value := FFrequencyResult[i].SegmentCount;
-               ChartData[i].ValueStr := IntToStr(FFrequencyResult[i].SegmentCount);
-             end;
-             FLocalVisualization.PrepareBarChart(ChartData, VW, VH);
-           end;
-        1: begin
-             CodeListX := TStringList.Create;
-             CodeListY := TStringList.Create;
-             try
-               CodeListX.Sorted := True; CodeListX.Duplicates := dupIgnore;
-               CodeListY.Sorted := True; CodeListY.Duplicates := dupIgnore;
-               MaxVal := 1;
-               for i := 0 to High(FCoOccurrenceResult) do
-               begin
-                 CodeListX.Add(FCoOccurrenceResult[i].Code1ID);
-                 CodeListY.Add(FCoOccurrenceResult[i].Code2ID);
-                 if FCoOccurrenceResult[i].Overlap > MaxVal then MaxVal := FCoOccurrenceResult[i].Overlap;
-               end;
-               SetLength(Matrix, CodeListX.Count, CodeListY.Count);
-               for i := 0 to High(FCoOccurrenceResult) do
-               begin
-                 c := CodeListX.IndexOf(FCoOccurrenceResult[i].Code1ID);
-                 r := CodeListY.IndexOf(FCoOccurrenceResult[i].Code2ID);
-                 if (c > -1) and (r > -1) then Matrix[c, r] := FCoOccurrenceResult[i].Overlap;
-               end;
-               SetLength(XLabel, CodeListX.Count);
-               for c := 0 to CodeListX.Count - 1 do XLabel[c] := frmModalAnalyse.GetTruncatedCodePath(CodeListX[c], 25);
-               SetLength(YLabel, CodeListY.Count);
-               for r := 0 to CodeListY.Count - 1 do YLabel[r] := frmModalAnalyse.GetTruncatedCodePath(CodeListY[r], 25);
-               FLocalVisualization.PrepareHeatmap(XLabel, YLabel, Matrix, MaxVal, False, VW, VH);
-             finally
-               CodeListX.Free; CodeListY.Free;
-             end;
-           end;
-        2: begin
-             CodeList := TStringList.Create;
-             AttributeList := TStringList.Create;
-             try
-               CodeList.Sorted := True; CodeList.Duplicates := dupIgnore;
-               AttributeList.Sorted := True; AttributeList.Duplicates := dupIgnore;
-               MaxVal := 1;
-               for i := 0 to High(FCrossResult) do
-               begin
-                 CodeList.Add(FCrossResult[i].CodeID);
-                 AttributeList.Add(FCrossResult[i].AttributeValue);
-                 if FCrossResult[i].Frequency > MaxVal then MaxVal := FCrossResult[i].Frequency;
-               end;
-               SetLength(Matrix, AttributeList.Count, CodeList.Count);
-               for i := 0 to High(FCrossResult) do
-               begin
-                 c := AttributeList.IndexOf(FCrossResult[i].AttributeValue);
-                 r := CodeList.IndexOf(FCrossResult[i].CodeID);
-                 if (c > -1) and (r > -1) then Matrix[c, r] := FCrossResult[i].Frequency;
-               end;
-               SetLength(XLabel, AttributeList.Count);
-               for c := 0 to AttributeList.Count - 1 do
-               begin
-                 AttributeString := AttributeList[c];
-                 if UTF8Length(AttributeString) > 40 then AttributeString := UTF8Copy(AttributeString, 1, 40) + '...';
-                 XLabel[c] := AttributeString;
-               end;
-               SetLength(YLabel, CodeList.Count);
-               for r := 0 to CodeList.Count - 1 do YLabel[r] := frmModalAnalyse.GetTruncatedCodePath(CodeList[r], 25);
-               FLocalVisualization.PrepareHeatmap(XLabel, YLabel, Matrix, MaxVal, True, VW, VH);
-             finally
-               CodeList.Free; AttributeList.Free;
-             end;
-           end;
-        3: begin
-             Limit := FLimit;
-             if Limit <= 0 then Limit := Length(FCoverageResult);
-             if Limit > Length(FCoverageResult) then Limit := Length(FCoverageResult);
-             SetLength(LabelArray, Limit);
-             SetLength(LabelStr, Limit);
-             SetLength(TotalVal, Limit);
-             SetLength(SubVal, Limit);
-             for i := 0 to Limit - 1 do
-             begin
-               DocumentName := FCoverageResult[i].DocumentName;
-               if UTF8Length(DocumentName) > 60 then DocumentName := UTF8Copy(DocumentName, 1, 60) + '...';
-               LabelArray[i] := DocumentName;
-               TotalVal[i] := FCoverageResult[i].TotalCharacters;
-               SubVal[i] := FCoverageResult[i].CodedCharacters;
-               if FCoverageResult[i].TotalCharacters > 0 then
-                 LabelStr[i] := FormatFloat('0.00', (FCoverageResult[i].CodedCharacters / FCoverageResult[i].TotalCharacters) * 100) + '%'
-               else
-                 LabelStr[i] := '0.00%';
-             end;
-             FLocalVisualization.PrepareStackedBarChart(LabelArray, TotalVal, SubVal, LabelStr, VW, VH);
-           end;
-        4: begin
-             Limit := Length(FCloudResult);
-             SetLength(Word, Limit);
-             SetLength(Frequency, Limit);
-             for i := 0 to Limit - 1 do
-             begin
-               Word[i] := FCloudResult[i].Word;
-               Frequency[i] := FCloudResult[i].Frequency;
-             end;
-             FLocalVisualization.PrepareWordCloud(Word, Frequency, VW, VH);
-           end;
-      end;
-      FSuccess := TServiceExport.ExportVisualisation(FFileName, FProjectTitle, FSubject, FWidth, FHeight, @ThreadRenderEvent);
-      if not FSuccess then FErrorMessage := 'Export failed or file is locked.';
-    finally
-      FLocalVisualization.Free;
-    end;
-  except
-    on E: Exception do FErrorMessage := E.Message;
-  end;
-  Synchronize(@CloseProgressDialog);
-end;
-
-procedure TThreadExportVisualization.ThreadRenderEvent(cr: Pcairo_t; AWidth, AHeight: Integer);
-begin
-  cairo_save(cr);
-  cairo_translate(cr, FMargin, FMargin);
-  FLocalVisualization.Render(cr, AWidth - Round(FMargin * 2.0), AHeight - Round(FMargin * 2.0), 0, 0, 1.0);
-  cairo_restore(cr);
-end;
-
-procedure TThreadExportVisualization.CloseProgressDialog;
-begin
-  if Assigned(frmDialogProgress) and frmDialogProgress.Visible then
-    frmDialogProgress.ModalResult := mrOk;
-end;
-
-{$R *.lfm}
-
 procedure TfrmModalAnalyse.FormCreate(Sender: TObject);
 begin
   ApplyAppFont(Self);
   FServiceDatabase := TServiceDatabase.Create(ServiceDatabase.TSQLite3Connection(frmAppBase.conMain));
   FVisualizer := TServiceVisualize.Create;
-  FLastCloudLimit := 50;
+  FLastWordCloudLimit := 50;
   FLastBarLimit := 10;
   FAnalysisState := asReady;
   FIsBatchOperation := False;
@@ -600,7 +429,7 @@ begin
   FCheckedCoOccurrenceXCode := specialize TDictionary<String, Boolean>.Create;
   FCheckedCoOccurrenceYCode := specialize TDictionary<String, Boolean>.Create;
   FCheckedCrosstabCode := specialize TDictionary<String, Boolean>.Create;
-  FCheckedCloudCode := specialize TDictionary<String, Boolean>.Create;
+  FCheckedWordCloudCode := specialize TDictionary<String, Boolean>.Create;
   FCodeMap := specialize TDictionary<String, TCodeNodeCache>.Create;
   FCurrentAttributeIndex := -1;
   FAttributeSortColumn := 0;
@@ -627,7 +456,7 @@ begin
   FCheckedCoOccurrenceXCode.Free;
   FCheckedCoOccurrenceYCode.Free;
   FCheckedCrosstabCode.Free;
-  FCheckedCloudCode.Free;
+  FCheckedWordCloudCode.Free;
   FCodeMap.Free;
   SetLength(FCodeCacheArray, 0);
   SetLength(FDocumentCacheArray, 0);
@@ -636,7 +465,7 @@ begin
   SetLength(FCoOccurrenceResult, 0);
   SetLength(FCrossResult, 0);
   SetLength(FCoverageResult, 0);
-  SetLength(FCloudResult, 0);
+  SetLength(FWordCloudResult, 0);
 end;
 
 procedure TfrmModalAnalyse.FormShow(Sender: TObject);
@@ -695,45 +524,6 @@ begin
   pcAnalysisTypeChange(nil);
 end;
 
-procedure TfrmModalAnalyse.pcAnalysisTypeChange(Sender: TObject);
-begin
-  UpdateLimitControlsContext;
-  ResetResults;
-end;
-
-procedure TfrmModalAnalyse.UpdateLimitControlsContext;
-begin
-  if (csLoading in ComponentState) or not Assigned(pcAnalysisType) or not Assigned(chkEnableLimit) or not Assigned(lblVisualizationLimit) or not Assigned(edtVisualizationLimit) then Exit;
-  if Assigned(btnStopwords) then
-    btnStopwords.Visible := (pcAnalysisType.ActivePageIndex = 4);
-  edtVisualizationLimit.OnChange := nil;
-  case pcAnalysisType.ActivePageIndex of
-    0, 3:
-      begin
-        pnlLimitControls.Visible := True;
-        chkEnableLimit.Visible := True;
-        lblVisualizationLimit.Caption := 'Limit Bars to:';
-        edtVisualizationLimit.MaxValue := 1000000;
-        edtVisualizationLimit.Value := FLastBarLimit;
-        edtVisualizationLimit.Enabled := chkEnableLimit.Checked;
-      end;
-    1, 2:
-      begin
-        pnlLimitControls.Visible := False;
-      end;
-    4:
-      begin
-        pnlLimitControls.Visible := True;
-        chkEnableLimit.Visible := False;
-        lblVisualizationLimit.Caption := 'Limit Words in Cloud to (Max. 100):';
-        edtVisualizationLimit.MaxValue := 100;
-        edtVisualizationLimit.Value := FLastCloudLimit;
-        edtVisualizationLimit.Enabled := True;
-      end;
-  end;
-  edtVisualizationLimit.OnChange := @edtVisualizationLimitChange;
-end;
-
 function TfrmModalAnalyse.GetFullCodePath(const CodeID: String): String;
 var
   CurrentID: String;
@@ -775,14 +565,6 @@ begin
   end;
 end;
 
-function TfrmModalAnalyse.TruncateText(const S: String; MaxLen: Integer): String;
-begin
-  if UTF8Length(S) > MaxLen then
-    Result := UTF8Copy(S, 1, MaxLen) + '...'
-  else
-    Result := S;
-end;
-
 procedure TfrmModalAnalyse.ResetResults;
 begin
   FZoom := 1.0;
@@ -796,13 +578,52 @@ begin
   SetLength(FCoOccurrenceResult, 0);
   SetLength(FCrossResult, 0);
   SetLength(FCoverageResult, 0);
-  SetLength(FCloudResult, 0);
+  SetLength(FWordCloudResult, 0);
   if Assigned(pnlGrid) then pnlGrid.Visible := False;
   if Assigned(splResults) then splResults.Visible := False;
   if Assigned(vstResultGrid) then vstResultGrid.RootNodeCount := 0;
   btnExportData.Enabled := False;
-  btnSaveVisualization.Enabled := False;
+  btnVisualizationSave.Enabled := False;
   if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
+end;
+
+procedure TfrmModalAnalyse.UpdateLimitControlsContext;
+begin
+  if (csLoading in ComponentState) or not Assigned(pcAnalysisType) or not Assigned(chkEnableLimit) or not Assigned(lblVisualizationLimit) or not Assigned(edtVisualizationLimit) then Exit;
+  if Assigned(btnStopwords) then
+    btnStopwords.Visible := (pcAnalysisType.ActivePageIndex = 4);
+  edtVisualizationLimit.OnChange := nil;
+  case pcAnalysisType.ActivePageIndex of
+    0, 3:
+      begin
+        pnlLimitControls.Visible := True;
+        chkEnableLimit.Visible := True;
+        lblVisualizationLimit.Caption := 'Limit Bars to:';
+        edtVisualizationLimit.MaxValue := 1000000;
+        edtVisualizationLimit.Value := FLastBarLimit;
+        edtVisualizationLimit.Enabled := chkEnableLimit.Checked;
+      end;
+    1, 2:
+      begin
+        pnlLimitControls.Visible := False;
+      end;
+    4:
+      begin
+        pnlLimitControls.Visible := True;
+        chkEnableLimit.Visible := False;
+        lblVisualizationLimit.Caption := 'Limit Words in Cloud to (Max. 100):';
+        edtVisualizationLimit.MaxValue := 100;
+        edtVisualizationLimit.Value := FLastWordCloudLimit;
+        edtVisualizationLimit.Enabled := True;
+      end;
+  end;
+  edtVisualizationLimit.OnChange := @edtVisualizationLimitChange;
+end;
+
+procedure TfrmModalAnalyse.pcAnalysisTypeChange(Sender: TObject);
+begin
+  UpdateLimitControlsContext;
+  ResetResults;
 end;
 
 procedure TfrmModalAnalyse.LoadCodeTree(Tree: TLazVirtualStringTree);
@@ -909,7 +730,7 @@ begin
   else if Tree = vstCoOccurrenceX then Result := FCheckedCoOccurrenceXCode
   else if Tree = vstCoOccurrenceY then Result := FCheckedCoOccurrenceYCode
   else if Tree = vstCrosstabCode then Result := FCheckedCrosstabCode
-  else if Tree = vstWordCloudCode then Result := FCheckedCloudCode
+  else if Tree = vstWordCloudCode then Result := FCheckedWordCloudCode
   else Result := nil;
 end;
 
@@ -1026,6 +847,237 @@ begin
   if Assigned(DataPtr) then Finalize(DataPtr^);
 end;
 
+procedure TfrmModalAnalyse.ToggleTreeNodes(Tree: TLazVirtualStringTree; Check: Boolean);
+var
+  Node: PVirtualNode;
+  DataPtr: PInteger;
+  CodeDict: specialize TDictionary<String, Boolean>;
+  i: Integer;
+begin
+  if not Assigned(Tree) then Exit;
+  FIsBatchOperation := True;
+  Tree.BeginUpdate;
+  try
+    if Tree = vstScopeDocument then
+    begin
+      for i := 0 to High(FDocumentCacheArray) do
+      begin
+        if Check then
+          FCheckedDocumentSet.AddOrSetValue(FDocumentCacheArray[i].ID, True)
+        else
+          FCheckedDocumentSet.Remove(FDocumentCacheArray[i].ID);
+      end;
+      Tree.ReinitChildren(nil, True);
+    end
+    else
+    begin
+      CodeDict := GetDictionaryForTree(Tree);
+      if not Assigned(CodeDict) then Exit;
+      Node := Tree.GetFirst;
+      while Assigned(Node) do
+      begin
+        if Tree.IsVisible[Node] then
+        begin
+          DataPtr := Tree.GetNodeData(Node);
+          if Assigned(DataPtr) then
+          begin
+            if Check then
+              CodeDict.AddOrSetValue(FCodeCacheArray[DataPtr^].ID, True)
+            else
+              CodeDict.Remove(FCodeCacheArray[DataPtr^].ID);
+          end;
+          if Check then Tree.CheckState[Node] := csCheckedNormal
+          else Tree.CheckState[Node] := csUncheckedNormal;
+        end;
+        Node := Tree.GetNext(Node);
+      end;
+    end;
+  finally
+    Tree.EndUpdate;
+    FIsBatchOperation := False;
+  end;
+end;
+
+procedure TfrmModalAnalyse.btnFrequencySelectAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstFrequencyCode, True);
+end;
+
+procedure TfrmModalAnalyse.btnFrequencyClearAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstFrequencyCode, False);
+end;
+
+procedure TfrmModalAnalyse.btnCoOccurrenceXSelectAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstCoOccurrenceX, True);
+end;
+
+procedure TfrmModalAnalyse.btnCoOccurrenceXClearAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstCoOccurrenceX, False);
+end;
+
+procedure TfrmModalAnalyse.btnCoOccurrenceYSelectAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstCoOccurrenceY, True);
+end;
+
+procedure TfrmModalAnalyse.btnCoOccurrenceYClearAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstCoOccurrenceY, False);
+end;
+
+procedure TfrmModalAnalyse.btnCrosstabSelectAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstCrosstabCode, True);
+end;
+
+procedure TfrmModalAnalyse.btnCrosstabClearAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstCrosstabCode, False);
+end;
+
+procedure TfrmModalAnalyse.btnWordCloudSelectAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstWordCloudCode, True);
+end;
+
+procedure TfrmModalAnalyse.btnWordCloudClearAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstWordCloudCode, False);
+end;
+
+procedure TfrmModalAnalyse.edtSearchFrequencyChange(Sender: TObject);
+begin
+  tmrFrequencySearch.Enabled := False; tmrFrequencySearch.Enabled := True;
+end;
+
+procedure TfrmModalAnalyse.edtSearchCoOccurrenceXChange(Sender: TObject);
+begin
+  tmrCoOccurrenceXSearch.Enabled := False; tmrCoOccurrenceXSearch.Enabled := True;
+end;
+
+procedure TfrmModalAnalyse.edtSearchCoOccurrenceYChange(Sender: TObject);
+begin
+  tmrCoOccurrenceYSearch.Enabled := False; tmrCoOccurrenceYSearch.Enabled := True;
+end;
+
+procedure TfrmModalAnalyse.edtSearchCrosstabChange(Sender: TObject);
+begin
+  tmrCrosstabSearch.Enabled := False; tmrCrosstabSearch.Enabled := True;
+end;
+
+procedure TfrmModalAnalyse.edtSearchCloudChange(Sender: TObject);
+begin
+  tmrCloudSearch.Enabled := False; tmrCloudSearch.Enabled := True;
+end;
+
+procedure TfrmModalAnalyse.tmrFrequencySearchTimer(Sender: TObject);
+begin
+  tmrFrequencySearch.Enabled := False;
+  if edtSearchFrequency.Text = '' then
+  begin
+    btnFrequencySelectAll.Caption := 'Select All';
+    btnFrequencyClearAll.Caption := 'Clear All';
+  end
+  else
+  begin
+    btnFrequencySelectAll.Caption := 'Select Filtered';
+    btnFrequencyClearAll.Caption := 'Clear Filtered';
+  end;
+  InternalApplyCodeFilter(vstFrequencyCode, edtSearchFrequency.Text);
+end;
+
+procedure TfrmModalAnalyse.tmrCoOccurrenceXSearchTimer(Sender: TObject);
+begin
+  tmrCoOccurrenceXSearch.Enabled := False;
+  if edtSearchCoOccurrenceX.Text = '' then
+  begin
+    btnCoOccurrenceXSelectAll.Caption := 'Select All';
+    btnCoOccurrenceXClearAll.Caption := 'Clear All';
+  end
+  else
+  begin
+    btnCoOccurrenceXSelectAll.Caption := 'Select Filtered';
+    btnCoOccurrenceXClearAll.Caption := 'Clear Filtered';
+  end;
+  InternalApplyCodeFilter(vstCoOccurrenceX, edtSearchCoOccurrenceX.Text);
+end;
+
+procedure TfrmModalAnalyse.tmrCoOccurrenceYSearchTimer(Sender: TObject);
+begin
+  tmrCoOccurrenceYSearch.Enabled := False;
+  if edtSearchCoOccurrenceY.Text = '' then
+  begin
+    btnCoOccurrenceYSelectAll.Caption := 'Select All';
+    btnCoOccurrenceYClearAll.Caption := 'Clear All';
+  end
+  else
+  begin
+    btnCoOccurrenceYSelectAll.Caption := 'Select Filtered';
+    btnCoOccurrenceYClearAll.Caption := 'Clear Filtered';
+  end;
+  InternalApplyCodeFilter(vstCoOccurrenceY, edtSearchCoOccurrenceY.Text);
+end;
+
+procedure TfrmModalAnalyse.tmrCrosstabSearchTimer(Sender: TObject);
+begin
+  tmrCrosstabSearch.Enabled := False;
+  if edtSearchCrosstab.Text = '' then
+  begin
+    btnCrosstabSelectAll.Caption := 'Select All';
+    btnCrosstabClearAll.Caption := 'Clear All';
+  end
+  else
+  begin
+    btnCrosstabSelectAll.Caption := 'Select Filtered';
+    btnCrosstabClearAll.Caption := 'Clear Filtered';
+  end;
+  InternalApplyCodeFilter(vstCrosstabCode, edtSearchCrosstab.Text);
+end;
+
+procedure TfrmModalAnalyse.tmrCloudSearchTimer(Sender: TObject);
+begin
+  tmrCloudSearch.Enabled := False;
+  if edtSearchCloud.Text = '' then
+  begin
+    btnWordCloudSelectAll.Caption := 'Select All';
+    btnWordCloudClearAll.Caption := 'Clear All';
+  end
+  else
+  begin
+    btnWordCloudSelectAll.Caption := 'Select Filtered';
+    btnWordCloudClearAll.Caption := 'Clear Filtered';
+  end;
+  InternalApplyCodeFilter(vstWordCloudCode, edtSearchCloud.Text);
+end;
+
+function TfrmModalAnalyse.GetCheckedTreeIDs(Tree: TLazVirtualStringTree; MaxLimit: Integer = 0): TStringDynArray;
+var
+  Dict: specialize TDictionary<String, Boolean>;
+  Key: String;
+  Count: Integer;
+begin
+  Result := nil;
+  Dict := GetDictionaryForTree(Tree);
+  if not Assigned(Dict) or (Dict.Count = 0) then Exit(nil);
+  Count := 0;
+  SetLength(Result, Dict.Count);
+  for Key in Dict.Keys do
+  begin
+    Inc(Count);
+    if (MaxLimit > 0) and (Count > MaxLimit) then
+    begin
+      MessageDlg('Selection Limit', Format('Please select a maximum of %d items for this analysis.', [MaxLimit]), mtWarning, [mbOK], 0);
+      SetLength(Result, 0);
+      Exit;
+    end;
+    Result[Count - 1] := Key;
+  end;
+  SetLength(Result, Count);
+end;
+
 procedure TfrmModalAnalyse.LoadDocumentTree(const FilterText: String);
 var
   FilterDefinition: TDocumentFilterDefinition;
@@ -1128,6 +1180,59 @@ end;
 
 procedure TfrmModalAnalyse.vstScopeDocumentFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
 begin
+end;
+
+function TfrmModalAnalyse.GetCheckedDocumentID(MaxLimit: Integer = 0): TStringDynArray;
+var
+  Key: String;
+  Count: Integer;
+begin
+  Result := nil;
+  Count := 0;
+  SetLength(Result, FCheckedDocumentSet.Count);
+  if FCheckedDocumentSet.Count = 0 then Exit;
+  for Key in FCheckedDocumentSet.Keys do
+  begin
+    Inc(Count);
+    if (MaxLimit > 0) and (Count > MaxLimit) then
+    begin
+      MessageDlg('Selection Limit', Format('Please select a maximum of %d items for this analysis.', [MaxLimit]), mtWarning, [mbOK], 0);
+      SetLength(Result, 0);
+      Exit;
+    end;
+    Result[Count - 1] := Key;
+  end;
+end;
+
+procedure TfrmModalAnalyse.btnScopeDocumentSelectAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstScopeDocument, True);
+end;
+
+procedure TfrmModalAnalyse.btnScopeDocumentClearAllClick(Sender: TObject);
+begin
+  ToggleTreeNodes(vstScopeDocument, False);
+end;
+
+procedure TfrmModalAnalyse.edtSearchScopeDocumentChange(Sender: TObject);
+begin
+  tmrScopeDocumentSearch.Enabled := False; tmrScopeDocumentSearch.Enabled := True;
+end;
+
+procedure TfrmModalAnalyse.tmrScopeDocumentSearchTimer(Sender: TObject);
+begin
+  tmrScopeDocumentSearch.Enabled := False;
+  if edtSearchScopeDocument.Text = '' then
+  begin
+    btnScopeDocumentSelectAll.Caption := 'Select All';
+    btnScopeDocumentClearAll.Caption := 'Clear All';
+  end
+  else
+  begin
+    btnScopeDocumentSelectAll.Caption := 'Select Filtered';
+    btnScopeDocumentClearAll.Caption := 'Clear Filtered';
+  end;
+  LoadDocumentTree(edtSearchScopeDocument.Text);
 end;
 
 procedure TfrmModalAnalyse.LoadAttributeTree(const FilterText: String);
@@ -1411,16 +1516,6 @@ begin
   end;
 end;
 
-procedure TfrmModalAnalyse.cmbScopeAttributeOperatorChange(Sender: TObject);
-var
-  Op: String;
-begin
-  Op := cmbScopeAttributeOperator.Text;
-  pnlScopeAttributeValue.Visible := (Op <> 'Is Empty') and (Op <> 'Is Not Empty');
-  fseScopeAttributeValueNumEnd.Visible := (pnlScopeAttributeValueNumeric.Visible) and (Op = 'Between');
-  deScopeAttributeValueDateEnd.Visible := (pnlScopeAttributeValueDate.Visible) and (Op = 'Between');
-end;
-
 procedure TfrmModalAnalyse.LoadCategoricalValue;
 var
   Q: TSQLQuery;
@@ -1443,6 +1538,16 @@ begin
   finally
     Q.Free;
   end;
+end;
+
+procedure TfrmModalAnalyse.cmbScopeAttributeOperatorChange(Sender: TObject);
+var
+  Op: String;
+begin
+  Op := cmbScopeAttributeOperator.Text;
+  pnlScopeAttributeValue.Visible := (Op <> 'Is Empty') and (Op <> 'Is Not Empty');
+  fseScopeAttributeValueNumEnd.Visible := (pnlScopeAttributeValueNumeric.Visible) and (Op = 'Between');
+  deScopeAttributeValueDateEnd.Visible := (pnlScopeAttributeValueDate.Visible) and (Op = 'Between');
 end;
 
 procedure TfrmModalAnalyse.btnScopeAttributeApplyClick(Sender: TObject);
@@ -1517,508 +1622,15 @@ begin
   if cmbScopeAttributeOperator.Items.Count > 0 then cmbScopeAttributeOperator.ItemIndex := 0;
 end;
 
-procedure TfrmModalAnalyse.ToggleTreeNodes(Tree: TLazVirtualStringTree; Check: Boolean);
-var
-  Node: PVirtualNode;
-  DataPtr: PInteger;
-  CodeDict: specialize TDictionary<String, Boolean>;
-  i: Integer;
-begin
-  if not Assigned(Tree) then Exit;
-  FIsBatchOperation := True;
-  Tree.BeginUpdate;
-  try
-    if Tree = vstScopeDocument then
-    begin
-      for i := 0 to High(FDocumentCacheArray) do
-      begin
-        if Check then
-          FCheckedDocumentSet.AddOrSetValue(FDocumentCacheArray[i].ID, True)
-        else
-          FCheckedDocumentSet.Remove(FDocumentCacheArray[i].ID);
-      end;
-      Tree.ReinitChildren(nil, True);
-    end
-    else
-    begin
-      CodeDict := GetDictionaryForTree(Tree);
-      if not Assigned(CodeDict) then Exit;
-      Node := Tree.GetFirst;
-      while Assigned(Node) do
-      begin
-        if Tree.IsVisible[Node] then
-        begin
-          DataPtr := Tree.GetNodeData(Node);
-          if Assigned(DataPtr) then
-          begin
-            if Check then
-              CodeDict.AddOrSetValue(FCodeCacheArray[DataPtr^].ID, True)
-            else
-              CodeDict.Remove(FCodeCacheArray[DataPtr^].ID);
-          end;
-          if Check then Tree.CheckState[Node] := csCheckedNormal
-          else Tree.CheckState[Node] := csUncheckedNormal;
-        end;
-        Node := Tree.GetNext(Node);
-      end;
-    end;
-  finally
-    Tree.EndUpdate;
-    FIsBatchOperation := False;
-  end;
-end;
-
-procedure TfrmModalAnalyse.btnFrequencySelectAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstFrequencyCode, True);
-end;
-
-procedure TfrmModalAnalyse.btnFrequencyClearAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstFrequencyCode, False);
-end;
-
-procedure TfrmModalAnalyse.btnCoOccurrenceXSelectAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstCoOccurrenceX, True);
-end;
-
-procedure TfrmModalAnalyse.btnCoOccurrenceXClearAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstCoOccurrenceX, False);
-end;
-
-procedure TfrmModalAnalyse.btnCoOccurrenceYSelectAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstCoOccurrenceY, True);
-end;
-
-procedure TfrmModalAnalyse.btnCoOccurrenceYClearAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstCoOccurrenceY, False);
-end;
-
-procedure TfrmModalAnalyse.btnCrosstabSelectAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstCrosstabCode, True);
-end;
-
-procedure TfrmModalAnalyse.btnCrossClearAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstCrosstabCode, False);
-end;
-
-procedure TfrmModalAnalyse.btnCloudSelectAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstWordCloudCode, True);
-end;
-
-procedure TfrmModalAnalyse.btnCloudClearAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstWordCloudCode, False);
-end;
-
-procedure TfrmModalAnalyse.btnScopeDocumentSelectAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstScopeDocument, True);
-end;
-
-procedure TfrmModalAnalyse.btnScopeDocumentClearAllClick(Sender: TObject);
-begin
-  ToggleTreeNodes(vstScopeDocument, False);
-end;
-
-procedure TfrmModalAnalyse.edtSearchFrequencyChange(Sender: TObject);
-begin
-  tmrFrequencySearch.Enabled := False; tmrFrequencySearch.Enabled := True;
-end;
-
-procedure TfrmModalAnalyse.edtSearchCoOccurrenceXChange(Sender: TObject);
-begin
-  tmrCoOccurrenceXSearch.Enabled := False; tmrCoOccurrenceXSearch.Enabled := True;
-end;
-
-procedure TfrmModalAnalyse.edtSearchCoOccurrenceYChange(Sender: TObject);
-begin
-  tmrCoOccurrenceYSearch.Enabled := False; tmrCoOccurrenceYSearch.Enabled := True;
-end;
-
-procedure TfrmModalAnalyse.edtSearchCrosstabChange(Sender: TObject);
-begin
-  tmrCrosstabSearch.Enabled := False; tmrCrosstabSearch.Enabled := True;
-end;
-
-procedure TfrmModalAnalyse.edtSearchCloudChange(Sender: TObject);
-begin
-  tmrCloudSearch.Enabled := False; tmrCloudSearch.Enabled := True;
-end;
-
-procedure TfrmModalAnalyse.edtSearchScopeDocumentChange(Sender: TObject);
-begin
-  tmrScopeDocumentSearch.Enabled := False; tmrScopeDocumentSearch.Enabled := True;
-end;
-
 procedure TfrmModalAnalyse.edtSearchScopeAttributeChange(Sender: TObject);
 begin
   tmrScopeAttributeSearch.Enabled := False; tmrScopeAttributeSearch.Enabled := True;
-end;
-
-procedure TfrmModalAnalyse.tmrFrequencySearchTimer(Sender: TObject);
-begin
-  tmrFrequencySearch.Enabled := False;
-  if edtSearchFrequency.Text = '' then
-  begin
-    btnFrequencySelectAll.Caption := 'Select All';
-    btnFrequencyClearAll.Caption := 'Clear All';
-  end
-  else
-  begin
-    btnFrequencySelectAll.Caption := 'Select Filtered';
-    btnFrequencyClearAll.Caption := 'Clear Filtered';
-  end;
-  InternalApplyCodeFilter(vstFrequencyCode, edtSearchFrequency.Text);
-end;
-
-procedure TfrmModalAnalyse.tmrCoOccurrenceXSearchTimer(Sender: TObject);
-begin
-  tmrCoOccurrenceXSearch.Enabled := False;
-  if edtSearchCoOccurrenceX.Text = '' then
-  begin
-    btnCoOccurrenceXSelectAll.Caption := 'Select All';
-    btnCoOccurrenceXClearAll.Caption := 'Clear All';
-  end
-  else
-  begin
-    btnCoOccurrenceXSelectAll.Caption := 'Select Filtered';
-    btnCoOccurrenceXClearAll.Caption := 'Clear Filtered';
-  end;
-  InternalApplyCodeFilter(vstCoOccurrenceX, edtSearchCoOccurrenceX.Text);
-end;
-
-procedure TfrmModalAnalyse.tmrCoOccurrenceYSearchTimer(Sender: TObject);
-begin
-  tmrCoOccurrenceYSearch.Enabled := False;
-  if edtSearchCoOccurrenceY.Text = '' then
-  begin
-    btnCoOccurrenceYSelectAll.Caption := 'Select All';
-    btnCoOccurrenceYClearAll.Caption := 'Clear All';
-  end
-  else
-  begin
-    btnCoOccurrenceYSelectAll.Caption := 'Select Filtered';
-    btnCoOccurrenceYClearAll.Caption := 'Clear Filtered';
-  end;
-  InternalApplyCodeFilter(vstCoOccurrenceY, edtSearchCoOccurrenceY.Text);
-end;
-
-procedure TfrmModalAnalyse.tmrCrosstabSearchTimer(Sender: TObject);
-begin
-  tmrCrosstabSearch.Enabled := False;
-  if edtSearchCrosstab.Text = '' then
-  begin
-    btnCrosstabSelectAll.Caption := 'Select All';
-    btnCrossClearAll.Caption := 'Clear All';
-  end
-  else
-  begin
-    btnCrosstabSelectAll.Caption := 'Select Filtered';
-    btnCrossClearAll.Caption := 'Clear Filtered';
-  end;
-  InternalApplyCodeFilter(vstCrosstabCode, edtSearchCrosstab.Text);
-end;
-
-procedure TfrmModalAnalyse.tmrCloudSearchTimer(Sender: TObject);
-begin
-  tmrCloudSearch.Enabled := False;
-  if edtSearchCloud.Text = '' then
-  begin
-    btnCloudSelectAll.Caption := 'Select All';
-    btnCloudClearAll.Caption := 'Clear All';
-  end
-  else
-  begin
-    btnCloudSelectAll.Caption := 'Select Filtered';
-    btnCloudClearAll.Caption := 'Clear Filtered';
-  end;
-  InternalApplyCodeFilter(vstWordCloudCode, edtSearchCloud.Text);
-end;
-
-procedure TfrmModalAnalyse.tmrScopeDocumentSearchTimer(Sender: TObject);
-begin
-  tmrScopeDocumentSearch.Enabled := False;
-  if edtSearchScopeDocument.Text = '' then
-  begin
-    btnScopeDocumentSelectAll.Caption := 'Select All';
-    btnScopeDocumentClearAll.Caption := 'Clear All';
-  end
-  else
-  begin
-    btnScopeDocumentSelectAll.Caption := 'Select Filtered';
-    btnScopeDocumentClearAll.Caption := 'Clear Filtered';
-  end;
-  LoadDocumentTree(edtSearchScopeDocument.Text);
 end;
 
 procedure TfrmModalAnalyse.tmrScopeAttributeSearchTimer(Sender: TObject);
 begin
   tmrScopeAttributeSearch.Enabled := False;
   ApplyAttributeFilter(edtSearchScopeAttribute.Text);
-end;
-
-procedure TfrmModalAnalyse.SearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-  if Key = VK_RETURN then
-  begin
-    if Sender = edtSearchFrequency then tmrFrequencySearchTimer(nil)
-    else if Sender = edtSearchCoOccurrenceX then tmrCoOccurrenceXSearchTimer(nil)
-    else if Sender = edtSearchCoOccurrenceY then tmrCoOccurrenceYSearchTimer(nil)
-    else if Sender = edtSearchCrosstab then tmrCrosstabSearchTimer(nil)
-    else if Sender = edtSearchCloud then tmrCloudSearchTimer(nil)
-    else if Sender = edtSearchScopeDocument then tmrScopeDocumentSearchTimer(nil)
-    else if Sender = edtSearchScopeAttribute then tmrScopeAttributeSearchTimer(nil);
-    Key := 0;
-  end;
-end;
-
-function TfrmModalAnalyse.GetCheckedTreeIDs(Tree: TLazVirtualStringTree; MaxLimit: Integer = 0): TStringDynArray;
-var
-  Dict: specialize TDictionary<String, Boolean>;
-  Key: String;
-  Count: Integer;
-begin
-  Result := nil;
-  Dict := GetDictionaryForTree(Tree);
-  if not Assigned(Dict) or (Dict.Count = 0) then Exit(nil);
-  Count := 0;
-  SetLength(Result, Dict.Count);
-  for Key in Dict.Keys do
-  begin
-    Inc(Count);
-    if (MaxLimit > 0) and (Count > MaxLimit) then
-    begin
-      MessageDlg('Selection Limit', Format('Please select a maximum of %d items for this analysis.', [MaxLimit]), mtWarning, [mbOK], 0);
-      SetLength(Result, 0);
-      Exit;
-    end;
-    Result[Count - 1] := Key;
-  end;
-  SetLength(Result, Count);
-end;
-
-function TfrmModalAnalyse.GetCheckedDocumentID(MaxLimit: Integer = 0): TStringDynArray;
-var
-  Key: String;
-  Count: Integer;
-begin
-  Result := nil;
-  Count := 0;
-  SetLength(Result, FCheckedDocumentSet.Count);
-  if FCheckedDocumentSet.Count = 0 then Exit;
-  for Key in FCheckedDocumentSet.Keys do
-  begin
-    Inc(Count);
-    if (MaxLimit > 0) and (Count > MaxLimit) then
-    begin
-      MessageDlg('Selection Limit', Format('Please select a maximum of %d items for this analysis.', [MaxLimit]), mtWarning, [mbOK], 0);
-      SetLength(Result, 0);
-      Exit;
-    end;
-    Result[Count - 1] := Key;
-  end;
-end;
-
-procedure TfrmModalAnalyse.SetupGrid(const ColumnArray: array of String; const ColumnWidthArray: array of Integer; RowCount: Integer);
-var
-  i: Integer;
-  Col: TVirtualTreeColumn;
-begin
-  if not Assigned(vstResultGrid) then Exit;
-  vstResultGrid.Header.Options := vstResultGrid.Header.Options - [hoAutoResize];
-  vstResultGrid.Header.AutoSizeIndex := -1;
-  vstResultGrid.BeginUpdate;
-  try
-    vstResultGrid.Clear;
-    vstResultGrid.Header.Columns.Clear;
-    for i := 0 to High(ColumnArray) do
-    begin
-      Col := vstResultGrid.Header.Columns.Add;
-      Col.Text := ColumnArray[i];
-      if i <= High(ColumnWidthArray) then Col.Width := ColumnWidthArray[i] else Col.Width := 150;
-      Col.Options := Col.Options - [coAutoSpring];
-    end;
-    vstResultGrid.RootNodeCount := RowCount;
-  finally
-    vstResultGrid.EndUpdate;
-  end;
-  vstResultGrid.Header.Options := [hoAutoResize, hoColumnResize, hoVisible];
-  vstResultGrid.Header.AutoSizeIndex := High(ColumnArray);
-  if Assigned(pnlGrid) then pnlGrid.Visible := (RowCount > 0);
-  if Assigned(splResults) then splResults.Visible := pnlGrid.Visible;
-end;
-
-procedure TfrmModalAnalyse.vstResultGridGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: String);
-var
-  Index: Integer;
-begin
-  Index := Node^.Index;
-  CellText := '';
-  case FActiveAnalysis of
-    0: if (Index >= 0) and (Index < Length(FFrequencyResult)) then
-       begin
-         case Column of
-           0: CellText := GetFullCodePath(FFrequencyResult[Index].CodeID);
-           1: CellText := IntToStr(FFrequencyResult[Index].SegmentCount);
-           2: CellText := IntToStr(FFrequencyResult[Index].DocumentCount);
-         end;
-       end;
-    1: if (Index >= 0) and (Index < Length(FCoOccurrenceResult)) then
-       begin
-         case Column of
-           0: CellText := GetFullCodePath(FCoOccurrenceResult[Index].Code1ID);
-           1: CellText := GetFullCodePath(FCoOccurrenceResult[Index].Code2ID);
-           2: CellText := IntToStr(FCoOccurrenceResult[Index].Overlap);
-         end;
-       end;
-    2: if (Index >= 0) and (Index < Length(FCrossResult)) then
-       begin
-         case Column of
-           0: CellText := GetFullCodePath(FCrossResult[Index].CodeID);
-           1: CellText := FCrossResult[Index].AttributeValue;
-           2: CellText := IntToStr(FCrossResult[Index].Frequency);
-         end;
-       end;
-    3: if (Index >= 0) and (Index < Length(FCoverageResult)) then
-       begin
-         case Column of
-           0: CellText := FCoverageResult[Index].DocumentName;
-           1: CellText := IntToStr(FCoverageResult[Index].TotalCharacters);
-           2: CellText := IntToStr(FCoverageResult[Index].CodedCharacters);
-           3: if FCoverageResult[Index].TotalCharacters > 0 then
-                CellText := FormatFloat('0.00', (FCoverageResult[Index].CodedCharacters / FCoverageResult[Index].TotalCharacters) * 100) + '%'
-              else CellText := '0.00%';
-         end;
-       end;
-    4: if (Index >= 0) and (Index < Length(FCloudResult)) then
-       begin
-         case Column of
-           0: CellText := FCloudResult[Index].Word;
-           1: CellText := IntToStr(FCloudResult[Index].Frequency);
-         end;
-       end;
-  end;
-end;
-
-procedure TfrmModalAnalyse.vstResultGridGetHint(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle; var HintText: String);
-var
-  Index: Integer;
-begin
-  Index := Node^.Index;
-  HintText := '';
-  case FActiveAnalysis of
-    0: if Column = 0 then HintText := GetFullCodePath(FFrequencyResult[Index].CodeID);
-    1: if Column = 0 then HintText := GetFullCodePath(FCoOccurrenceResult[Index].Code1ID)
-       else if Column = 1 then HintText := GetFullCodePath(FCoOccurrenceResult[Index].Code2ID);
-    2: if Column = 0 then HintText := GetFullCodePath(FCrossResult[Index].CodeID);
-    3: if Column = 0 then HintText := FCoverageResult[Index].DocumentName;
-  end;
-end;
-
-procedure TfrmModalAnalyse.btnAnalyseClick(Sender: TObject);
-var
-  HasCodeSelection, HasDocSelection: Boolean;
-  VisWorker: TThreadPrepareVisualization;
-  CurrentLimit: Integer;
-begin
-  if csLoading in ComponentState then Exit;
-  ResetResults;
-  if Assigned(pcAnalysisType) then
-    FActiveAnalysis := pcAnalysisType.ActivePageIndex
-  else
-    Exit;
-  HasDocSelection := FCheckedDocumentSet.Count > 0;
-  HasCodeSelection := True;
-  case FActiveAnalysis of
-    0: HasCodeSelection := FCheckedFrequencyCode.Count > 0;
-    1: HasCodeSelection := (FCheckedCoOccurrenceXCode.Count > 0) or (FCheckedCoOccurrenceYCode.Count > 0);
-    2: HasCodeSelection := FCheckedCrosstabCode.Count > 0;
-    3: HasCodeSelection := True;
-    4: HasCodeSelection := FCheckedCloudCode.Count > 0;
-  end;
-  if not HasDocSelection or not HasCodeSelection then
-  begin
-    FAnalysisState := asNoSelection;
-    if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
-    Exit;
-  end;
-  if (FActiveAnalysis = 2) and Assigned(cmbCrossAttribute) and (cmbCrossAttribute.ItemIndex = -1) then
-  begin
-    FAnalysisState := asMissingAttribute;
-    if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
-    Exit;
-  end;
-  FAnalysisState := asRunning;
-  if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
-  Application.ProcessMessages;
-  Screen.Cursor := crHourGlass;
-  try
-    case FActiveAnalysis of
-      0: ExecuteFrequency;
-      1: ExecuteCoOccurrence;
-      2: ExecuteCrosstab;
-      3: ExecuteCoverage;
-      4: ExecuteWordCloud;
-    end;
-    if (Length(FFrequencyResult) > 0) or (Length(FCoOccurrenceResult) > 0) or
-       (Length(FCrossResult) > 0)  or (Length(FCoverageResult) > 0) or
-       (Length(FCloudResult) > 0) then
-    begin
-      CurrentLimit := 1000000;
-      if Assigned(chkEnableLimit) and Assigned(edtVisualizationLimit) then
-      begin
-        if (FActiveAnalysis = 4) or chkEnableLimit.Checked then
-          CurrentLimit := edtVisualizationLimit.Value;
-      end;
-      VisWorker := TThreadPrepareVisualization.Create(True);
-      VisWorker.FreeOnTerminate := False;
-      VisWorker.FActiveAnalysis := FActiveAnalysis;
-      VisWorker.FFrequencyResult := FFrequencyResult;
-      VisWorker.FCoOccurrenceResult := FCoOccurrenceResult;
-      VisWorker.FCrossResult := FCrossResult;
-      VisWorker.FCoverageResult := FCoverageResult;
-      VisWorker.FCloudResult := FCloudResult;
-      VisWorker.FLimit := CurrentLimit;
-      VisWorker.Start;
-      TfrmDialogProgress.Prepare('Composing Visualisation', 'Measuring layout dimensions...');
-      frmDialogProgress.ShowModal;
-      if VisWorker.Success and Assigned(VisWorker.PreparedVisualization) then
-      begin
-        FVisualizer.Free;
-        FVisualizer := VisWorker.PreparedVisualization;
-        FVirtualWidth := VisWorker.VWidth;
-        FVirtualHeight := VisWorker.VHeight;
-        VisWorker.PreparedVisualization := nil; 
-        ResetViewContext;
-        FAnalysisState := asComplete;
-        btnExportData.Enabled := True;
-        btnSaveVisualization.Enabled := True;
-      end
-      else
-      begin
-        FAnalysisState := asNoResults;
-        MessageDlg('Visualisation Error', 'Failed to build the visualisation: ' + VisWorker.ErrorMessage, mtError, [mbOK], 0);
-      end;
-      VisWorker.Free;
-    end
-    else
-    begin
-      FAnalysisState := asNoResults;
-      btnExportData.Enabled := False;
-      btnSaveVisualization.Enabled := False;
-    end;
-    if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
-  finally
-    Screen.Cursor := crDefault;
-  end;
 end;
 
 function TfrmModalAnalyse.GetAttributeSQL: String;
@@ -2100,6 +1712,191 @@ begin
   finally
     vstScopeAttribute.EndUpdate;
   end;
+end;
+
+procedure TfrmModalAnalyse.SearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if Key = VK_RETURN then
+  begin
+    if Sender = edtSearchFrequency then tmrFrequencySearchTimer(nil)
+    else if Sender = edtSearchCoOccurrenceX then tmrCoOccurrenceXSearchTimer(nil)
+    else if Sender = edtSearchCoOccurrenceY then tmrCoOccurrenceYSearchTimer(nil)
+    else if Sender = edtSearchCrosstab then tmrCrosstabSearchTimer(nil)
+    else if Sender = edtSearchCloud then tmrCloudSearchTimer(nil)
+    else if Sender = edtSearchScopeDocument then tmrScopeDocumentSearchTimer(nil)
+    else if Sender = edtSearchScopeAttribute then tmrScopeAttributeSearchTimer(nil);
+    Key := 0;
+  end;
+end;
+
+procedure TfrmModalAnalyse.SetupGrid(const ColumnArray: array of String; const ColumnWidthArray: array of Integer; RowCount: Integer);
+var
+  i: Integer;
+  Col: TVirtualTreeColumn;
+begin
+  if not Assigned(vstResultGrid) then Exit;
+  vstResultGrid.Header.Options := vstResultGrid.Header.Options - [hoAutoResize];
+  vstResultGrid.Header.AutoSizeIndex := -1;
+  vstResultGrid.BeginUpdate;
+  try
+    vstResultGrid.Clear;
+    vstResultGrid.Header.Columns.Clear;
+    for i := 0 to High(ColumnArray) do
+    begin
+      Col := vstResultGrid.Header.Columns.Add;
+      Col.Text := ColumnArray[i];
+      if i <= High(ColumnWidthArray) then Col.Width := ColumnWidthArray[i] else Col.Width := 150;
+      Col.Options := Col.Options - [coAutoSpring];
+    end;
+    vstResultGrid.RootNodeCount := RowCount;
+  finally
+    vstResultGrid.EndUpdate;
+  end;
+  vstResultGrid.Header.Options := [hoAutoResize, hoColumnResize, hoVisible];
+  vstResultGrid.Header.AutoSizeIndex := High(ColumnArray);
+  if Assigned(pnlGrid) then pnlGrid.Visible := (RowCount > 0);
+  if Assigned(splResults) then splResults.Visible := pnlGrid.Visible;
+end;
+
+procedure TfrmModalAnalyse.vstResultGridGetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType; var CellText: String);
+var
+  Index: Integer;
+begin
+  Index := Node^.Index;
+  CellText := '';
+  case FActiveAnalysis of
+    0: if (Index >= 0) and (Index < Length(FFrequencyResult)) then
+       begin
+         case Column of
+           0: CellText := GetFullCodePath(FFrequencyResult[Index].CodeID);
+           1: CellText := IntToStr(FFrequencyResult[Index].SegmentCount);
+           2: CellText := IntToStr(FFrequencyResult[Index].DocumentCount);
+         end;
+       end;
+    1: if (Index >= 0) and (Index < Length(FCoOccurrenceResult)) then
+       begin
+         case Column of
+           0: CellText := GetFullCodePath(FCoOccurrenceResult[Index].Code1ID);
+           1: CellText := GetFullCodePath(FCoOccurrenceResult[Index].Code2ID);
+           2: CellText := IntToStr(FCoOccurrenceResult[Index].Overlap);
+         end;
+       end;
+    2: if (Index >= 0) and (Index < Length(FCrossResult)) then
+       begin
+         case Column of
+           0: CellText := GetFullCodePath(FCrossResult[Index].CodeID);
+           1: CellText := FCrossResult[Index].AttributeValue;
+           2: CellText := IntToStr(FCrossResult[Index].Frequency);
+         end;
+       end;
+    3: if (Index >= 0) and (Index < Length(FCoverageResult)) then
+       begin
+         case Column of
+           0: CellText := FCoverageResult[Index].DocumentName;
+           1: CellText := IntToStr(FCoverageResult[Index].TotalCharacters);
+           2: CellText := IntToStr(FCoverageResult[Index].CodedCharacters);
+           3: if FCoverageResult[Index].TotalCharacters > 0 then
+                CellText := FormatFloat('0.00', (FCoverageResult[Index].CodedCharacters / FCoverageResult[Index].TotalCharacters) * 100) + '%'
+              else CellText := '0.00%';
+         end;
+       end;
+    4: if (Index >= 0) and (Index < Length(FWordCloudResult)) then
+       begin
+         case Column of
+           0: CellText := FWordCloudResult[Index].Word;
+           1: CellText := IntToStr(FWordCloudResult[Index].Frequency);
+         end;
+       end;
+  end;
+end;
+
+procedure TfrmModalAnalyse.vstResultGridGetHint(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var LineBreakStyle: TVTTooltipLineBreakStyle; var HintText: String);
+var
+  Index: Integer;
+begin
+  Index := Node^.Index;
+  HintText := '';
+  case FActiveAnalysis of
+    0: if Column = 0 then HintText := GetFullCodePath(FFrequencyResult[Index].CodeID);
+    1: if Column = 0 then HintText := GetFullCodePath(FCoOccurrenceResult[Index].Code1ID)
+       else if Column = 1 then HintText := GetFullCodePath(FCoOccurrenceResult[Index].Code2ID);
+    2: if Column = 0 then HintText := GetFullCodePath(FCrossResult[Index].CodeID);
+    3: if Column = 0 then HintText := FCoverageResult[Index].DocumentName;
+  end;
+end;
+
+procedure TfrmModalAnalyse.ExecuteFrequency;
+var
+  IDArray, DocumentID: TStringDynArray;
+  Limit: Integer;
+begin
+  IDArray := GetCheckedTreeIDs(vstFrequencyCode);
+  if Length(IDArray) = 0 then Exit;
+  DocumentID := GetCheckedDocumentID();
+  if Assigned(chkEnableLimit) and chkEnableLimit.Checked and Assigned(edtVisualizationLimit) then
+    Limit := edtVisualizationLimit.Value
+  else
+    Limit := 1000000;
+  FFrequencyResult := FServiceDatabase.RunFrequencyAnalysis(IDArray, DocumentID, GetAttributeSQL, Limit);
+  SetupGrid(['Code', 'Segment Count', 'Document Count'], [500, 200, 200], Length(FFrequencyResult));
+  if Length(FFrequencyResult) = 0 then FAnalysisState := asNoResults;
+end;
+
+procedure TfrmModalAnalyse.ExecuteCoOccurrence;
+var
+  IDXArray, IDYArray, DocumentID: TStringDynArray;
+begin
+  IDXArray := GetCheckedTreeIDs(vstCoOccurrenceX);
+  IDYArray := GetCheckedTreeIDs(vstCoOccurrenceY);
+  if (Length(IDXArray) = 0) and (Length(IDYArray) = 0) then Exit;
+  DocumentID := GetCheckedDocumentID();
+  FCoOccurrenceResult := FServiceDatabase.RunCoOccurrenceAnalysis(IDXArray, IDYArray, DocumentID, GetAttributeSQL, 0);
+  SetupGrid(['Code X', 'Code Y', 'Overlap Count'], [350, 350, 200], Length(FCoOccurrenceResult));
+  if Length(FCoOccurrenceResult) = 0 then FAnalysisState := asNoResults;
+end;
+
+procedure TfrmModalAnalyse.ExecuteCrosstab;
+var
+  IDArray, DocumentID: TStringDynArray;
+begin
+  if not Assigned(cmbCrossAttribute) or (cmbCrossAttribute.ItemIndex = -1) then Exit;
+  IDArray := GetCheckedTreeIDs(vstCrosstabCode, 0);
+  if Length(IDArray) = 0 then Exit;
+  DocumentID := GetCheckedDocumentID();
+  FCrossResult := FServiceDatabase.RunCrosstabAnalysis(IDArray, DocumentID, GetAttributeSQL, FAttributeKey[cmbCrossAttribute.ItemIndex]);
+  SetupGrid(['Code', cmbCrossAttribute.Text, 'Segment Count'], [400, 300, 200], Length(FCrossResult));
+  if Length(FCrossResult) = 0 then FAnalysisState := asNoResults;
+end;
+
+procedure TfrmModalAnalyse.ExecuteCoverage;
+var
+  DocumentID: TStringDynArray;
+  i, ValidCount: Integer;
+begin
+  DocumentID := GetCheckedDocumentID();
+  FCoverageResult := FServiceDatabase.RunCoverageAnalysis(DocumentID, GetAttributeSQL, 0);
+  ValidCount := 0;
+  for i := 0 to High(FCoverageResult) do if FCoverageResult[i].DocumentID <> '' then Inc(ValidCount);
+  SetLength(FCoverageResult, ValidCount);
+  SetupGrid(['Document Name', 'Total Characters', 'Coded Characters', 'Coverage %'], [300, 200, 200, 200], Length(FCoverageResult));
+  if Length(FCoverageResult) = 0 then FAnalysisState := asNoResults;
+end;
+
+procedure TfrmModalAnalyse.ExecuteWordCloud;
+var
+  IDArray, DocumentID: TStringDynArray;
+  StopStr: String;
+  Limit: Integer;
+begin
+  IDArray := GetCheckedTreeIDs(vstWordCloudCode);
+  if Length(IDArray) = 0 then Exit;
+  DocumentID := GetCheckedDocumentID();
+  StopStr := FServiceDatabase.GetUserPreference('StopWord', 'a,about,above,after,again,against,ain,all,am,an,and,any,are,aren,aren''t,as,at,be,because,been,before,being,below,between,both,but,by,can,couldn,couldn''t,d,did,didn,didn''t,do,does,doesn,doesn''t,doing,don,don''t,down,during,each,few,for,from,further,had,hadn,hadn''t,has,hasn,hasn''t,have,haven,haven''t,having,he,he''d,he''ll,her,here,hers,herself,he''s,him,himself,his,how,i,i''d,if,i''ll,i''m,in,into,is,isn,isn''t,it,it''d,it''ll,it''s,its,itself,i''ve,just,ll,m,ma,me,mightn,mightn''t,more,most,mustn,mustn''t,my,myself,needn,needn''t,no,nor,not,now,o,of,off,on,once,only,or,other,our,ours,ourselves,out,over,own,re,s,same,shan,shan''t,she,she''d,she''ll,she''s,should,shouldn,shouldn''t,should''ve,so,some,such,t,than,that,that''ll,the,their,theirs,them,themselves,then,there,these,they,they''d,they''ll,they''re,they''ve,this,those,through,to,too,under,until,up,ve,very,was,wasn,wasn''t,we,we''d,we''ll,we''re,were,weren,weren''t,we''ve,what,when,where,which,while,who,whom,why,will,with,won,won''t,wouldn,wouldn''t,y,you,you''d,you''ll,your,you''re,yours,yourself,yourselves,you''ve');
+  if Assigned(edtVisualizationLimit) then Limit := edtVisualizationLimit.Value else Limit := 50;
+  if Limit > 100 then Limit := 100;
+  FWordCloudResult := FServiceDatabase.RunWordCloudAnalysis(IDArray, DocumentID, GetAttributeSQL, StopStr, Limit);
+  SetupGrid(['Word', 'Frequency'], [500, 200], Length(FWordCloudResult));
+  if Length(FWordCloudResult) = 0 then FAnalysisState := asNoResults;
 end;
 
 procedure TThreadPrepareVisualization.SyncStatus(const Message: String);
@@ -2234,13 +2031,13 @@ begin
            PreparedVisualization.PrepareStackedBarChart(LabelArray, TotalVal, SubVal, LabelStr, VW, VH);
          end;
       4: begin
-           Limit := Length(FCloudResult);
+           Limit := Length(FWordCloudResult);
            SetLength(Word, Limit);
            SetLength(Frequency, Limit);
            for i := 0 to Limit - 1 do
            begin
-             Word[i] := FCloudResult[i].Word;
-             Frequency[i] := FCloudResult[i].Frequency;
+             Word[i] := FWordCloudResult[i].Word;
+             Frequency[i] := FWordCloudResult[i].Frequency;
            end;
            PreparedVisualization.PrepareWordCloud(Word, Frequency, VW, VH);
          end;
@@ -2262,78 +2059,102 @@ begin
   Synchronize(@CloseProgressDialog);
 end;
 
-procedure TfrmModalAnalyse.ExecuteFrequency;
+procedure TfrmModalAnalyse.btnAnalyseClick(Sender: TObject);
 var
-  IDArray, DocumentID: TStringDynArray;
-  Limit: Integer;
+  HasCodeSelection, HasDocSelection: Boolean;
+  VisWorker: TThreadPrepareVisualization;
+  CurrentLimit: Integer;
 begin
-  IDArray := GetCheckedTreeIDs(vstFrequencyCode);
-  if Length(IDArray) = 0 then Exit;
-  DocumentID := GetCheckedDocumentID();
-  if Assigned(chkEnableLimit) and chkEnableLimit.Checked and Assigned(edtVisualizationLimit) then
-    Limit := edtVisualizationLimit.Value
+  if csLoading in ComponentState then Exit;
+  ResetResults;
+  if Assigned(pcAnalysisType) then
+    FActiveAnalysis := pcAnalysisType.ActivePageIndex
   else
-    Limit := 1000000;
-  FFrequencyResult := FServiceDatabase.RunFrequencyAnalysis(IDArray, DocumentID, GetAttributeSQL, Limit);
-  SetupGrid(['Code', 'Segment Count', 'Document Count'], [500, 200, 200], Length(FFrequencyResult));
-  if Length(FFrequencyResult) = 0 then FAnalysisState := asNoResults;
-end;
-
-procedure TfrmModalAnalyse.ExecuteCoOccurrence;
-var
-  IDXArray, IDYArray, DocumentID: TStringDynArray;
-begin
-  IDXArray := GetCheckedTreeIDs(vstCoOccurrenceX);
-  IDYArray := GetCheckedTreeIDs(vstCoOccurrenceY);
-  if (Length(IDXArray) = 0) and (Length(IDYArray) = 0) then Exit;
-  DocumentID := GetCheckedDocumentID();
-  FCoOccurrenceResult := FServiceDatabase.RunCoOccurrenceAnalysis(IDXArray, IDYArray, DocumentID, GetAttributeSQL, 0);
-  SetupGrid(['Code X', 'Code Y', 'Overlap Count'], [350, 350, 200], Length(FCoOccurrenceResult));
-  if Length(FCoOccurrenceResult) = 0 then FAnalysisState := asNoResults;
-end;
-
-procedure TfrmModalAnalyse.ExecuteCrosstab;
-var
-  IDArray, DocumentID: TStringDynArray;
-begin
-  if not Assigned(cmbCrossAttribute) or (cmbCrossAttribute.ItemIndex = -1) then Exit;
-  IDArray := GetCheckedTreeIDs(vstCrosstabCode, 0);
-  if Length(IDArray) = 0 then Exit;
-  DocumentID := GetCheckedDocumentID();
-  FCrossResult := FServiceDatabase.RunCrosstabAnalysis(IDArray, DocumentID, GetAttributeSQL, FAttributeKey[cmbCrossAttribute.ItemIndex]);
-  SetupGrid(['Code', cmbCrossAttribute.Text, 'Segment Count'], [400, 300, 200], Length(FCrossResult));
-  if Length(FCrossResult) = 0 then FAnalysisState := asNoResults;
-end;
-
-procedure TfrmModalAnalyse.ExecuteCoverage;
-var
-  DocumentID: TStringDynArray;
-  i, ValidCount: Integer;
-begin
-  DocumentID := GetCheckedDocumentID();
-  FCoverageResult := FServiceDatabase.RunCoverageAnalysis(DocumentID, GetAttributeSQL, 0);
-  ValidCount := 0;
-  for i := 0 to High(FCoverageResult) do if FCoverageResult[i].DocumentID <> '' then Inc(ValidCount);
-  SetLength(FCoverageResult, ValidCount);
-  SetupGrid(['Document Name', 'Total Characters', 'Coded Characters', 'Coverage %'], [300, 200, 200, 200], Length(FCoverageResult));
-  if Length(FCoverageResult) = 0 then FAnalysisState := asNoResults;
-end;
-
-procedure TfrmModalAnalyse.ExecuteWordCloud;
-var
-  IDArray, DocumentID: TStringDynArray;
-  StopStr: String;
-  Limit: Integer;
-begin
-  IDArray := GetCheckedTreeIDs(vstWordCloudCode);
-  if Length(IDArray) = 0 then Exit;
-  DocumentID := GetCheckedDocumentID();
-  StopStr := FServiceDatabase.GetUserPreference('StopWord', 'a,about,above,after,again,against,ain,all,am,an,and,any,are,aren,aren''t,as,at,be,because,been,before,being,below,between,both,but,by,can,couldn,couldn''t,d,did,didn,didn''t,do,does,doesn,doesn''t,doing,don,don''t,down,during,each,few,for,from,further,had,hadn,hadn''t,has,hasn,hasn''t,have,haven,haven''t,having,he,he''d,he''ll,her,here,hers,herself,he''s,him,himself,his,how,i,i''d,if,i''ll,i''m,in,into,is,isn,isn''t,it,it''d,it''ll,it''s,its,itself,i''ve,just,ll,m,ma,me,mightn,mightn''t,more,most,mustn,mustn''t,my,myself,needn,needn''t,no,nor,not,now,o,of,off,on,once,only,or,other,our,ours,ourselves,out,over,own,re,s,same,shan,shan''t,she,she''d,she''ll,she''s,should,shouldn,shouldn''t,should''ve,so,some,such,t,than,that,that''ll,the,their,theirs,them,themselves,then,there,these,they,they''d,they''ll,they''re,they''ve,this,those,through,to,too,under,until,up,ve,very,was,wasn,wasn''t,we,we''d,we''ll,we''re,were,weren,weren''t,we''ve,what,when,where,which,while,who,whom,why,will,with,won,won''t,wouldn,wouldn''t,y,you,you''d,you''ll,your,you''re,yours,yourself,yourselves,you''ve');
-  if Assigned(edtVisualizationLimit) then Limit := edtVisualizationLimit.Value else Limit := 50;
-  if Limit > 100 then Limit := 100;
-  FCloudResult := FServiceDatabase.RunWordCloudAnalysis(IDArray, DocumentID, GetAttributeSQL, StopStr, Limit);
-  SetupGrid(['Word', 'Frequency'], [500, 200], Length(FCloudResult));
-  if Length(FCloudResult) = 0 then FAnalysisState := asNoResults;
+    Exit;
+  HasDocSelection := FCheckedDocumentSet.Count > 0;
+  HasCodeSelection := True;
+  case FActiveAnalysis of
+    0: HasCodeSelection := FCheckedFrequencyCode.Count > 0;
+    1: HasCodeSelection := (FCheckedCoOccurrenceXCode.Count > 0) or (FCheckedCoOccurrenceYCode.Count > 0);
+    2: HasCodeSelection := FCheckedCrosstabCode.Count > 0;
+    3: HasCodeSelection := True;
+    4: HasCodeSelection := FCheckedWordCloudCode.Count > 0;
+  end;
+  if not HasDocSelection or not HasCodeSelection then
+  begin
+    FAnalysisState := asNoSelection;
+    if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
+    Exit;
+  end;
+  if (FActiveAnalysis = 2) and Assigned(cmbCrossAttribute) and (cmbCrossAttribute.ItemIndex = -1) then
+  begin
+    FAnalysisState := asMissingAttribute;
+    if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
+    Exit;
+  end;
+  FAnalysisState := asRunning;
+  if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
+  Application.ProcessMessages;
+  Screen.Cursor := crHourGlass;
+  try
+    case FActiveAnalysis of
+      0: ExecuteFrequency;
+      1: ExecuteCoOccurrence;
+      2: ExecuteCrosstab;
+      3: ExecuteCoverage;
+      4: ExecuteWordCloud;
+    end;
+    if (Length(FFrequencyResult) > 0) or (Length(FCoOccurrenceResult) > 0) or
+       (Length(FCrossResult) > 0)  or (Length(FCoverageResult) > 0) or
+       (Length(FWordCloudResult) > 0) then
+    begin
+      CurrentLimit := 1000000;
+      if Assigned(chkEnableLimit) and Assigned(edtVisualizationLimit) then
+      begin
+        if (FActiveAnalysis = 4) or chkEnableLimit.Checked then
+          CurrentLimit := edtVisualizationLimit.Value;
+      end;
+      VisWorker := TThreadPrepareVisualization.Create(True);
+      VisWorker.FreeOnTerminate := False;
+      VisWorker.FActiveAnalysis := FActiveAnalysis;
+      VisWorker.FFrequencyResult := FFrequencyResult;
+      VisWorker.FCoOccurrenceResult := FCoOccurrenceResult;
+      VisWorker.FCrossResult := FCrossResult;
+      VisWorker.FCoverageResult := FCoverageResult;
+      VisWorker.FWordCloudResult := FWordCloudResult;
+      VisWorker.FLimit := CurrentLimit;
+      VisWorker.Start;
+      TfrmDialogProgress.Prepare('Composing Visualisation', 'Measuring layout dimensions...');
+      frmDialogProgress.ShowModal;
+      if VisWorker.Success and Assigned(VisWorker.PreparedVisualization) then
+      begin
+        FVisualizer.Free;
+        FVisualizer := VisWorker.PreparedVisualization;
+        FVirtualWidth := VisWorker.VWidth;
+        FVirtualHeight := VisWorker.VHeight;
+        VisWorker.PreparedVisualization := nil; 
+        ResetViewContext;
+        FAnalysisState := asComplete;
+        btnExportData.Enabled := True;
+        btnVisualizationSave.Enabled := True;
+      end
+      else
+      begin
+        FAnalysisState := asNoResults;
+        MessageDlg('Visualisation Error', 'Failed to build the visualisation: ' + VisWorker.ErrorMessage, mtError, [mbOK], 0);
+      end;
+      VisWorker.Free;
+    end
+    else
+    begin
+      FAnalysisState := asNoResults;
+      btnExportData.Enabled := False;
+      btnVisualizationSave.Enabled := False;
+    end;
+    if Assigned(pbxVisualization) then pbxVisualization.Invalidate;
+  finally
+    Screen.Cursor := crDefault;
+  end;
 end;
 
 procedure TfrmModalAnalyse.pbxVisualizationPaint(Sender: TObject);
@@ -2416,13 +2237,53 @@ begin
   Handled := True;
 end;
 
+procedure TfrmModalAnalyse.ResetViewContext;
+var
+  ActualViewW, ActualViewH: Double;
+  VisibleViewW, VisibleViewH: Double;
+  ScaleX, ScaleY, ContentW, ContentH: Double;
+begin
+  if not Assigned(pbxVisualization) or (pbxVisualization.Width <= 0) or (pbxVisualization.Height <= 0) then Exit;
+  ActualViewW := pbxVisualization.Width;
+  ActualViewH := pbxVisualization.Height;
+  VisibleViewW := ActualViewW;
+  VisibleViewH := ActualViewH;
+  if Assigned(pnlGrid) and pnlGrid.Visible then
+  begin
+    VisibleViewH := VisibleViewH - pnlGrid.Height;
+    if Assigned(splResults) and splResults.Visible then
+      VisibleViewH := VisibleViewH - splResults.Height;
+  end;
+  if (FVirtualWidth <= 0) or (FVirtualHeight <= 0) then
+  begin
+    FZoom := 1.0;
+    FPanX := 20.0;
+    FPanY := 20.0;
+    Exit;
+  end;
+  ScaleX := (VisibleViewW - 40.0) / FVirtualWidth;
+  ScaleY := (VisibleViewH - 40.0) / FVirtualHeight;
+  FZoom := Math.Min(1.0, Math.Min(ScaleX, ScaleY));
+  if FZoom < 0.333 then FZoom := 0.333;
+  ContentW := FVirtualWidth * FZoom;
+  ContentH := FVirtualHeight * FZoom;
+  if ContentW < VisibleViewW then
+    FPanX := (VisibleViewW - ContentW) / 2.0
+  else
+    FPanX := 20.0;
+  if ContentH < VisibleViewH then
+    FPanY := (VisibleViewH - ContentH) / 2.0
+  else
+    FPanY := 20.0;
+end;
+
 procedure TfrmModalAnalyse.edtVisualizationLimitChange(Sender: TObject);
 begin
   if (csLoading in ComponentState) or not Assigned(pbxVisualization) or not Assigned(edtVisualizationLimit) then Exit;
   if pcAnalysisType.ActivePageIndex = 4 then
   begin
     if edtVisualizationLimit.Value > 100 then edtVisualizationLimit.Value := 100;
-    FLastCloudLimit := edtVisualizationLimit.Value;
+    FLastWordCloudLimit := edtVisualizationLimit.Value;
   end
   else
     FLastBarLimit := edtVisualizationLimit.Value;
@@ -2460,6 +2321,62 @@ begin
   end;
 end;
 
+procedure TfrmModalAnalyse.btnResetClick(Sender: TObject);
+begin
+  if Assigned(edtSearchFrequency) then edtSearchFrequency.Clear;
+  if Assigned(edtSearchCoOccurrenceX) then edtSearchCoOccurrenceX.Clear;
+  if Assigned(edtSearchCoOccurrenceY) then edtSearchCoOccurrenceY.Clear;
+  if Assigned(edtSearchCrosstab) then edtSearchCrosstab.Clear;
+  if Assigned(edtSearchCloud) then edtSearchCloud.Clear;
+  if Assigned(edtSearchScopeDocument) then edtSearchScopeDocument.Clear;
+  if Assigned(edtSearchScopeAttribute) then edtSearchScopeAttribute.Clear;
+  btnFrequencyClearAllClick(nil);
+  btnCoOccurrenceXClearAllClick(nil);
+  btnCoOccurrenceYClearAllClick(nil);
+  btnCrosstabClearAllClick(nil);
+  btnWordCloudClearAllClick(nil);
+  btnScopeDocumentClearAllClick(nil);
+  btnScopeAttributeClearAllClick(nil);
+  vstFrequencyCode.FullCollapse(nil);
+  vstCoOccurrenceX.FullCollapse(nil);
+  vstCoOccurrenceY.FullCollapse(nil);
+  vstCrosstabCode.FullCollapse(nil);
+  vstWordCloudCode.FullCollapse(nil);
+  if Assigned(cmbCrossAttribute) and (cmbCrossAttribute.Items.Count > 0) then
+    cmbCrossAttribute.ItemIndex := -1;
+  vstScopeAttribute.ClearSelection;
+  FCurrentAttributeIndex := -1;
+  pnlAttributeFilterDef.Visible := False;
+  FLastWordCloudLimit := 50;
+  FLastBarLimit := 10;
+  if Assigned(chkEnableLimit) then chkEnableLimit.Checked := True;
+  pcAnalysisType.ActivePageIndex := 0;
+  pcAnalysisTypeChange(nil);
+  FLastCheckedNode := nil;
+  FLastCheckedTree := nil;
+  FLastCheckedDocNode := nil;
+  ResetResults;
+end;
+
+procedure TThreadExportTable.Execute;
+begin
+  FSuccess := False;
+  FErrorMessage := '';
+  try
+    FSuccess := TServiceExport.ExportDataTable(FHeader, FDataKeys, FGridData, FFileName);
+    if not FSuccess then FErrorMessage := 'Export failed or file is locked.';
+  except
+    on E: Exception do FErrorMessage := E.Message;
+  end;
+  Synchronize(@CloseProgressDialog);
+end;
+
+procedure TThreadExportTable.CloseProgressDialog;
+begin
+  if Assigned(frmDialogProgress) and frmDialogProgress.Visible then
+    frmDialogProgress.ModalResult := mrOk;
+end;
+
 procedure TfrmModalAnalyse.btnExportDataClick(Sender: TObject);
 var
   Worker: TThreadExportTable;
@@ -2469,7 +2386,9 @@ var
   Node: PVirtualNode;
 begin
   if not Assigned(vstResultGrid) or (vstResultGrid.RootNodeCount = 0) then Exit;
-  if not Assigned(dlgExportData) or not dlgExportData.Execute then Exit;
+  if not Assigned(dlgExportData) then Exit;
+  TAppFormat.PrepareFileDialog(dlgExportData);
+  if not dlgExportData.Execute then Exit;
   ColCount := vstResultGrid.Header.Columns.Count;
   RowCount := vstResultGrid.RootNodeCount;
   SetLength(Header, ColCount);
@@ -2518,58 +2437,157 @@ begin
   Worker.Free;
 end;
 
-procedure TfrmModalAnalyse.RenderActiveVisualisation(cr: Pcairo_t; AWidth, AHeight: Integer);
+procedure TThreadExportVisualization.Execute;
 var
-  Margin: Double;
+  VW, VH, i, c, r, MaxVal, Limit: Integer;
+  ChartData: TChartElementArray;
+  CodeListX, CodeListY, CodeList, AttributeList: TStringList;
+  Matrix: TMatrixData;
+  XLabel, YLabel, LabelArray, LabelStr: array of String;
+  TotalVal, SubVal: array of Double;
+  Word: array of String;
+  Frequency: array of Integer;
+  AttributeString, DocumentName: String;
 begin
-  Margin := MulDiv(38, Font.PixelsPerInch, 96);
+  FSuccess := False;
+  FErrorMessage := '';
+  try
+    FLocalVisualization := TServiceVisualize.Create;
+    try
+      case FActiveAnalysis of
+        0: begin
+             SetLength(ChartData, Length(FFrequencyResult));
+             for i := 0 to High(FFrequencyResult) do
+             begin
+               ChartData[i].LabelText := frmModalAnalyse.GetTruncatedCodePath(FFrequencyResult[i].CodeID, 25);
+               ChartData[i].Value := FFrequencyResult[i].SegmentCount;
+               ChartData[i].ValueStr := IntToStr(FFrequencyResult[i].SegmentCount);
+             end;
+             FLocalVisualization.PrepareBarChart(ChartData, VW, VH);
+           end;
+        1: begin
+             CodeListX := TStringList.Create;
+             CodeListY := TStringList.Create;
+             try
+               CodeListX.Sorted := True; CodeListX.Duplicates := dupIgnore;
+               CodeListY.Sorted := True; CodeListY.Duplicates := dupIgnore;
+               MaxVal := 1;
+               for i := 0 to High(FCoOccurrenceResult) do
+               begin
+                 CodeListX.Add(FCoOccurrenceResult[i].Code1ID);
+                 CodeListY.Add(FCoOccurrenceResult[i].Code2ID);
+                 if FCoOccurrenceResult[i].Overlap > MaxVal then MaxVal := FCoOccurrenceResult[i].Overlap;
+               end;
+               SetLength(Matrix, CodeListX.Count, CodeListY.Count);
+               for i := 0 to High(FCoOccurrenceResult) do
+               begin
+                 c := CodeListX.IndexOf(FCoOccurrenceResult[i].Code1ID);
+                 r := CodeListY.IndexOf(FCoOccurrenceResult[i].Code2ID);
+                 if (c > -1) and (r > -1) then Matrix[c, r] := FCoOccurrenceResult[i].Overlap;
+               end;
+               SetLength(XLabel, CodeListX.Count);
+               for c := 0 to CodeListX.Count - 1 do XLabel[c] := frmModalAnalyse.GetTruncatedCodePath(CodeListX[c], 25);
+               SetLength(YLabel, CodeListY.Count);
+               for r := 0 to CodeListY.Count - 1 do YLabel[r] := frmModalAnalyse.GetTruncatedCodePath(CodeListY[r], 25);
+               FLocalVisualization.PrepareHeatmap(XLabel, YLabel, Matrix, MaxVal, False, VW, VH);
+             finally
+               CodeListX.Free; CodeListY.Free;
+             end;
+           end;
+        2: begin
+             CodeList := TStringList.Create;
+             AttributeList := TStringList.Create;
+             try
+               CodeList.Sorted := True; CodeList.Duplicates := dupIgnore;
+               AttributeList.Sorted := True; AttributeList.Duplicates := dupIgnore;
+               MaxVal := 1;
+               for i := 0 to High(FCrossResult) do
+               begin
+                 CodeList.Add(FCrossResult[i].CodeID);
+                 AttributeList.Add(FCrossResult[i].AttributeValue);
+                 if FCrossResult[i].Frequency > MaxVal then MaxVal := FCrossResult[i].Frequency;
+               end;
+               SetLength(Matrix, AttributeList.Count, CodeList.Count);
+               for i := 0 to High(FCrossResult) do
+               begin
+                 c := AttributeList.IndexOf(FCrossResult[i].AttributeValue);
+                 r := CodeList.IndexOf(FCrossResult[i].CodeID);
+                 if (c > -1) and (r > -1) then Matrix[c, r] := FCrossResult[i].Frequency;
+               end;
+               SetLength(XLabel, AttributeList.Count);
+               for c := 0 to AttributeList.Count - 1 do
+               begin
+                 AttributeString := AttributeList[c];
+                 if UTF8Length(AttributeString) > 40 then AttributeString := UTF8Copy(AttributeString, 1, 40) + '...';
+                 XLabel[c] := AttributeString;
+               end;
+               SetLength(YLabel, CodeList.Count);
+               for r := 0 to CodeList.Count - 1 do YLabel[r] := frmModalAnalyse.GetTruncatedCodePath(CodeList[r], 25);
+               FLocalVisualization.PrepareHeatmap(XLabel, YLabel, Matrix, MaxVal, True, VW, VH);
+             finally
+               CodeList.Free; AttributeList.Free;
+             end;
+           end;
+        3: begin
+             Limit := FLimit;
+             if Limit <= 0 then Limit := Length(FCoverageResult);
+             if Limit > Length(FCoverageResult) then Limit := Length(FCoverageResult);
+             SetLength(LabelArray, Limit);
+             SetLength(LabelStr, Limit);
+             SetLength(TotalVal, Limit);
+             SetLength(SubVal, Limit);
+             for i := 0 to Limit - 1 do
+             begin
+               DocumentName := FCoverageResult[i].DocumentName;
+               if UTF8Length(DocumentName) > 60 then DocumentName := UTF8Copy(DocumentName, 1, 60) + '...';
+               LabelArray[i] := DocumentName;
+               TotalVal[i] := FCoverageResult[i].TotalCharacters;
+               SubVal[i] := FCoverageResult[i].CodedCharacters;
+               if FCoverageResult[i].TotalCharacters > 0 then
+                 LabelStr[i] := FormatFloat('0.00', (FCoverageResult[i].CodedCharacters / FCoverageResult[i].TotalCharacters) * 100) + '%'
+               else
+                 LabelStr[i] := '0.00%';
+             end;
+             FLocalVisualization.PrepareStackedBarChart(LabelArray, TotalVal, SubVal, LabelStr, VW, VH);
+           end;
+        4: begin
+             Limit := Length(FWordCloudResult);
+             SetLength(Word, Limit);
+             SetLength(Frequency, Limit);
+             for i := 0 to Limit - 1 do
+             begin
+               Word[i] := FWordCloudResult[i].Word;
+               Frequency[i] := FWordCloudResult[i].Frequency;
+             end;
+             FLocalVisualization.PrepareWordCloud(Word, Frequency, VW, VH);
+           end;
+      end;
+      FSuccess := TServiceExport.ExportVisualisation(FFileName, FProjectTitle, FSubject, FWidth, FHeight, @ThreadRenderEvent);
+      if not FSuccess then FErrorMessage := 'Export failed or file is locked.';
+    finally
+      FLocalVisualization.Free;
+    end;
+  except
+    on E: Exception do FErrorMessage := E.Message;
+  end;
+  Synchronize(@CloseProgressDialog);
+end;
+
+procedure TThreadExportVisualization.ThreadRenderEvent(cr: Pcairo_t; AWidth, AHeight: Integer);
+begin
   cairo_save(cr);
-  cairo_translate(cr, Margin, Margin);
-  FVisualizer.Render(cr, AWidth - Round(Margin * 2.0), AHeight - Round(Margin * 2.0), 0, 0, 1.0);
+  cairo_translate(cr, FMargin, FMargin);
+  FLocalVisualization.Render(cr, AWidth - Round(FMargin * 2.0), AHeight - Round(FMargin * 2.0), 0, 0, 1.0);
   cairo_restore(cr);
 end;
 
-procedure TfrmModalAnalyse.ResetViewContext;
-var
-  ActualViewW, ActualViewH: Double;
-  VisibleViewW, VisibleViewH: Double;
-  ScaleX, ScaleY, ContentW, ContentH: Double;
+procedure TThreadExportVisualization.CloseProgressDialog;
 begin
-  if not Assigned(pbxVisualization) or (pbxVisualization.Width <= 0) or (pbxVisualization.Height <= 0) then Exit;
-  ActualViewW := pbxVisualization.Width;
-  ActualViewH := pbxVisualization.Height;
-  VisibleViewW := ActualViewW;
-  VisibleViewH := ActualViewH;
-  if Assigned(pnlGrid) and pnlGrid.Visible then
-  begin
-    VisibleViewH := VisibleViewH - pnlGrid.Height;
-    if Assigned(splResults) and splResults.Visible then
-      VisibleViewH := VisibleViewH - splResults.Height;
-  end;
-  if (FVirtualWidth <= 0) or (FVirtualHeight <= 0) then
-  begin
-    FZoom := 1.0;
-    FPanX := 20.0;
-    FPanY := 20.0;
-    Exit;
-  end;
-  ScaleX := (VisibleViewW - 40.0) / FVirtualWidth;
-  ScaleY := (VisibleViewH - 40.0) / FVirtualHeight;
-  FZoom := Math.Min(1.0, Math.Min(ScaleX, ScaleY));
-  if FZoom < 0.333 then FZoom := 0.333;
-  ContentW := FVirtualWidth * FZoom;
-  ContentH := FVirtualHeight * FZoom;
-  if ContentW < VisibleViewW then
-    FPanX := (VisibleViewW - ContentW) / 2.0
-  else
-    FPanX := 20.0;
-  if ContentH < VisibleViewH then
-    FPanY := (VisibleViewH - ContentH) / 2.0
-  else
-    FPanY := 20.0;
+  if Assigned(frmDialogProgress) and frmDialogProgress.Visible then
+    frmDialogProgress.ModalResult := mrOk;
 end;
 
-procedure TfrmModalAnalyse.btnSaveVisualizationClick(Sender: TObject);
+procedure TfrmModalAnalyse.btnVisualizationSaveClick(Sender: TObject);
 var
   RequestedWidth, RequestedHeight: Integer;
   Margin: Double;
@@ -2578,7 +2596,9 @@ var
   CurrentLimit: Integer;
 begin
   if FAnalysisState <> asComplete then Exit;
-  if not Assigned(dlgSaveVisualization) or not dlgSaveVisualization.Execute then Exit;
+  if not Assigned(dlgSaveVisualization) then Exit;
+  TAppFormat.PrepareFileDialog(dlgSaveVisualization);
+  if not dlgSaveVisualization.Execute then Exit;
   RequestedWidth := FVirtualWidth;
   RequestedHeight := FVirtualHeight;
   Margin := MulDiv(38, Font.PixelsPerInch, 96);
@@ -2613,7 +2633,7 @@ begin
   Worker.FCoOccurrenceResult := FCoOccurrenceResult;
   Worker.FCrossResult := FCrossResult;
   Worker.FCoverageResult := FCoverageResult;
-  Worker.FCloudResult := FCloudResult;
+  Worker.FWordCloudResult := FWordCloudResult;
   CurrentLimit := 1000000;
   if Assigned(chkEnableLimit) and Assigned(edtVisualizationLimit) then
   begin
@@ -2629,43 +2649,6 @@ begin
   else
     MessageDlg('Success', 'Visualisation saved successfully.', mtInformation, [mbOK], 0);
   Worker.Free;
-end;
-
-procedure TfrmModalAnalyse.btnResetClick(Sender: TObject);
-begin
-  if Assigned(edtSearchFrequency) then edtSearchFrequency.Clear;
-  if Assigned(edtSearchCoOccurrenceX) then edtSearchCoOccurrenceX.Clear;
-  if Assigned(edtSearchCoOccurrenceY) then edtSearchCoOccurrenceY.Clear;
-  if Assigned(edtSearchCrosstab) then edtSearchCrosstab.Clear;
-  if Assigned(edtSearchCloud) then edtSearchCloud.Clear;
-  if Assigned(edtSearchScopeDocument) then edtSearchScopeDocument.Clear;
-  if Assigned(edtSearchScopeAttribute) then edtSearchScopeAttribute.Clear;
-  btnFrequencyClearAllClick(nil);
-  btnCoOccurrenceXClearAllClick(nil);
-  btnCoOccurrenceYClearAllClick(nil);
-  btnCrossClearAllClick(nil);
-  btnCloudClearAllClick(nil);
-  btnScopeDocumentClearAllClick(nil);
-  btnScopeAttributeClearAllClick(nil);
-  vstFrequencyCode.FullCollapse(nil);
-  vstCoOccurrenceX.FullCollapse(nil);
-  vstCoOccurrenceY.FullCollapse(nil);
-  vstCrosstabCode.FullCollapse(nil);
-  vstWordCloudCode.FullCollapse(nil);
-  if Assigned(cmbCrossAttribute) and (cmbCrossAttribute.Items.Count > 0) then
-    cmbCrossAttribute.ItemIndex := -1;
-  vstScopeAttribute.ClearSelection;
-  FCurrentAttributeIndex := -1;
-  pnlAttributeFilterDef.Visible := False;
-  FLastCloudLimit := 50;
-  FLastBarLimit := 10;
-  if Assigned(chkEnableLimit) then chkEnableLimit.Checked := True;
-  pcAnalysisType.ActivePageIndex := 0;
-  pcAnalysisTypeChange(nil);
-  FLastCheckedNode := nil;
-  FLastCheckedTree := nil;
-  FLastCheckedDocNode := nil;
-  ResetResults;
 end;
 
 end.
