@@ -81,7 +81,7 @@ Lattice is built and shipped with a ready-to-set-up installer. However, if requi
 
 1. [Lazarus IDE](https://www.lazarus-ide.org) v4.6 or later
 
-2. [Free Pascal Compiler](https://www.freepascal.org) v3.2.2 (included with the Lazarus IDE)
+2. [Free Pascal Compiler](https://www.freepascal.org) v3.2.2 or later (included with the Lazarus IDE)
 
 3. [FPSpreadsheet](https://wiki.freepascal.org/FPSpreadsheet) installed in Lazarus IDE via [Online Package Manager](https://wiki.freepascal.org/Online_Package_Manager)
 
