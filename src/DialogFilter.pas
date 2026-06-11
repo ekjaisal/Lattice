@@ -297,12 +297,15 @@ end;
 
 function TfrmDialogFilter.BuildAttributeSQL: String;
 var
-  AttributeValue, OpStr, OpSelection, ColumnName: String;
+  AttributeValue, OpStr, OpSelection, ColumnName, AttributeType, ValueFirst, ValueSecond: String;
   PipePos: Integer;
+  IsNumeric: Boolean;
 begin
   Result := '';
   if cmbAttribute.ItemIndex < 1 then Exit;
   ColumnName := FAttributeKey[cmbAttribute.ItemIndex];
+  AttributeType := FAttributeTypes[cmbAttribute.ItemIndex];
+  IsNumeric := AttributeType = 'Numeric';
   OpSelection := cmbOperator.Text;
   if OpSelection = 'Is Empty' then
   begin
@@ -328,25 +331,55 @@ begin
   else if cmbAttributeValueCat.Visible then AttributeValue := Trim(cmbAttributeValueCat.Text);
   if AttributeValue = '' then Exit;
   AttributeValue := StringReplace(AttributeValue, ',', '.', [rfReplaceAll]);
-  if (OpSelection = 'Equals') or (OpSelection = 'On') then OpStr := '= ' + QuotedStr(AttributeValue)
-  else if (OpSelection = 'Does Not Equal') or (OpSelection = 'Not On') then OpStr := '<> ' + QuotedStr(AttributeValue)
+  if (OpSelection = 'Equals') or (OpSelection = 'On') then
+  begin
+    if IsNumeric then OpStr := '= ' + AttributeValue else OpStr := '= ' + QuotedStr(AttributeValue);
+  end
+  else if (OpSelection = 'Does Not Equal') or (OpSelection = 'Not On') then
+  begin
+    if IsNumeric then OpStr := '<> ' + AttributeValue else OpStr := '<> ' + QuotedStr(AttributeValue);
+  end
   else if OpSelection = 'Contains' then OpStr := 'LIKE ' + QuotedStr('%' + AttributeValue + '%')
   else if OpSelection = 'Does Not Contain' then OpStr := 'NOT LIKE ' + QuotedStr('%' + AttributeValue + '%')
   else if OpSelection = 'Starts With' then OpStr := 'LIKE ' + QuotedStr(AttributeValue + '%')
   else if OpSelection = 'Ends With' then OpStr := 'LIKE ' + QuotedStr('%' + AttributeValue)
-  else if (OpSelection = 'Greater Than') or (OpSelection = 'After') then OpStr := '> ' + QuotedStr(AttributeValue)
-  else if (OpSelection = 'Less Than') or (OpSelection = 'Before') then OpStr := '< ' + QuotedStr(AttributeValue)
-  else if (OpSelection = 'Greater or Equal') or (OpSelection = 'On or After') then OpStr := '>= ' + QuotedStr(AttributeValue)
-  else if (OpSelection = 'Less or Equal') or (OpSelection = 'On or Before') then OpStr := '<= ' + QuotedStr(AttributeValue)
+  else if (OpSelection = 'Greater Than') or (OpSelection = 'After') then
+  begin
+    if IsNumeric then OpStr := '> ' + AttributeValue else OpStr := '> ' + QuotedStr(AttributeValue);
+  end
+  else if (OpSelection = 'Less Than') or (OpSelection = 'Before') then
+  begin
+    if IsNumeric then OpStr := '< ' + AttributeValue else OpStr := '< ' + QuotedStr(AttributeValue);
+  end
+  else if (OpSelection = 'Greater or Equal') or (OpSelection = 'On or After') then
+  begin
+    if IsNumeric then OpStr := '>= ' + AttributeValue else OpStr := '>= ' + QuotedStr(AttributeValue);
+  end
+  else if (OpSelection = 'Less or Equal') or (OpSelection = 'On or Before') then
+  begin
+    if IsNumeric then OpStr := '<= ' + AttributeValue else OpStr := '<= ' + QuotedStr(AttributeValue);
+  end
   else if OpSelection = 'Between' then
   begin
     PipePos := Pos('|', AttributeValue);
     if PipePos > 0 then
-      OpStr := 'BETWEEN ' + QuotedStr(Copy(AttributeValue, 1, PipePos - 1)) + ' AND ' + QuotedStr(Copy(AttributeValue, PipePos + 1, MaxInt))
+    begin
+      ValueFirst := Copy(AttributeValue, 1, PipePos - 1);
+      ValueSecond := Copy(AttributeValue, PipePos + 1, MaxInt);
+      if IsNumeric then
+        OpStr := 'BETWEEN ' + ValueFirst + ' AND ' + ValueSecond
+      else
+        OpStr := 'BETWEEN ' + QuotedStr(ValueFirst) + ' AND ' + QuotedStr(ValueSecond);
+    end
     else
-      OpStr := '= ' + QuotedStr(AttributeValue);
+    begin
+      if IsNumeric then OpStr := '= ' + AttributeValue else OpStr := '= ' + QuotedStr(AttributeValue);
+    end;
   end
-  else OpStr := '= ' + QuotedStr(AttributeValue);
+  else
+  begin
+    if IsNumeric then OpStr := '= ' + AttributeValue else OpStr := '= ' + QuotedStr(AttributeValue);
+  end;
   if (OpSelection = 'Does Not Equal') or (OpSelection = 'Not On') or (OpSelection = 'Does Not Contain') then
     Result := ' AND (json_extract(da.attributes, ''$.' + ColumnName + ''') ' + OpStr + ' OR json_extract(da.attributes, ''$.' + ColumnName + ''') IS NULL)'
   else
